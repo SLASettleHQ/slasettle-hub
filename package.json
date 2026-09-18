@@ -1,0 +1,16 @@
+{
+  "name": "slasettle-hub",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@12.4.2",
+  "scripts": {
+    "dev": "pnpm --filter @slasettle/sdk build && pnpm --filter @slasettle/web dev",
+    "build": "pnpm --filter @slasettle/sdk build && pnpm --filter @slasettle/web build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}
