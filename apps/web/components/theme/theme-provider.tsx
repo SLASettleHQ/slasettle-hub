@@ -6,16 +6,19 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { resolveTheme, type ResolvedTheme, type ThemePreference } from "@/lib/theme";
 import {
-  DEFAULT_THEME_PREFERENCE,
-  THEME_STORAGE_KEY,
-  resolveTheme,
-  type ResolvedTheme,
-  type ThemePreference,
-} from "@/lib/theme";
+  getPreferenceServerSnapshot,
+  getPreferenceSnapshot,
+  getSystemSchemeIsLightSnapshot,
+  getSystemSchemeServerSnapshot,
+  subscribeToPreference,
+  subscribeToSystemScheme,
+  writePreference,
+} from "@/lib/theme-store";
 
 interface ThemeContextValue {
   preference: ThemePreference;
@@ -25,55 +28,30 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function readStoredPreference(): ThemePreference {
-  try {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored === "dark" || stored === "light" || stored === "system") {
-      return stored;
-    }
-  } catch {
-    // localStorage unavailable (private browsing, blocked site data, etc).
-  }
-  return DEFAULT_THEME_PREFERENCE;
-}
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // The blocking inline script in <head> already set the correct
-  // data-theme attribute before paint; this just brings React state in
-  // sync with it on mount, so there is no flash and no mismatch.
-  const [preference, setPreferenceState] = useState<ThemePreference>(
-    DEFAULT_THEME_PREFERENCE,
+  const preference = useSyncExternalStore(
+    subscribeToPreference,
+    getPreferenceSnapshot,
+    getPreferenceServerSnapshot,
   );
-  const [resolved, setResolved] = useState<ResolvedTheme>("dark");
+  const systemIsLight = useSyncExternalStore(
+    subscribeToSystemScheme,
+    getSystemSchemeIsLightSnapshot,
+    getSystemSchemeServerSnapshot,
+  );
 
-  useEffect(() => {
-    const stored = readStoredPreference();
-    setPreferenceState(stored);
-    setResolved(resolveTheme(stored));
-  }, []);
+  const resolved: ResolvedTheme =
+    preference === "system" ? (systemIsLight ? "light" : "dark") : resolveTheme(preference);
 
+  // The blocking inline script in <head> already applied the correct
+  // data-theme attribute before paint; this keeps it in sync with React
+  // state afterward (e.g. when the preference or OS scheme changes).
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", resolved);
   }, [resolved]);
 
-  useEffect(() => {
-    if (preference !== "system") {
-      return;
-    }
-    const media = window.matchMedia("(prefers-color-scheme: light)");
-    const onChange = () => setResolved(resolveTheme("system"));
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
-  }, [preference]);
-
   const setPreference = useCallback((next: ThemePreference) => {
-    setPreferenceState(next);
-    setResolved(resolveTheme(next));
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      // Persisting the preference is a nice-to-have; ignore failures.
-    }
+    writePreference(next);
   }, []);
 
   const value = useMemo(
