@@ -5,7 +5,6 @@ import { useCallback, useState } from "react";
 import {
   signTransaction,
   submitTransaction,
-  WalletError,
   type SubmittedTransaction,
   type WalletConnection,
 } from "./wallet";
@@ -56,10 +55,14 @@ export function useTransaction() {
         }
         return result;
       } catch (err) {
+        // Anything thrown here already carries a deliberate, specific
+        // message — from WalletError, from a form's own validation inside
+        // buildUnsignedTx, or from the SDK/RPC layer — so surface it
+        // directly rather than masking it with a generic fallback.
         setState({
           status: "failed",
           message:
-            err instanceof WalletError
+            err instanceof Error
               ? err.message
               : "The transaction could not be completed. Check your wallet and try again.",
         });
