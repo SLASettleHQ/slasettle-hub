@@ -1,26 +1,125 @@
 @import "tailwindcss";
 
+/*
+ * Dark-first design system for an infrastructure console. Dark tokens live
+ * on :root as the default; [data-theme="light"] overrides them. The
+ * "system" preference is resolved to a concrete data-theme value at runtime
+ * by ThemeProvider, so no media-query duplication is needed here.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  --color-bg-base: #08090c;
+  --color-bg-surface: #0f1116;
+  --color-bg-raised: #161922;
+  --color-bg-overlay: #1c202b;
+
+  --color-border-subtle: #23272f;
+  --color-border-default: #2e333e;
+  --color-border-strong: #3d4351;
+
+  --color-fg-primary: #e8eaf0;
+  --color-fg-secondary: #a7adba;
+  --color-fg-muted: #6b7280;
+
+  --color-accent: #5b9dff;
+  --color-accent-fg: #04101f;
+
+  --color-status-up: #34d399;
+  --color-status-up-bg: #0d2b21;
+  --color-status-down: #f87171;
+  --color-status-down-bg: #2f1414;
+  --color-status-pending: #fbbf24;
+  --color-status-pending-bg: #2b2308;
+  --color-status-neutral: #8b93a3;
+  --color-status-neutral-bg: #1a1d24;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  --shadow-raised: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset,
+    0 8px 24px -12px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg-base: #f5f6f8;
+  --color-bg-surface: #ffffff;
+  --color-bg-raised: #ffffff;
+  --color-bg-overlay: #ffffff;
+
+  --color-border-subtle: #e5e7eb;
+  --color-border-default: #d7dae0;
+  --color-border-strong: #b9bec9;
+
+  --color-fg-primary: #14161a;
+  --color-fg-secondary: #4b5262;
+  --color-fg-muted: #767e8f;
+
+  --color-accent: #1d6fe0;
+  --color-accent-fg: #ffffff;
+
+  --color-status-up: #067a4d;
+  --color-status-up-bg: #e3f7ee;
+  --color-status-down: #c0362c;
+  --color-status-down-bg: #fbe9e7;
+  --color-status-pending: #92620a;
+  --color-status-pending-bg: #fbf0dc;
+  --color-status-neutral: #5b6272;
+  --color-status-neutral-bg: #eceef1;
+
+  --shadow-raised: 0 1px 0 0 rgba(255, 255, 255, 0.6) inset,
+    0 8px 24px -14px rgba(20, 22, 26, 0.18);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg-base: var(--color-bg-base);
+  --color-bg-surface: var(--color-bg-surface);
+  --color-bg-raised: var(--color-bg-raised);
+  --color-bg-overlay: var(--color-bg-overlay);
+
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-default: var(--color-border-default);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-fg-primary: var(--color-fg-primary);
+  --color-fg-secondary: var(--color-fg-secondary);
+  --color-fg-muted: var(--color-fg-muted);
+
+  --color-accent: var(--color-accent);
+  --color-accent-fg: var(--color-accent-fg);
+
+  --color-status-up: var(--color-status-up);
+  --color-status-up-bg: var(--color-status-up-bg);
+  --color-status-down: var(--color-status-down);
+  --color-status-down-bg: var(--color-status-down-bg);
+  --color-status-pending: var(--color-status-pending);
+  --color-status-pending-bg: var(--color-status-pending-bg);
+  --color-status-neutral: var(--color-status-neutral);
+  --color-status-neutral-bg: var(--color-status-neutral-bg);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--color-border-default);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg-base);
+  color: var(--color-fg-primary);
+  font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
