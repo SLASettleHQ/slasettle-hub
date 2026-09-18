@@ -17,3 +17,20 @@ export function labelForNetworkPassphrase(passphrase: string): string {
 export function getConfiguredNetworkPassphrase(): string | null {
   return process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE ?? null;
 }
+
+const STELLAR_EXPERT_NETWORK_SLUGS: Record<string, string> = {
+  [Networks.PUBLIC]: "public",
+  [Networks.TESTNET]: "testnet",
+};
+
+/**
+ * A stellar.expert explorer link for a transaction hash on this deployment's
+ * configured network, or null when the network isn't one stellar.expert
+ * indexes (e.g. a local/standalone network) — callers should fall back to
+ * showing the raw hash without a link in that case.
+ */
+export function explorerTxUrl(transactionHash: string): string | null {
+  const passphrase = getConfiguredNetworkPassphrase();
+  const slug = passphrase ? STELLAR_EXPERT_NETWORK_SLUGS[passphrase] : undefined;
+  return slug ? `https://stellar.expert/explorer/${slug}/tx/${transactionHash}` : null;
+}
