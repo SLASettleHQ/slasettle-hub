@@ -111,6 +111,67 @@ body {
   background: var(--color-bg-base);
   color: var(--color-fg-primary);
   font-family: var(--font-sans);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes flash-highlight {
+  0% {
+    background-color: color-mix(in srgb, var(--flash-color, var(--color-accent)) 35%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.96);
+  }
+  60% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 260ms ease-out both;
+}
+
+.animate-flash {
+  animation: flash-highlight 900ms ease-out;
+}
+
+.animate-pop {
+  animation: pop 240ms ease-out;
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-dropdown-in {
+  animation: dropdown-in 140ms ease-out both;
+  transform-origin: top right;
 }
 
 @media (prefers-reduced-motion: reduce) {

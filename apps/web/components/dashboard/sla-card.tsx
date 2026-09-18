@@ -10,7 +10,7 @@ export function SlaCard({ sla, onChanged }: { sla: ProviderSlaView; onChanged: (
   const { slaId, config, bondBalance, tokenDecimals, tokenSymbol } = sla;
 
   return (
-    <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5">
+    <div className="animate-fade-in-up rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           href={`/status/${slaId}`}

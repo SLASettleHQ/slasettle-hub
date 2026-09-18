@@ -24,7 +24,7 @@ export function TransactionStatus({ state }: { state: TransactionState }) {
   if (state.status === "confirmed") {
     const explorerUrl = explorerTxUrl(state.hash);
     return (
-      <p role="status" className="text-sm text-[var(--color-status-up)]">
+      <p role="status" className="animate-fade-in-up text-sm text-[var(--color-status-up)]">
         Confirmed &mdash;{" "}
         {explorerUrl ? (
           <a href={explorerUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">

@@ -27,7 +27,7 @@ export function WalletPanel({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label="Wallet"
-      className="absolute right-0 top-full z-20 mt-2 w-72 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-raised)] p-3 shadow-[var(--shadow-raised)]"
+      className="animate-dropdown-in absolute right-0 top-full z-20 mt-2 w-72 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-raised)] p-3 shadow-[var(--shadow-raised)]"
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-fg-muted)]">

@@ -55,7 +55,7 @@ export function StatusView({ slaId }: { slaId: bigint }) {
         </span>
       </div>
 
-      <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5">
+      <section className="animate-fade-in-up rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5" style={{ animationDelay: "0ms" }}>
         <h2 className="text-xs font-medium uppercase tracking-wide text-[var(--color-fg-muted)]">
           Configuration
         </h2>
@@ -102,7 +102,7 @@ export function StatusView({ slaId }: { slaId: bigint }) {
         </p>
       </section>
 
-      <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5">
+      <section className="animate-fade-in-up rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5" style={{ animationDelay: "60ms" }}>
         {roundStatus.data ? (
           <RoundIndicator roundId={roundStatus.data.roundId} ledgerCloseTime={roundStatus.data.ledgerCloseTime} />
         ) : roundStatus.error ? (
@@ -153,7 +153,7 @@ export function StatusView({ slaId }: { slaId: bigint }) {
         )}
       </section>
 
-      <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5">
+      <section className="animate-fade-in-up rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5" style={{ animationDelay: "120ms" }}>
         <h2 className="text-xs font-medium uppercase tracking-wide text-[var(--color-fg-muted)]">
           Settlement history
         </h2>

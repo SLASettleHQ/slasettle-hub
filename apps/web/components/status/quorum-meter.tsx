@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
 export function QuorumMeter({
   votesUp,
   votesDown,
@@ -11,6 +15,21 @@ export function QuorumMeter({
 }) {
   const progress = quorumThreshold > 0 ? Math.min(votesDown / quorumThreshold, 1) : 0;
 
+  const wasReached = useRef(reached);
+  const [justReached, setJustReached] = useState(false);
+
+  // Pop only the moment quorum actually flips to reached — never on mount,
+  // and never for an SLA that was already at quorum when the page loaded.
+  useEffect(() => {
+    if (!wasReached.current && reached) {
+      setJustReached(true);
+      const timeout = setTimeout(() => setJustReached(false), 400);
+      wasReached.current = reached;
+      return () => clearTimeout(timeout);
+    }
+    wasReached.current = reached;
+  }, [reached]);
+
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -18,7 +37,7 @@ export function QuorumMeter({
           {votesUp} up &middot; {votesDown} down &middot; quorum requires {quorumThreshold}
         </span>
         <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+          className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-300 ${justReached ? "animate-pop" : ""} ${
             reached
               ? "bg-[var(--color-status-down-bg)] text-[var(--color-status-down)]"
               : "bg-[var(--color-status-neutral-bg)] text-[var(--color-status-neutral)]"
@@ -36,7 +55,7 @@ export function QuorumMeter({
         className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-raised)]"
       >
         <div
-          className="h-full rounded-full bg-[var(--color-status-down)] transition-[width] duration-300"
+          className="h-full rounded-full bg-[var(--color-status-down)] transition-[width] duration-500 ease-out"
           style={{ width: `${progress * 100}%` }}
         />
       </div>
