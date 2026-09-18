@@ -27,6 +27,13 @@ export class MissingSdkConfigError extends Error {
   }
 }
 
+const ENV_VAR_NAMES: Record<keyof SdkConfig, string> = {
+  sorobanRpcUrl: "NEXT_PUBLIC_SOROBAN_RPC_URL",
+  networkPassphrase: "NEXT_PUBLIC_NETWORK_PASSPHRASE",
+  slaVaultContractId: "NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID",
+  watcherRegistryContractId: "NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID",
+};
+
 function readConfig(): SdkConfig {
   const env = {
     sorobanRpcUrl: process.env.NEXT_PUBLIC_SOROBAN_RPC_URL,
@@ -35,9 +42,9 @@ function readConfig(): SdkConfig {
     watcherRegistryContractId: process.env.NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID,
   };
 
-  const missingKeys = Object.entries(env)
+  const missingKeys = (Object.entries(env) as [keyof SdkConfig, string | undefined][])
     .filter(([, value]) => !value)
-    .map(([key]) => key);
+    .map(([key]) => ENV_VAR_NAMES[key]);
 
   if (missingKeys.length > 0) {
     throw new MissingSdkConfigError(missingKeys);
