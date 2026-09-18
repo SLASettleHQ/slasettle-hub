@@ -32,3 +32,31 @@ export function formatTokenAmount(amount: bigint, decimals: number): string {
 
   return `${negative ? "-" : ""}${groupedWhole}${fractionPart}`;
 }
+
+export class InvalidTokenAmountError extends Error {}
+
+/**
+ * Parses a human-entered decimal string (e.g. "100.50") into the token's
+ * smallest-unit integer amount, using only string/bigint arithmetic — never
+ * `parseFloat`/`Number`, which would risk precision loss. Throws
+ * {@link InvalidTokenAmountError} for anything that isn't a plain
+ * non-negative decimal, or that specifies more fractional digits than the
+ * token supports.
+ */
+export function parseTokenAmount(input: string, decimals: number): bigint {
+  const trimmed = input.trim();
+  if (!/^\d*\.?\d*$/.test(trimmed) || trimmed === "" || trimmed === ".") {
+    throw new InvalidTokenAmountError(`"${input}" is not a valid amount.`);
+  }
+
+  const [wholePart, fractionPart = ""] = trimmed.split(".");
+  if (fractionPart.length > decimals) {
+    throw new InvalidTokenAmountError(
+      `"${input}" has more decimal places than this token supports (${decimals}).`,
+    );
+  }
+
+  const whole = BigInt(wholePart || "0");
+  const fraction = BigInt(fractionPart.padEnd(decimals, "0") || "0");
+  return whole * 10n ** BigInt(decimals) + fraction;
+}
