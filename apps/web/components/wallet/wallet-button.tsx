@@ -53,7 +53,7 @@ export function WalletButton() {
           onClick={() => setPanelOpen((open) => !open)}
           className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-1.5 font-mono text-sm text-[var(--color-fg-primary)] transition-colors hover:border-[var(--color-border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]"
         >
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--color-status-up)]" />
+          <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-status-up)]" />
           {truncateAddress(connection.address)}
         </button>
         {panelOpen && <WalletPanel onClose={() => setPanelOpen(false)} />}
