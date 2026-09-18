@@ -1,6 +1,6 @@
 import { nativeToScVal, type Transaction } from "@stellar/stellar-sdk";
 import { buildInvokeTx, getSdkConfig, simulateReadCall } from "./client.js";
-import type { SLAConfig } from "./types.js";
+import { SLA_STATUS_VARIANTS, type SLAConfig, type SLAStatus } from "./types.js";
 
 function requireField(
   raw: Record<string, unknown>,
@@ -13,6 +13,26 @@ function requireField(
     );
   }
   return raw[key];
+}
+
+/**
+ * soroban-sdk encodes a fieldless `#[contracttype] enum` variant as a
+ * one-element ScVec containing the variant's Symbol — scValToNative
+ * therefore decodes it as a single-element JS array, e.g. `["Cancelled"]`,
+ * not as a bare string.
+ */
+function decodeContractEnum<T extends string>(
+  value: unknown,
+  variants: readonly T[],
+  context: string,
+): T {
+  const tag = Array.isArray(value) ? value[0] : undefined;
+  if (typeof tag !== "string" || !(variants as readonly string[]).includes(tag)) {
+    throw new TypeError(
+      `${context}: expected one of ${variants.join(", ")}, got ${JSON.stringify(value)}.`,
+    );
+  }
+  return tag as T;
 }
 
 function decodeSlaConfig(raw: unknown): SLAConfig {
@@ -28,6 +48,11 @@ function decodeSlaConfig(raw: unknown): SLAConfig {
     quorumThreshold: requireField(record, "quorum_threshold") as number,
     penaltyPerBreach: requireField(record, "penalty_per_breach") as bigint,
     beneficiary: requireField(record, "beneficiary") as string,
+    status: decodeContractEnum<SLAStatus>(
+      requireField(record, "status"),
+      SLA_STATUS_VARIANTS,
+      "SLAConfig.status",
+    ),
   };
 }
 
