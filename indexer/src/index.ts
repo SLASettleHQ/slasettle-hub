@@ -13,7 +13,7 @@ async function main(): Promise<void> {
   logger.info({ rpcUrl: config.RPC_URL, dbPath: config.DB_PATH }, "starting slasettle-indexer");
 
   const db = new IndexerDb(config.DB_PATH);
-  const client = new SorobanEventClient(config.RPC_URL);
+  const client = new SorobanEventClient(config.RPC_URL, logger);
   const server = new rpc.Server(config.RPC_URL);
 
   const app = buildApp({ db, server, config }, logger);

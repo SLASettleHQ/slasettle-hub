@@ -1,4 +1,5 @@
 import { rpc } from "@stellar/stellar-sdk";
+import type { Logger } from "pino";
 import { wildcardTopicFilter } from "./decode.js";
 
 /**
@@ -18,15 +19,63 @@ export interface EventClient {
   getEvents(params: { contractIds: string[]; cursor: EventsCursor; limit: number }): Promise<rpc.Api.GetEventsResponse>;
 }
 
+const RETRY_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 250;
+
+/**
+ * @stellar/stellar-sdk's HTTP client (feaxios) wraps every network-level
+ * fetch failure in an AxiosError but never forwards the original error's
+ * `.cause` — so a DNS failure, a dropped connection, and a timeout are all
+ * indistinguishable "fetch failed" with `cause: undefined` by the time they
+ * reach us (confirmed by reproducing the same request with plain `fetch()`,
+ * which does surface a real cause: ETIMEDOUT / ENETUNREACH against the RPC
+ * host's Cloudflare edge — an environment-level connectivity issue, not a
+ * malformed request). An AxiosError with no `.response` is exactly the
+ * shape of that swallowed network failure — as opposed to one *with* a
+ * `.response`, which means the RPC host answered with an HTTP error status,
+ * a real failure this indexer should surface immediately rather than retry.
+ */
+export function isTransientNetworkError(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "isAxiosError" in err &&
+    (err as { isAxiosError?: unknown }).isAxiosError === true &&
+    (err as { response?: unknown }).response === undefined
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function withNetworkRetry<T>(label: string, logger: Logger | undefined, fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (!isTransientNetworkError(err) || attempt === RETRY_ATTEMPTS) throw err;
+      logger?.warn(
+        { attempt, maxAttempts: RETRY_ATTEMPTS, label },
+        `${label} failed with a network-level error whose real cause feaxios discards (see client.ts) — retrying, this is very likely transient`,
+      );
+      await sleep(RETRY_BASE_DELAY_MS * attempt);
+    }
+  }
+  throw new Error("unreachable");
+}
+
 export class SorobanEventClient implements EventClient {
   private readonly server: rpc.Server;
+  private readonly logger?: Logger;
 
-  constructor(rpcUrl: string) {
+  constructor(rpcUrl: string, logger?: Logger) {
     this.server = new rpc.Server(rpcUrl);
+    this.logger = logger;
   }
 
   async getLatestLedger(): Promise<number> {
-    const res = await this.server.getLatestLedger();
+    const res = await withNetworkRetry("getLatestLedger", this.logger, () => this.server.getLatestLedger());
     return res.sequence;
   }
 
@@ -60,9 +109,11 @@ export class SorobanEventClient implements EventClient {
       limit: params.limit,
     };
 
-    if (params.cursor.kind === "ledger") {
-      return this.server.getEvents({ ...base, startLedger: params.cursor.startLedger });
-    }
-    return this.server.getEvents({ ...base, cursor: params.cursor.cursor });
+    return withNetworkRetry("getEvents", this.logger, () => {
+      if (params.cursor.kind === "ledger") {
+        return this.server.getEvents({ ...base, startLedger: params.cursor.startLedger });
+      }
+      return this.server.getEvents({ ...base, cursor: params.cursor.cursor });
+    });
   }
 }
