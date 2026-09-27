@@ -4,30 +4,25 @@ Indexes events from the `watcher_registry` and `sla_vault` Soroban contracts
 and serves them over the six endpoints defined in
 `SLASettle-indexer-api-spec.md`. Testnet only, for now.
 
-## Verified status — unlike the contracts repo, this one actually compiled
+## Verified status
 
-This code was written, installed, compiled, and tested for real in the same
-sandbox — Node 22, npm install, `tsc --noEmit`, and `node --test` all ran
-successfully. **0 type errors, 24/24 tests passing**, as of the last commit.
-That's a meaningfully different situation from `slasettle-vault`, which could
-only be written by hand and never compiled — read this section, not that
-repo's caveats, for what's actually been checked here.
+Node 24.21.0 (matches the repository's `.nvmrc`), `npm run build` (`tsc`),
+and `npm test` (`node --test`) all pass. **0 type errors, 33/33 tests
+passing**, as of the last commit.
 
-What "verified" means concretely: the TypeScript compiler confirmed every
-type in this codebase is internally consistent, and the real installed
-`@stellar/stellar-sdk` types were used to catch and fix three real mistakes
-during development (see git log): `EventResponse` has no `pagingToken`
-field (it's `id`), `GetLatestLedgerResponse` uses `closeTime` not
-`ledgerCloseTime`, and topic filters must be plain strings, not `ScVal`
-objects.
-
-**What is still genuinely unverified:** the event *topic naming* itself.
-`#[contractevent]`'s exact wire format for the field-level `#[topic]` style
-used in `slasettle-vault` was never observed from a real emitted event,
-because those contracts were never compiled or deployed either. See the
-large comment at the top of `src/rpc/decode.ts` for exactly what to check
-and fix before trusting this against real testnet events — a compiler can't
-catch a wrong string literal, only real data can.
+The event *topic naming* was originally flagged as unverified, since
+`#[contractevent]`'s exact wire format was never observed from a real
+emitted event when this was written. The contracts have since been
+compiled and deployed to Testnet, and five of the eight event kinds have
+now been confirmed against real emitted events, each with a fix committed
+when the real shape differed from what was assumed (see git log):
+`watcher_registered`, `watcher_removed`, `check_submitted`, `sla_created`,
+and `settlement_paid`. `bond_topped_up`, `sla_cancelled`, and
+`bond_withdrawn` remain genuinely unverified: no real event of those three
+kinds has been observed yet, and the topic/data split for them in
+`src/rpc/decode.ts` is inferred from the same `#[topic]`-annotated-fields
+pattern that turned out correct for the other five, not confirmed
+independently.
 
 ## Setup
 
@@ -44,14 +39,24 @@ Or for local iteration: `npm run dev` (uses `tsx watch`).
 
 | Variable | Required | Default |
 |---|---|---|
-| `WATCHER_REGISTRY_CONTRACT_ID` | yes | — |
-| `SLA_VAULT_CONTRACT_ID` | yes | — |
+| `WATCHER_REGISTRY_CONTRACT_ID` | yes | none |
+| `SLA_VAULT_CONTRACT_ID` | yes | none |
 | `RPC_URL` | no | testnet |
 | `NETWORK_PASSPHRASE` | no | testnet |
 | `DB_PATH` | no | `./data/indexer.db` |
 | `HTTP_PORT` | no | `8787` |
 | `POLL_INTERVAL_MS` | no | `5000` |
+| `MAX_LEDGERS_PER_REQUEST` | no | `1000` |
+| `ROUND_LENGTH_SECONDS` | no | `60` |
 | `START_LEDGER` | no | current tip |
+| `ALLOWED_ORIGINS` | no | `http://localhost:3000` |
+| `LOG_LEVEL` | no | `info` |
+
+`ALLOWED_ORIGINS` is a comma-separated list of exact frontend origins
+allowed to call this API from a browser. Never a wildcard. Set this to the
+real deployed frontend origin(s) before deploying anywhere but local dev.
+`LOG_LEVEL` is read directly by the logger in `src/index.ts`, not through
+`src/config.ts` like the rest of this table.
 
 Startup fails loudly (not silently) if a required variable is missing — see
 `src/config.ts`.
@@ -79,7 +84,8 @@ Startup fails loudly (not silently) if a required variable is missing — see
 
 ## Known limitations, stated plainly
 
-1. **Topic-naming assumption unverified against real events** — see above.
+1. **Three event kinds' topic/data split unverified against real events**
+   (`bond_topped_up`, `sla_cancelled`, `bond_withdrawn`), see above.
 2. **RPC retention is roughly 7 days.** If this indexer is down longer than
    that, the gap cannot be recovered from RPC alone. `runOnce` logs this
    explicitly rather than silently skipping the gap.
