@@ -25,6 +25,21 @@ const ConfigSchema = z.object({
   // would be an unbounded first run, and public RPC nodes only retain
   // roughly 7 days of history anyway (see README).
   START_LEDGER: z.coerce.number().int().positive().optional(),
+  // Comma-separated list of exact frontend origins allowed to read this
+  // API from a browser. Defaults to the local Next.js dev server so local
+  // development keeps working with no configuration, but a real deployment
+  // must set this to its actual origin(s), not rely on the default. Never a
+  // wildcard, and never anything that reflects an arbitrary caller's
+  // Origin header, since this API returns provider-address-scoped data.
+  ALLOWED_ORIGINS: z
+    .string()
+    .default("http://localhost:3000")
+    .transform((value) =>
+      value
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter((origin) => origin.length > 0),
+    ),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

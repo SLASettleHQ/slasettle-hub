@@ -9,20 +9,18 @@ const errorHandler = (logger: Logger): ErrorRequestHandler => (err, _req, res, _
 };
 
 /**
- * Only the local Next.js dev server's origin is allowed here, not a
- * wildcard `*` — this API returns provider-address-scoped data, and a
- * wildcard would let any origin read it via a victim's browser. This is a
- * local-development allowlist, not a real one: before deploying anywhere
- * but localhost, replace this with the actual list of deployed frontend
- * origins (e.g. from an env var), since this hardcoded localhost value
- * will never match a real deployed frontend's origin.
+ * Allowed origins come from config.ALLOWED_ORIGINS (see config.ts), never
+ * hardcoded here and never a wildcard `*`, since this API returns
+ * provider-address-scoped data, and a wildcard would let any origin read
+ * it via a victim's browser. Passing the array to `cors`'s `origin` option
+ * makes it check the incoming Origin header against this exact list and
+ * only echo back a match; an origin not on the list gets no
+ * Access-Control-Allow-Origin header at all, not a reflected value.
  */
-const LOCAL_FRONTEND_ORIGIN = "http://localhost:3000";
-
 export function buildApp(deps: RouteDeps, logger: Logger): Express {
   const app = express();
   app.disable("x-powered-by");
-  app.use(cors({ origin: LOCAL_FRONTEND_ORIGIN }));
+  app.use(cors({ origin: deps.config.ALLOWED_ORIGINS }));
   app.use(express.json());
   app.use(buildRouter(deps));
   app.use(errorHandler(logger));
