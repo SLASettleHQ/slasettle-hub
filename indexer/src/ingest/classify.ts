@@ -31,16 +31,20 @@ export function classifyEvents(events: DecodedEvent[], logger: Logger): Classifi
     const data = event.data as Record<string, unknown>;
 
     switch (event.topicSymbol) {
+      // watcher_registered/watcher_removed carry no `value` payload at all
+      // (confirmed against a real on-chain event: `data` decodes to `{}`)
+      // — the watcher's address is topic[1], the field the contract marked
+      // #[topic], not a `watcher` key in `data`.
       case EVENT_TYPE_TOPIC.watcherRegistered:
         batch.watcherRegistrations.push({
-          address: String(data.watcher),
+          address: String(event.topics[1]),
           registeredAt: event.ledgerCloseTime,
         });
         break;
 
       case EVENT_TYPE_TOPIC.watcherRemoved:
         batch.watcherRemovals.push({
-          address: String(data.watcher),
+          address: String(event.topics[1]),
           removedAt: event.ledgerCloseTime,
         });
         break;

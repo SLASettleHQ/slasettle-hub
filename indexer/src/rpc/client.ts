@@ -1,6 +1,5 @@
 import { rpc } from "@stellar/stellar-sdk";
 import type { Logger } from "pino";
-import { wildcardTopicFilter } from "./decode.js";
 
 /**
  * getEvents requires either startLedger or cursor, never both — the RPC
@@ -80,12 +79,19 @@ export class SorobanEventClient implements EventClient {
   }
 
   /**
-   * Fetches one page of events for the given contract IDs. Soroban RPC's
-   * getEvents topic filter accepts at most 4 segments; this indexer never
-   * relies on it for filtering anyway (see decode.ts for why) — the
-   * wildcard filter is used here instead, and real filtering happens after
-   * decoding. contractIds is capped at 5 per filter batch per the RPC's own
-   * limit; this indexer only ever watches 2, well under that.
+   * Fetches one page of events for the given contract IDs. No `topics`
+   * filter is sent — Soroban RPC's topic filter matches on segment *count*,
+   * so a single-segment wildcard (`[["*"]]`) only matches events whose
+   * topic array has exactly one element and silently excludes every
+   * multi-segment event, which is the shape real contract events actually
+   * use (confirmed against a real on-chain `watcher_registered` event,
+   * whose topic is `[symbol, address]` — 2 segments). Omitting `topics`
+   * entirely (it's optional on EventFilter) is what actually gets every
+   * event regardless of shape; this indexer was never relying on
+   * server-side topic filtering anyway (see decode.ts) — classification
+   * happens client-side, after decoding. contractIds is capped at 5 per
+   * filter batch per the RPC's own limit; this indexer only ever watches
+   * 2, well under that.
    */
   async getEvents(params: {
     contractIds: string[];
@@ -103,7 +109,6 @@ export class SorobanEventClient implements EventClient {
         {
           type: "contract" as const,
           contractIds: params.contractIds,
-          topics: wildcardTopicFilter(),
         },
       ],
       limit: params.limit,

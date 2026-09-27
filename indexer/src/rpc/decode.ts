@@ -15,22 +15,42 @@ import { rpc, scValToNative } from "@stellar/stellar-sdk";
  * one of the strings in EVENT_TYPE_TOPIC below. If it doesn't, fix the map
  * — do not fix it by guessing again, fix it by looking at a real event.
  *
- * getEvents is filtered to contractId only, topics: [["*"]] wildcard — not
+ * getEvents is filtered to contractId only, no topics filter at all — not
  * by topic value — specifically because of this uncertainty, following the
  * same defensive choice a real production Soroban indexer made when facing
  * the same problem (see the escrow-backend PR referenced in this repo's
  * README). Classification happens client-side, after decoding, by matching
  * topic[0] and the decoded field shape together, not by topic[0] alone.
+ *
+ * (Earlier this indexer sent a single-segment wildcard, `topics: [["*"]]`,
+ * intending it to match anything — it doesn't. Soroban RPC's topic filter
+ * matches on segment count, so `[["*"]]` only matches 1-segment topics and
+ * silently drops every real event here, which all carry 2 segments
+ * (`[symbol, address]`). Confirmed against a real on-chain
+ * `watcher_registered` transaction: `getEvents` returned it with no
+ * `topics` key and returned nothing with `[["*"]]`, for the identical
+ * contract IDs and ledger range.)
+ *
+ * The naming convention below is now confirmed for watcherRegistered: the
+ * real event's topic[0] symbol is `watcher_registered` (snake_case), not
+ * `WatcherRegistered` — the #[contractevent] macro lower-snakes the Rust
+ * variant name. The other seven are updated to match that same, now-known
+ * derivation, but only watcherRegistered/watcherRemoved's *data shape* is
+ * confirmed: the real event's `value` payload is empty and the watcher
+ * address is topic[1], not a `watcher` field in `data` (see classify.ts).
+ * checkSubmitted/slaCreated/settlementPaid/etc. still have their field
+ * layout guessed — no real event of those kinds has been observed yet, so
+ * don't trust `data.*` for those without checking a real one first.
  */
 export const EVENT_TYPE_TOPIC = {
-  watcherRegistered: "WatcherRegistered",
-  watcherRemoved: "WatcherRemoved",
-  checkSubmitted: "CheckSubmitted",
-  slaCreated: "SlaCreated",
-  bondToppedUp: "BondToppedUp",
-  settlementPaid: "SettlementPaid",
-  slaCancelled: "SlaCancelled",
-  bondWithdrawn: "BondWithdrawn",
+  watcherRegistered: "watcher_registered",
+  watcherRemoved: "watcher_removed",
+  checkSubmitted: "check_submitted",
+  slaCreated: "sla_created",
+  bondToppedUp: "bond_topped_up",
+  settlementPaid: "settlement_paid",
+  slaCancelled: "sla_cancelled",
+  bondWithdrawn: "bond_withdrawn",
 } as const;
 
 export interface DecodedEvent {
@@ -40,6 +60,8 @@ export interface DecodedEvent {
   txHash: string;
   contractId: string;
   topicSymbol: string | undefined;
+  /** Every decoded topic segment, topic[0] (the symbol) included. */
+  topics: unknown[];
   data: Record<string, unknown> | unknown;
 }
 
@@ -67,19 +89,9 @@ export function decodeEvent(raw: rpc.Api.EventResponse): DecodedEvent {
     txHash: raw.txHash,
     contractId: raw.contractId?.toString() ?? "",
     topicSymbol,
+    topics,
     data,
   };
-}
-
-/**
- * getEvents topic filtering: each segment must be the literal string "*"
- * (wildcard) or a base64-encoded XDR ScVal — confirmed against the real
- * installed SDK types, EventFilter.topics is string[][], not ScVal[][].
- * This indexer never filters by topic value server-side (see the warning
- * at the top of this file for why), so the wildcard is all it ever sends.
- */
-export function wildcardTopicFilter(): string[][] {
-  return [["*"]];
 }
 
 /**

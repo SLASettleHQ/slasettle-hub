@@ -15,14 +15,21 @@ function baseEvent(overrides: Partial<DecodedEvent>): DecodedEvent {
     txHash: "abc123",
     contractId: "CREGISTRY",
     topicSymbol: undefined,
+    topics: [],
     data: {},
     ...overrides,
   };
 }
 
 test("classifies a watcherRegistered event", () => {
+  // Real shape confirmed against a live testnet event: `data` is empty,
+  // the watcher's address is topic[1].
   const events = [
-    baseEvent({ topicSymbol: EVENT_TYPE_TOPIC.watcherRegistered, data: { watcher: "GWATCHER" } }),
+    baseEvent({
+      topicSymbol: EVENT_TYPE_TOPIC.watcherRegistered,
+      topics: [EVENT_TYPE_TOPIC.watcherRegistered, "GWATCHER"],
+      data: {},
+    }),
   ];
   const batch = classifyEvents(events, silentLogger);
   assert.equal(batch.watcherRegistrations.length, 1);
