@@ -43,10 +43,23 @@ import { rpc, scValToNative } from "@stellar/stellar-sdk";
  *     `data` = { round_id: u64, status: Vec<Symbol> } — `status` is a
  *     one-element vec wrapping the CheckStatus enum's symbol (e.g.
  *     `["Up"]`), not a bare string.
- * slaCreated/settlementPaid/bondToppedUp/slaCancelled/bondWithdrawn still
- * have their field layout guessed — no real event of those kinds has been
- * observed yet, so don't trust `data.*` for those without checking a real
- * one first.
+ *   - slaCreated: topics = [symbol, sla_id: u64, provider: address]
+ *     (both #[topic] fields on the Rust struct); `data` = { token: address,
+ *     bond_amount: i128, beneficiary: address }. sla_id/provider are NOT in
+ *     `data` — confirmed against the real sla_created event from tx
+ *     258c86d2a0de481d60240dd29cea6de490840bd29f78e550fb97fb4fb8028b7c.
+ *   - settlementPaid: topics = [symbol, sla_id: u64, round_id: u64] (both
+ *     #[topic]); `data` = { payout: i128, beneficiary: address }.
+ *     sla_id/round_id are NOT in `data` — confirmed against the real
+ *     settlement_paid event from tx
+ *     b1dc301a22f8381ee9705a72e214d212e1f1c81c9b0ac53729506708b286d85e.
+ * bondToppedUp/slaCancelled/bondWithdrawn still have their field layout
+ * guessed — no real event of those kinds has been observed yet, so don't
+ * trust `data.*` for those without checking a real one first. (They're each
+ * a single #[topic] sla_id plus one data field per contracts/sla_vault/src/
+ * events.rs, so the same topic/data split almost certainly applies, but
+ * "almost certainly" is exactly the confidence level that was wrong twice
+ * already — verify before trusting.)
  */
 export const EVENT_TYPE_TOPIC = {
   watcherRegistered: "watcher_registered",

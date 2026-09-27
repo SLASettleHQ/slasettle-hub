@@ -55,16 +55,43 @@ test("classifies a checkSubmitted event with lowercase status", () => {
 });
 
 test("classifies a slaCreated event with quorum_threshold left null", () => {
+  // Real shape confirmed against a live testnet event (tx
+  // 258c86d2a0de481d60240dd29cea6de490840bd29f78e550fb97fb4fb8028b7c):
+  // sla_id and provider are topics, not data fields.
   const events = [
     baseEvent({
       topicSymbol: EVENT_TYPE_TOPIC.slaCreated,
-      data: { sla_id: 7n, provider: "GPROV", token: "CTOKEN", bond_amount: 1000n, beneficiary: "GBEN" },
+      topics: [EVENT_TYPE_TOPIC.slaCreated, 7n, "GPROV"],
+      data: { token: "CTOKEN", bond_amount: 1000n, beneficiary: "GBEN" },
     }),
   ];
   const batch = classifyEvents(events, silentLogger);
   assert.equal(batch.slas.length, 1);
+  assert.equal(batch.slas[0]?.sla_id, "7");
+  assert.equal(batch.slas[0]?.provider, "GPROV");
+  assert.equal(batch.slas[0]?.token, "CTOKEN");
+  assert.equal(batch.slas[0]?.beneficiary, "GBEN");
   assert.equal(batch.slas[0]?.quorum_threshold, null);
   assert.equal(batch.slas[0]?.bond_amount_at_creation, "1000");
+});
+
+test("classifies a settlementPaid event with sla_id/round_id read from topics", () => {
+  // Real shape confirmed against a live testnet event (tx
+  // b1dc301a22f8381ee9705a72e214d212e1f1c81c9b0ac53729506708b286d85e):
+  // sla_id and round_id are topics, not data fields.
+  const events = [
+    baseEvent({
+      topicSymbol: EVENT_TYPE_TOPIC.settlementPaid,
+      topics: [EVENT_TYPE_TOPIC.settlementPaid, 7n, 1n],
+      data: { payout: 10_000_000n, beneficiary: "GBEN" },
+    }),
+  ];
+  const batch = classifyEvents(events, silentLogger);
+  assert.equal(batch.settlements.length, 1);
+  assert.equal(batch.settlements[0]?.sla_id, "7");
+  assert.equal(batch.settlements[0]?.round_id, "1");
+  assert.equal(batch.settlements[0]?.penalty_amount, "10000000");
+  assert.equal(batch.settlements[0]?.beneficiary, "GBEN");
 });
 
 test("an unrecognized topic is skipped, not thrown, and does not appear in any batch bucket", () => {

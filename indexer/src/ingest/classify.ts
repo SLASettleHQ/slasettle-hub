@@ -70,10 +70,16 @@ export function classifyEvents(events: DecodedEvent[], logger: Logger): Classifi
         break;
       }
 
+      // slaCreated's real shape, confirmed against a live testnet event:
+      // topics = [symbol, sla_id: u64, provider: address] — both are
+      // #[topic] fields on the Rust event struct — and
+      // data = { token: address, bond_amount: i128, beneficiary: address }.
+      // sla_id/provider are NOT in data; reading them from there silently
+      // produced the string "undefined" for every row.
       case EVENT_TYPE_TOPIC.slaCreated:
         batch.slas.push({
-          sla_id: String(data.sla_id),
-          provider: String(data.provider),
+          sla_id: String(event.topics[1]),
+          provider: String(event.topics[2]),
           token: String(data.token),
           bond_amount_at_creation: amountToString(data.bond_amount),
           // Not in the event payload — see the schema.sql comment on this
@@ -85,11 +91,15 @@ export function classifyEvents(events: DecodedEvent[], logger: Logger): Classifi
         });
         break;
 
+      // settlementPaid's real shape, confirmed against a live testnet
+      // event: topics = [symbol, sla_id: u64, round_id: u64] — both
+      // #[topic] fields — and data = { payout: i128, beneficiary: address}.
+      // sla_id/round_id are NOT in data, same mistake as slaCreated above.
       case EVENT_TYPE_TOPIC.settlementPaid:
         batch.settlements.push({
           event_id: event.eventId,
-          sla_id: String(data.sla_id),
-          round_id: String(data.round_id),
+          sla_id: String(event.topics[1]),
+          round_id: String(event.topics[2]),
           quorum_threshold: null,
           penalty_amount: amountToString(data.payout),
           beneficiary: String(data.beneficiary),
