@@ -28,6 +28,14 @@
 //   - PollTransaction returns (protocol.GetTransactionResponse, error); the
 //     error is only for context/transport failures; a terminal FAILED status
 //     comes back as a normal (non-error) response and must be checked.
+//   - txnbuild.TransactionParams.IncrementSequenceNum defaults to false,
+//     which makes NewTransaction use the loaded account's *current*
+//     sequence number verbatim instead of current+1 — a guaranteed
+//     txBadSeq on every submission, since every real Stellar tx must use
+//     the account's last-used sequence plus one. This wasn't caught by any
+//     mocked-RPC test (none of them decode the built tx's SeqNum), only by
+//     running this against the live network for the first time: both
+//     getSourceAccount call sites now set IncrementSequenceNum: true.
 //
 // Still worth double-checking once real events can be observed: whether
 // CheckStatus's vec-wrapped-symbol encoding in mustCheckStatusEnum actually
@@ -141,10 +149,11 @@ func (c *Client) SubmitCheck(ctx context.Context, slaID, roundID uint64, endpoin
 	}
 
 	tx, err := txnbuild.NewTransaction(txnbuild.TransactionParams{
-		SourceAccount: sourceAccount,
-		Operations:    []txnbuild.Operation{preparedOp},
-		BaseFee:       txnbuild.MinBaseFee,
-		Preconditions: txnbuild.Preconditions{TimeBounds: txnbuild.NewTimeout(30)},
+		SourceAccount:        sourceAccount,
+		IncrementSequenceNum: true,
+		Operations:           []txnbuild.Operation{preparedOp},
+		BaseFee:              txnbuild.MinBaseFee,
+		Preconditions:        txnbuild.Preconditions{TimeBounds: txnbuild.NewTimeout(30)},
 	})
 	if err != nil {
 		return fmt.Errorf("building transaction: %w", err)
@@ -176,10 +185,11 @@ func (c *Client) simulate(ctx context.Context, op *txnbuild.InvokeHostFunction) 
 	}
 
 	tx, err := txnbuild.NewTransaction(txnbuild.TransactionParams{
-		SourceAccount: sourceAccount,
-		Operations:    []txnbuild.Operation{op},
-		BaseFee:       txnbuild.MinBaseFee,
-		Preconditions: txnbuild.Preconditions{TimeBounds: txnbuild.NewTimeout(30)},
+		SourceAccount:        sourceAccount,
+		IncrementSequenceNum: true,
+		Operations:           []txnbuild.Operation{op},
+		BaseFee:              txnbuild.MinBaseFee,
+		Preconditions:        txnbuild.Preconditions{TimeBounds: txnbuild.NewTimeout(30)},
 	})
 	if err != nil {
 		return protocol.SimulateTransactionResponse{}, err
