@@ -6,59 +6,40 @@ own watcher address, once the contract admin has registered it via
 `SLASettle-contract-spec.md`). Once per round it checks a target endpoint
 and submits its vote.
 
-## Verified status — split honestly, this package is not one thing
+## Verified status
 
-Unlike the indexer (fully compiled and tested) or the contracts (entirely
-hand-written and unverified), this daemon is genuinely split down the
-middle, and it matters which half you're looking at:
+An earlier version of this section reported `internal/contract` as
+hand-written and unverified, because the sandbox it was written in only
+had Go 1.22 available and go-stellar-sdk v0.7.2 requires Go 1.25. That
+constraint no longer holds: Go 1.25.1 is available directly in the current
+environment (confirmed with `go version`, no toolchain auto-download
+needed), and the whole module now builds, vets, and tests cleanly against
+the real `go-stellar-sdk` v0.7.2 types.
 
-**`internal/config`, `internal/round`, `internal/health` — real, verified,
-19/19 tests passing.** These have zero dependency on `go-stellar-sdk`, so
-they could be compiled and tested for real in this sandbox using a
-temporarily lowered `go.mod` directive purely to work around the
-toolchain's version (restored to the real `go 1.25` before committing —
-see git log for the exact commands). `internal/health`'s tests hit real
-`httptest` servers, including a genuine timeout and a genuine refused
-connection, not mocked results.
+`go build ./...` and `go vet ./...` succeed with no errors. `go test ./...`
+passes 48/48: 19 in `internal/config`, `internal/round`, and
+`internal/health` combined (no dependency on `go-stellar-sdk`;
+`internal/health`'s tests hit real `httptest` servers, including a genuine
+timeout and a genuine refused connection, not mocked results), and 29 in
+`internal/contract`, covering `decodeScVal` against real encoded XDR
+values for each primitive type it handles, and `HasVoted`/`SubmitCheck`
+against a mocked RPC transport covering simulation failure, transport
+failure, poll timeout, transient-not-found-then-success, and
+rejected-before-inclusion.
 
-**`internal/contract` — hand-written, unverified, explicitly flagged in
-its own file header.** `go-stellar-sdk` v0.7.2 requires Go ≥1.25; this
-sandbox only had 1.22 via apt, and Go's own toolchain auto-download is
-blocked under this environment's network policy (`golang.org` isn't
-reachable — confirmed directly, not assumed; see the error this produced,
-copied into git log). Two import paths were confirmed against real current
-sources before writing this file (`clients/rpcclient`, `protocols/rpc` —
-the SDK's own recent migration PR calls out exactly these two as having
-moved). Everything else — `txnbuild`'s exact API, the ScVal encoding
-helpers, the simulate/prepare/sign/submit/poll flow — is written from the
-well-established general Soroban Go pattern, not confirmed against this
-SDK version's actual compiled types.
+This is tested locally against the real SDK's types and a mocked RPC
+transport, not verified against a live Testnet RPC endpoint or a real
+deployed contract. No transaction built by this package has actually been
+submitted and confirmed on-chain as of this writing. That is a distinct,
+separate verification step from what this section describes.
 
-**One function is deliberately incomplete, not guessed at:**
-`decodeScVal` in `internal/contract/contract.go` returns an explicit error
-rather than a fabricated implementation, because the real decode API
-wasn't something I could verify. Fix that function first — `HasVoted` can't
-actually work until it's real.
-
-## Building and fixing this for real
+## Building
 
 ```bash
 go build ./...
+go vet ./...
 go test ./...
 ```
-
-In a real Go 1.25+ environment, this will very likely surface real compile
-errors in `internal/contract` — expected, not a sign anything else is
-wrong. Fix them the same way the contracts agent fixed `slasettle-vault`:
-correct the specific mismatch against the real SDK types, don't rewrite the
-file from scratch. The three things most likely to need adjustment, in
-likely order of how much they'll need to change:
-
-1. `decodeScVal` — needs the SDK's real ScVal-to-Go-value decode function.
-2. The exact `txnbuild.InvokeHostFunction` / `xdr.HostFunction` construction
-   — field names and nesting may differ from what's written here.
-3. `PollTransaction` and `PrepareTransaction`'s exact signatures on
-   `rpcclient.Client` — sketched, not confirmed.
 
 ## Setup
 
@@ -86,8 +67,10 @@ go run ./cmd/watcher
 
 ## Known limitations, stated plainly
 
-1. **The contract-calling half is unverified**, as above — the most
-   important thing to know about this repo.
+1. **The contract-calling half has not been verified against a live
+   Testnet RPC endpoint or a real deployed contract**, as above. Tested
+   locally against the real SDK types and a mocked RPC transport is not
+   the same claim.
 2. **Same last-mover vote-copying limitation as the contract itself** — see
    `SLASettle-contract-spec.md`. This daemon doesn't and can't fix that; it
    would need a commit-reveal protocol change on the contract side.
