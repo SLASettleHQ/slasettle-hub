@@ -35,12 +35,18 @@ import { rpc, scValToNative } from "@stellar/stellar-sdk";
  * real event's topic[0] symbol is `watcher_registered` (snake_case), not
  * `WatcherRegistered` — the #[contractevent] macro lower-snakes the Rust
  * variant name. The other seven are updated to match that same, now-known
- * derivation, but only watcherRegistered/watcherRemoved's *data shape* is
- * confirmed: the real event's `value` payload is empty and the watcher
- * address is topic[1], not a `watcher` field in `data` (see classify.ts).
- * checkSubmitted/slaCreated/settlementPaid/etc. still have their field
- * layout guessed — no real event of those kinds has been observed yet, so
- * don't trust `data.*` for those without checking a real one first.
+ * derivation, but only two event kinds' *data shape* is confirmed so far
+ * (see classify.ts for both):
+ *   - watcherRegistered/watcherRemoved: `value` is empty; the watcher
+ *     address is topic[1], not a `watcher` field in `data`.
+ *   - checkSubmitted: topics = [symbol, sla_id: u64, watcher: address];
+ *     `data` = { round_id: u64, status: Vec<Symbol> } — `status` is a
+ *     one-element vec wrapping the CheckStatus enum's symbol (e.g.
+ *     `["Up"]`), not a bare string.
+ * slaCreated/settlementPaid/bondToppedUp/slaCancelled/bondWithdrawn still
+ * have their field layout guessed — no real event of those kinds has been
+ * observed yet, so don't trust `data.*` for those without checking a real
+ * one first.
  */
 export const EVENT_TYPE_TOPIC = {
   watcherRegistered: "watcher_registered",

@@ -37,16 +37,21 @@ test("classifies a watcherRegistered event", () => {
 });
 
 test("classifies a checkSubmitted event with lowercase status", () => {
+  // Real shape confirmed against a live testnet event: sla_id and watcher
+  // are topics, not data fields, and status is a one-element vec wrapping
+  // the CheckStatus symbol (e.g. ["Down"]), not a bare string.
   const events = [
     baseEvent({
       topicSymbol: EVENT_TYPE_TOPIC.checkSubmitted,
-      data: { sla_id: 1n, round_id: 5n, watcher: "GWATCHER", status: "Down" },
+      topics: [EVENT_TYPE_TOPIC.checkSubmitted, 1n, "GWATCHER"],
+      data: { round_id: 5n, status: ["Down"] },
     }),
   ];
   const batch = classifyEvents(events, silentLogger);
   assert.equal(batch.checks.length, 1);
   assert.equal(batch.checks[0]?.status, "down");
   assert.equal(batch.checks[0]?.sla_id, "1");
+  assert.equal(batch.checks[0]?.watcher, "GWATCHER");
 });
 
 test("classifies a slaCreated event with quorum_threshold left null", () => {

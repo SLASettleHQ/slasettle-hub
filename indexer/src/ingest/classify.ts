@@ -49,16 +49,26 @@ export function classifyEvents(events: DecodedEvent[], logger: Logger): Classifi
         });
         break;
 
-      case EVENT_TYPE_TOPIC.checkSubmitted:
+      // check_submitted's real shape, confirmed against a live testnet
+      // event: topics = [symbol, sla_id: u64, watcher: address], and
+      // data = { round_id: u64, status: Vec<Symbol> } — `status` is a
+      // one-element vec wrapping the CheckStatus enum's symbol (e.g.
+      // `["Up"]`), not a bare string, confirming the vec-wrapped-symbol
+      // encoding this file's mustCheckStatusEnum write-side counterpart
+      // (in the watcher daemon) already assumed.
+      case EVENT_TYPE_TOPIC.checkSubmitted: {
+        const statusVec = data.status;
+        const statusSymbol = Array.isArray(statusVec) ? statusVec[0] : statusVec;
         batch.checks.push({
           event_id: event.eventId,
-          sla_id: String(data.sla_id),
+          sla_id: String(event.topics[1]),
           round_id: String(data.round_id),
-          watcher: String(data.watcher),
-          status: String(data.status).toLowerCase() === "down" ? "down" : "up",
+          watcher: String(event.topics[2]),
+          status: String(statusSymbol).toLowerCase() === "down" ? "down" : "up",
           checked_at: event.ledgerCloseTime,
         });
         break;
+      }
 
       case EVENT_TYPE_TOPIC.slaCreated:
         batch.slas.push({
