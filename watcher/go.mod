@@ -9,7 +9,7 @@ module github.com/SLASettleHQ/slasettle-hub/watcher
 // internal/contract. See README for the current, real test status.
 go 1.25
 
-require github.com/stellar/go-stellar-sdk v0.7.2
+require github.com/stellar/go-stellar-sdk v0.7.3
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
