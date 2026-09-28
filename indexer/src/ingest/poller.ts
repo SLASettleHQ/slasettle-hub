@@ -60,8 +60,7 @@ export async function runOnce(deps: PollerDeps): Promise<boolean> {
     db.applyBatch({
       lastLedger: page.latestLedger,
       lastCursor: page.cursor,
-      watcherRegistrations: [],
-      watcherRemovals: [],
+      watcherEvents: [],
       checks: [],
       slas: [],
       settlements: [],

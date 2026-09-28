@@ -51,11 +51,11 @@ test("GET /v1/watchers returns registered watchers, excludes removed ones", asyn
   db.applyBatch({
     lastLedger: 1,
     lastCursor: null,
-    watcherRegistrations: [
-      { address: "GACTIVE", registeredAt: "2026-01-01T00:00:00Z" },
-      { address: "GREMOVED", registeredAt: "2026-01-01T00:00:00Z" },
+    watcherEvents: [
+      { type: "registered", address: "GACTIVE", at: "2026-01-01T00:00:00Z" },
+      { type: "registered", address: "GREMOVED", at: "2026-01-01T00:00:00Z" },
+      { type: "removed", address: "GREMOVED", at: "2026-01-02T00:00:00Z" },
     ],
-    watcherRemovals: [{ address: "GREMOVED", removedAt: "2026-01-02T00:00:00Z" }],
     checks: [],
     slas: [],
     settlements: [],
@@ -76,8 +76,7 @@ test("GET /v1/providers/:address/slas returns only that provider's SLAs, amounts
   db.applyBatch({
     lastLedger: 1,
     lastCursor: null,
-    watcherRegistrations: [],
-    watcherRemovals: [],
+    watcherEvents: [],
     checks: [],
     slas: [
       {

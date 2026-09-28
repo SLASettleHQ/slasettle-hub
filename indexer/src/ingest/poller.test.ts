@@ -48,8 +48,7 @@ test("runOnce resumes from a stored cursor, not a fresh startLedger, on a second
   db.applyBatch({
     lastLedger: 50,
     lastCursor: "0000000050-0000000000",
-    watcherRegistrations: [],
-    watcherRemovals: [],
+    watcherEvents: [],
     checks: [],
     slas: [],
     settlements: [],

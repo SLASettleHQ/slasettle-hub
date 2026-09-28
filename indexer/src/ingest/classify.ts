@@ -1,18 +1,21 @@
 import type { DecodedEvent } from "../rpc/decode.js";
 import { EVENT_TYPE_TOPIC, amountToString } from "../rpc/decode.js";
-import type { CheckRow, SettlementRow, SlaRow } from "../db/db.js";
+import type { CheckRow, SettlementRow, SlaRow, WatcherEvent } from "../db/db.js";
 import type { Logger } from "pino";
 
 export interface ClassifiedBatch {
-  watcherRegistrations: Array<{ address: string; registeredAt: string }>;
-  watcherRemovals: Array<{ address: string; removedAt: string }>;
+  // A single array, not separate registration/removal arrays, so a
+  // register -> remove -> re-register sequence within one batch keeps
+  // its real chronological order all the way to the database. See
+  // WatcherEvent's doc comment in db.ts for why this matters.
+  watcherEvents: WatcherEvent[];
   checks: CheckRow[];
   slas: SlaRow[];
   settlements: SettlementRow[];
 }
 
 function emptyBatch(): ClassifiedBatch {
-  return { watcherRegistrations: [], watcherRemovals: [], checks: [], slas: [], settlements: [] };
+  return { watcherEvents: [], checks: [], slas: [], settlements: [] };
 }
 
 /**
@@ -36,16 +39,18 @@ export function classifyEvents(events: DecodedEvent[], logger: Logger): Classifi
       // — the watcher's address is topic[1], the field the contract marked
       // #[topic], not a `watcher` key in `data`.
       case EVENT_TYPE_TOPIC.watcherRegistered:
-        batch.watcherRegistrations.push({
+        batch.watcherEvents.push({
+          type: "registered",
           address: String(event.topics[1]),
-          registeredAt: event.ledgerCloseTime,
+          at: event.ledgerCloseTime,
         });
         break;
 
       case EVENT_TYPE_TOPIC.watcherRemoved:
-        batch.watcherRemovals.push({
+        batch.watcherEvents.push({
+          type: "removed",
           address: String(event.topics[1]),
-          removedAt: event.ledgerCloseTime,
+          at: event.ledgerCloseTime,
         });
         break;
 

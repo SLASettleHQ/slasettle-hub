@@ -17,8 +17,7 @@ test("applyBatch writes the checkpoint and it round-trips", () => {
   db.applyBatch({
     lastLedger: 100,
     lastCursor: "abc",
-    watcherRegistrations: [],
-    watcherRemovals: [],
+    watcherEvents: [],
     checks: [],
     slas: [],
     settlements: [],
@@ -42,8 +41,7 @@ test("applying the same batch twice does not duplicate checks (idempotency)", ()
   const batch = {
     lastLedger: 1,
     lastCursor: "tok-1",
-    watcherRegistrations: [],
-    watcherRemovals: [],
+    watcherEvents: [],
     checks: [check],
     slas: [],
     settlements: [],
@@ -62,8 +60,7 @@ test("watcher removal after registration sets removed_at without deleting the ro
   db.applyBatch({
     lastLedger: 1,
     lastCursor: null,
-    watcherRegistrations: [{ address: "GWATCHER", registeredAt: "2026-01-01T00:00:00Z" }],
-    watcherRemovals: [],
+    watcherEvents: [{ type: "registered", address: "GWATCHER", at: "2026-01-01T00:00:00Z" }],
     checks: [],
     slas: [],
     settlements: [],
@@ -71,8 +68,7 @@ test("watcher removal after registration sets removed_at without deleting the ro
   db.applyBatch({
     lastLedger: 2,
     lastCursor: null,
-    watcherRegistrations: [],
-    watcherRemovals: [{ address: "GWATCHER", removedAt: "2026-01-02T00:00:00Z" }],
+    watcherEvents: [{ type: "removed", address: "GWATCHER", at: "2026-01-02T00:00:00Z" }],
     checks: [],
     slas: [],
     settlements: [],
@@ -90,8 +86,10 @@ test("re-registering a previously removed watcher clears removed_at", () => {
   db.applyBatch({
     lastLedger: 1,
     lastCursor: null,
-    watcherRegistrations: [{ address: "GWATCHER", registeredAt: "2026-01-01T00:00:00Z" }],
-    watcherRemovals: [{ address: "GWATCHER", removedAt: "2026-01-02T00:00:00Z" }],
+    watcherEvents: [
+      { type: "registered", address: "GWATCHER", at: "2026-01-01T00:00:00Z" },
+      { type: "removed", address: "GWATCHER", at: "2026-01-02T00:00:00Z" },
+    ],
     checks: [],
     slas: [],
     settlements: [],
@@ -100,8 +98,35 @@ test("re-registering a previously removed watcher clears removed_at", () => {
   db.applyBatch({
     lastLedger: 2,
     lastCursor: null,
-    watcherRegistrations: [{ address: "GWATCHER", registeredAt: "2026-01-03T00:00:00Z" }],
-    watcherRemovals: [],
+    watcherEvents: [{ type: "registered", address: "GWATCHER", at: "2026-01-03T00:00:00Z" }],
+    checks: [],
+    slas: [],
+    settlements: [],
+  });
+
+  const row = db.raw.prepare("SELECT * FROM watchers WHERE address = ?").get("GWATCHER") as {
+    removed_at: string | null;
+  };
+  assert.equal(row.removed_at, null);
+  db.close();
+});
+
+test("register, remove, and re-register the same watcher within a single batch applies in real chronological order, not grouped by event type", () => {
+  // This is the exact shape of the real bug found via live Testnet evidence
+  // (Phase 10): a watcher was registered, removed, then re-registered, and
+  // all three events landed in one ingestion batch. The previous
+  // implementation ran every registration first and every removal second,
+  // so the removal (chronologically the middle event) was applied last and
+  // incorrectly won, leaving a just-re-registered watcher looking removed.
+  const db = freshDb();
+  db.applyBatch({
+    lastLedger: 1,
+    lastCursor: null,
+    watcherEvents: [
+      { type: "registered", address: "GWATCHER", at: "2026-01-01T00:00:00Z" },
+      { type: "removed", address: "GWATCHER", at: "2026-01-01T00:00:05Z" },
+      { type: "registered", address: "GWATCHER", at: "2026-01-01T00:00:10Z" },
+    ],
     checks: [],
     slas: [],
     settlements: [],

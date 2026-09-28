@@ -32,8 +32,9 @@ test("classifies a watcherRegistered event", () => {
     }),
   ];
   const batch = classifyEvents(events, silentLogger);
-  assert.equal(batch.watcherRegistrations.length, 1);
-  assert.equal(batch.watcherRegistrations[0]?.address, "GWATCHER");
+  assert.equal(batch.watcherEvents.length, 1);
+  assert.equal(batch.watcherEvents[0]?.type, "registered");
+  assert.equal(batch.watcherEvents[0]?.address, "GWATCHER");
 });
 
 test("classifies a checkSubmitted event with lowercase status", () => {
@@ -94,14 +95,41 @@ test("classifies a settlementPaid event with sla_id/round_id read from topics", 
   assert.equal(batch.settlements[0]?.beneficiary, "GBEN");
 });
 
+test("watcherEvents preserves the real order of interleaved register/remove events for the same address", () => {
+  // classifyEvents must not group by event type before this array reaches
+  // the db layer; db.ts applies watcherEvents in exactly the order given
+  // here, so if this order is wrong, the final watcher state will be too.
+  const events = [
+    baseEvent({
+      topicSymbol: EVENT_TYPE_TOPIC.watcherRegistered,
+      topics: [EVENT_TYPE_TOPIC.watcherRegistered, "GWATCHER"],
+      data: {},
+    }),
+    baseEvent({
+      topicSymbol: EVENT_TYPE_TOPIC.watcherRemoved,
+      topics: [EVENT_TYPE_TOPIC.watcherRemoved, "GWATCHER"],
+      data: {},
+    }),
+    baseEvent({
+      topicSymbol: EVENT_TYPE_TOPIC.watcherRegistered,
+      topics: [EVENT_TYPE_TOPIC.watcherRegistered, "GWATCHER"],
+      data: {},
+    }),
+  ];
+  const batch = classifyEvents(events, silentLogger);
+  assert.deepEqual(
+    batch.watcherEvents.map((w) => w.type),
+    ["registered", "removed", "registered"],
+  );
+});
+
 test("an unrecognized topic is skipped, not thrown, and does not appear in any batch bucket", () => {
   const events = [baseEvent({ topicSymbol: "SomethingUnexpected" })];
   const batch = classifyEvents(events, silentLogger);
   assert.equal(batch.checks.length, 0);
   assert.equal(batch.slas.length, 0);
   assert.equal(batch.settlements.length, 0);
-  assert.equal(batch.watcherRegistrations.length, 0);
-  assert.equal(batch.watcherRemovals.length, 0);
+  assert.equal(batch.watcherEvents.length, 0);
 });
 
 test("bondToppedUp, slaCancelled, bondWithdrawn are recognized but intentionally not persisted", () => {

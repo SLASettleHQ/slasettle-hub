@@ -37,6 +37,22 @@ export interface SlaRow {
   tx_hash: string;
 }
 
+/**
+ * One watcher registration or removal, in the same order the events
+ * occurred on-chain. Registration and removal for the same address must
+ * be applied in this single interleaved order, not grouped by type: a
+ * register -> remove -> re-register sequence landing in one ingestion
+ * batch previously lost its real order because applyBatch ran every
+ * registration first and every removal second, regardless of which
+ * actually happened last. That made a just-re-registered watcher look
+ * removed. See classify.ts for how this array is built.
+ */
+export interface WatcherEvent {
+  type: "registered" | "removed";
+  address: string;
+  at: string;
+}
+
 export interface SettlementRow {
   event_id: string;
   sla_id: string;
@@ -78,8 +94,7 @@ export class IndexerDb {
   applyBatch(params: {
     lastLedger: number;
     lastCursor: string | null;
-    watcherRegistrations: Array<{ address: string; registeredAt: string }>;
-    watcherRemovals: Array<{ address: string; removedAt: string }>;
+    watcherEvents: WatcherEvent[];
     checks: CheckRow[];
     slas: SlaRow[];
     settlements: SettlementRow[];
@@ -96,10 +111,11 @@ export class IndexerDb {
         `INSERT INTO watchers (address, registered_at, removed_at) VALUES (?, ?, NULL)
          ON CONFLICT(address) DO UPDATE SET removed_at = NULL`,
       );
-      for (const w of params.watcherRegistrations) insertWatcher.run(w.address, w.registeredAt);
-
       const removeWatcher = this.raw.prepare("UPDATE watchers SET removed_at = ? WHERE address = ?");
-      for (const w of params.watcherRemovals) removeWatcher.run(w.removedAt, w.address);
+      for (const w of params.watcherEvents) {
+        if (w.type === "registered") insertWatcher.run(w.address, w.at);
+        else removeWatcher.run(w.at, w.address);
+      }
 
       const insertCheck = this.raw.prepare(
         `INSERT OR IGNORE INTO checks (event_id, sla_id, round_id, watcher, status, checked_at)
