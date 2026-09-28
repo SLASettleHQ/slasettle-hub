@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # pnpm workspace root: covers apps/web and packages/sdk, which share the
+  # single pnpm-lock.yaml at the repository root.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # The indexer is a separate npm project with its own package-lock.json,
+  # not part of the pnpm workspace above.
+  - package-ecosystem: "npm"
+    directory: "/indexer"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "gomod"
+    directory: "/watcher"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
