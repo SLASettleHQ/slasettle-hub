@@ -58,8 +58,9 @@ read (`getLatestLedgerInfo`), not from the caller's clock —
 
 ## `GET /v1/slas/:slaId/settlements`
 
-Query params: `limit` (default `20`, capped at `100`), `before` (an
-opaque cursor from a previous response's `next_cursor`).
+Query params: `limit` (default `20`, capped at `100`; a negative value is
+rejected with `400`, see [Errors](#errors-and-input-handling-as-implemented)),
+`before` (an opaque cursor from a previous response's `next_cursor`).
 
 ```json
 {
@@ -157,9 +158,12 @@ milliseconds; timestamps the indexer computes (`round_started_at`, and
   `current-round` for any `:slaId`, including a non-numeric one, returns
   `200` with every registered watcher under `not_yet_checked_in`.
 - A `before` cursor that does not decode is ignored, so the first page
-  is returned. `limit` is `20` when absent, non-numeric or `0`, and is
-  capped at `100`; a negative `limit` is not rejected and produces an
-  empty page.
+  is returned. `limit` is `20` when absent, empty, non-numeric or `0`,
+  and is capped at `100`. A negative `limit` is rejected with HTTP `400`
+  and `{"error":"invalid_limit","message":"limit must not be negative"}`;
+  no database query is made for it. (Before 2026-09-29 a negative `limit`
+  reached SQLite, where a negative `LIMIT` means "no limit", and the
+  endpoint returned an empty page.)
 - A path that is not one of the six routes gets Express's default HTML
   `404`, not JSON.
 - The contracts' error codes never appear in this API: it only reads

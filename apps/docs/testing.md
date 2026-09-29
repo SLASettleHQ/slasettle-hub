@@ -8,7 +8,7 @@ page (2026-09-29):
 | `slasettle-vault` (`watcher_registry` + `sla_vault`) | `cargo test --workspace` | 46/46 passed |
 | `packages/sdk` | `pnpm --filter @slasettle/sdk test` (Vitest) | 29/29 passed |
 | `apps/web` | `pnpm --filter @slasettle/web test` (Vitest) | 50/50 passed |
-| `indexer` | `npm test` (`node --test`) | 36/36 passed |
+| `indexer` | `npm test` (`node --test`) | 44/44 passed |
 | `watcher` | `go test ./...` | 48/48 passed |
 
 Every number above is unit/integration-level, run against local

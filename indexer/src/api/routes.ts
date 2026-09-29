@@ -83,7 +83,16 @@ function buildRemainingRoutes(router: Router, deps: RouteDeps): Router {
   // GET /v1/slas/:slaId/settlements
   router.get("/v1/slas/:slaId/settlements", async (req, res) => {
     const slaId = req.params.slaId as string;
-    const limit = Math.min(Number(req.query.limit ?? 20) || 20, 100);
+    // A negative limit is rejected outright rather than coerced: SQLite treats
+    // a negative LIMIT as "no limit", and silently reinterpreting it would hide
+    // a caller bug. Absent, empty, zero and non-numeric values still fall back
+    // to 20; anything above 100 is capped at 100.
+    const requestedLimit = Number(req.query.limit ?? 20);
+    if (requestedLimit < 0) {
+      res.status(400).json({ error: "invalid_limit", message: "limit must not be negative" });
+      return;
+    }
+    const limit = Math.min(requestedLimit || 20, 100);
     const beforeParam = typeof req.query.before === "string" ? decodeCursor(req.query.before) : undefined;
 
     const rows = beforeParam
