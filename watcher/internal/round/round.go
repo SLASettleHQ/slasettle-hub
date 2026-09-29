@@ -1,8 +1,11 @@
-// Package round computes round IDs the same way the contract spec defines
-// them: floor(unix_seconds / roundLengthSeconds). Every watcher computes
-// this independently from its own clock — that's what lets independent
-// watchers converge on the same round_id without coordinating with each
-// other. No external dependencies; this package is directly testable.
+// Package round computes round IDs by an off-chain convention:
+// floor(unix_seconds / roundLengthSeconds). The contracts do not define it:
+// they treat round_id as an opaque u64, never read ledger time, and never
+// validate a round_id against time. Every watcher applies this convention to
+// its own system clock, which is what lets watchers configured with the same
+// round length converge on the same round_id without coordinating. The
+// indexer applies the same formula to the latest ledger's close time instead.
+// No external dependencies; this package is directly testable.
 package round
 
 import "time"

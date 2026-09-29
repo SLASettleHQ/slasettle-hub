@@ -13,7 +13,7 @@ export function Hero() {
         </h1>
         <p className="mt-5 max-w-xl text-lg text-[var(--color-fg-secondary)]">
           A provider locks a bond in the <code className="font-mono text-[0.9em]">sla_vault</code>{" "}
-          contract. Independent watchers check the service every round and vote{" "}
+          contract. Registered watchers check the service each round and vote{" "}
           <span className="font-mono text-[0.9em]">Up</span> or{" "}
           <span className="font-mono text-[0.9em]">Down</span>. When a round reaches quorum on{" "}
           <span className="font-mono text-[0.9em]">Down</span>, anyone can trigger settlement and

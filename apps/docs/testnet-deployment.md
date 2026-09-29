@@ -82,7 +82,7 @@ has been deployed or re-verified live.
   `GBAKUA3AN6MNXF6RREUBQRN3Z6JKT3IH5O6T3WUK3JRYVIWFN45XNVJ2`.
   `create_sla` tx:
   `819dd54031a2391d9ead3dbd0a902f5fdaeb597f0914a8307cfacfecc7031083`.
-- Three independent watchers voted `Down` for round 1, meeting the
+- Three registered watchers voted `Down` for round 1, meeting the
   quorum of 3.
 - `trigger_settlement` tx:
   `6522d8b77e135fc60154089d89b2b720d71593eed0de63916187eef16897d147`,

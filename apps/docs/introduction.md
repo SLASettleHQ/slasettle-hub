@@ -3,7 +3,7 @@
 ## What SLASettle is
 
 SLASettle lets a service provider back an uptime promise with a real bond
-of tokens. Independent watchers check the service each round and vote on
+of tokens. Registered watchers check the service each round and vote on
 whether it was up or down. When enough watchers have voted it down and
 anyone calls `trigger_settlement`, a fixed penalty is paid out of the bond
 to a named beneficiary. Nothing in this repository triggers that call

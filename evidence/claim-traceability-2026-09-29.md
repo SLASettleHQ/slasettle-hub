@@ -287,3 +287,11 @@ Still required, not made here (they touch contract source or product copy):
    table).
 5. Hub issues #11 and #12 describe gaps that Phase 23 partly or fully closed;
    see the external review, section 8.
+
+### Follow-up (2026-09-29)
+
+Required corrections 1 to 4 above were made afterwards as comment and copy
+changes only (see `evidence/external-review-2026-09-29.md` section 11); item 5
+was handled by rewriting the two issues without closing them. The status
+column of the claim table is unchanged: no claim gained a test or live
+evidence from these edits.

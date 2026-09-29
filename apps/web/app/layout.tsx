@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SLASettle",
   description:
-    "Inspect and manage Stellar-based SLAs backed by on-chain bonds, watcher quorum, and public settlement.",
+    "Inspect and manage Stellar-based SLAs backed by on-chain bonds and watcher votes, on Stellar Testnet.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

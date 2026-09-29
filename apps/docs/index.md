@@ -2,7 +2,7 @@
 layout: home
 hero:
   name: SLASettle
-  text: Bonded uptime, settled by independent watchers
+  text: Bonded uptime, settled by registered watchers
   tagline: Testnet only. Not audited. Not production. See the Introduction page for the real current status.
   actions:
     - theme: brand

@@ -270,3 +270,35 @@ Required and not made:
 6. Optional: a test that asserts signatures are required (contract tests use
    `mock_all_auths`), and a permissionless-settlement test using an unrelated
    account. Not created in this pass.
+
+## 11. Follow-up: corrections made after this review (2026-09-29)
+
+Items 1 to 4 of section 10 and the issue observations of section 8 were acted
+on. The findings above are kept as originally written.
+
+- `watcher_registry/src/lib.rs`: the `submit_check` doc comment and the comment
+  at `let _ = &endpoint_hash` now say the hash is accepted, not persisted and
+  not emitted, and is observable only from the transaction. Comments only.
+- `sla_vault/src/lib.rs`: the `trigger_settlement` doc comment now says
+  `caller` is not authorized, not stored, not in `SettlementPaid`, and visible
+  from the transaction. Comment only.
+- `watcher/internal/round/round.go`: the package comment now describes the
+  off-chain convention, and that the contracts treat `round_id` as opaque.
+- Landing copy: hero "Independent watchers check the service every round"
+  became "Registered watchers check the service each round"; the layout
+  description now ends "… on-chain bonds and watcher votes, on Stellar Testnet."
+  instead of "public settlement"; the footer reads "uptime bonds on Stellar
+  Testnet" and its "Documentation" link, which points at the hub repository, is
+  labeled "Hub source".
+- Docs: "independent watchers" became "registered watchers" in
+  `apps/docs/index.md`, `introduction.md` and `testnet-deployment.md`.
+- Issues #11 and #12 were rewritten to record what 2026-09-29 completed and
+  what remains. #11 keeps one open criterion (the indexer route reflecting a
+  daemon vote). #12 keeps signed dashboard writes, app theme observation,
+  `prefers-reduced-motion` and mobile checks open. Neither was closed.
+
+Unchanged and still open: UNVERIFIED (signed dashboard writes, narrow-viewport
+docs, dedicated secret scanning, live rejections, live payout cap, second live
+pagination page) and BLOCKED (live zero-balance withdrawal rejection,
+soroban-sdk 28.0.0 redeploy). Landing-page hero text no longer needs a
+correction; item 6 of section 10 (extra tests) was not attempted.
