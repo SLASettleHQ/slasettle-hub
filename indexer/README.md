@@ -7,7 +7,7 @@ and serves them over the six endpoints documented in
 ## Verified status
 
 Node 24.21.0 (matches the repository's `.nvmrc`), `npm run build` (`tsc`),
-and `npm test` (`node --test`) all pass. **0 type errors, 36/36 tests
+and `npm test` (`node --test`) all pass. **0 type errors, 44/44 tests
 passing**, as of 2026-09-29.
 
 The event *topic naming* was originally flagged as unverified, since
