@@ -346,3 +346,28 @@ test("GET /v1/slas/:slaId/settlements rejects a negative limit with 400 and neve
   });
   db.close();
 });
+
+test("GET /v1/slas/:slaId/settlements rejects a non-integer limit with 400 and never queries the database", async () => {
+  const db = settlementFixtureDb(1);
+  const prepared: string[] = [];
+  const realPrepare = db.raw.prepare.bind(db.raw);
+  (db.raw as any).prepare = (sql: string) => {
+    prepared.push(sql);
+    return realPrepare(sql);
+  };
+  await withServer(db, async (baseUrl) => {
+    for (const query of ["?limit=1.5", "?limit=0.5", "?limit=20.25"]) {
+      const { status, body } = await fetchJson(`${baseUrl}/v1/slas/0/settlements${query}`);
+      assert.equal(status, 400, query);
+      assert.deepEqual(body, { error: "invalid_limit", message: "limit must be an integer" }, query);
+    }
+    assert.deepEqual(prepared, [], "no SQL statement may be prepared for an invalid limit");
+
+    // Integer-valued spellings and the existing fallbacks are unchanged.
+    for (const query of ["?limit=2.0", "?limit=1e1", "?limit=abc", "?limit=0", "?limit=", ""]) {
+      const { status } = await fetchJson(`${baseUrl}/v1/slas/0/settlements${query}`);
+      assert.equal(status, 200, query);
+    }
+  });
+  db.close();
+});

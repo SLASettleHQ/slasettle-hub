@@ -92,6 +92,12 @@ function buildRemainingRoutes(router: Router, deps: RouteDeps): Router {
       res.status(400).json({ error: "invalid_limit", message: "limit must not be negative" });
       return;
     }
+    // A fractional value would be bound as e.g. LIMIT 2.5, which SQLite rejects
+    // and which used to surface as a 500.
+    if (Number.isFinite(requestedLimit) && !Number.isInteger(requestedLimit)) {
+      res.status(400).json({ error: "invalid_limit", message: "limit must be an integer" });
+      return;
+    }
     const limit = Math.min(requestedLimit || 20, 100);
     const beforeParam = typeof req.query.before === "string" ? decodeCursor(req.query.before) : undefined;
 
