@@ -1,65 +1,44 @@
 import { rpc, scValToNative } from "@stellar/stellar-sdk";
 
 /**
- * IMPORTANT, READ BEFORE TRUSTING THIS FILE:
+ * Event wire format, as observed on real Testnet transactions (see
+ * slasettle-vault/evidence/testnet-2026-09-27.md and, for the current
+ * deployment's re-check on 2026-09-29,
+ * evidence/parity-matrix-2026-09-29.md section 4). Every event's topic[0] is
+ * the event's name as a snake_case symbol — the #[contractevent] macro
+ * lower-snakes the Rust struct name — followed by the fields the contract
+ * marked #[topic]. The remaining fields are `value`, decoded as a map keyed
+ * by field name; an event with no such fields decodes to `{}`.
  *
- * The event topic layout below (which string identifies each event type) is
- * inferred from the #[contractevent] macro's documented convention, not
- * observed from a real compiled contract. The sandbox this indexer was
- * written in could not compile slasettle-vault (see its own README), so no
- * real event was ever actually emitted and inspected here.
+ *   watcher_registered / watcher_removed
+ *     topics = [symbol, watcher: address]        data = {}
+ *   check_submitted
+ *     topics = [symbol, sla_id: u64, watcher: address]
+ *     data   = { round_id: u64, status: Vec<Symbol> }  e.g. status = ["Up"]
+ *   sla_created
+ *     topics = [symbol, sla_id: u64, provider: address]
+ *     data   = { token: address, bond_amount: i128, beneficiary: address }
+ *   bond_topped_up
+ *     topics = [symbol, sla_id: u64]             data = { amount: i128 }
+ *   settlement_paid
+ *     topics = [symbol, sla_id: u64, round_id: u64]
+ *     data   = { payout: i128, beneficiary: address }
+ *   sla_cancelled
+ *     topics = [symbol, sla_id: u64]             data = {}
+ *   bond_withdrawn
+ *     topics = [symbol, sla_id: u64]             data = { amount: i128 }
  *
- * Before running this indexer against testnet: deploy the contracts,
- * trigger one of each event type, log the raw decoded topics with
- * DEBUG_LOG_RAW_EVENTS=1, and confirm the topic[0] symbol actually matches
- * one of the strings in EVENT_TYPE_TOPIC below. If it doesn't, fix the map
- * — do not fix it by guessing again, fix it by looking at a real event.
+ * Reading sla_id/round_id/provider/watcher from `data` instead of `topics`
+ * silently produced the string "undefined" for every row when this file
+ * was first written; that mistake is why each shape above is pinned to an
+ * observed event rather than inferred from the #[topic] annotations alone.
  *
- * getEvents is filtered to contractId only, no topics filter at all — not
- * by topic value — specifically because of this uncertainty, following the
- * same defensive choice a real production Soroban indexer made when facing
- * the same problem (see the escrow-backend PR referenced in this repo's
- * README). Classification happens client-side, after decoding, by matching
- * topic[0] and the decoded field shape together, not by topic[0] alone.
- *
- * (Earlier this indexer sent a single-segment wildcard, `topics: [["*"]]`,
- * intending it to match anything — it doesn't. Soroban RPC's topic filter
- * matches on segment count, so `[["*"]]` only matches 1-segment topics and
- * silently drops every real event here, which all carry 2 segments
- * (`[symbol, address]`). Confirmed against a real on-chain
- * `watcher_registered` transaction: `getEvents` returned it with no
- * `topics` key and returned nothing with `[["*"]]`, for the identical
- * contract IDs and ledger range.)
- *
- * The naming convention below is now confirmed for watcherRegistered: the
- * real event's topic[0] symbol is `watcher_registered` (snake_case), not
- * `WatcherRegistered` — the #[contractevent] macro lower-snakes the Rust
- * variant name. The other seven are updated to match that same, now-known
- * derivation, but only two event kinds' *data shape* is confirmed so far
- * (see classify.ts for both):
- *   - watcherRegistered/watcherRemoved: `value` is empty; the watcher
- *     address is topic[1], not a `watcher` field in `data`.
- *   - checkSubmitted: topics = [symbol, sla_id: u64, watcher: address];
- *     `data` = { round_id: u64, status: Vec<Symbol> } — `status` is a
- *     one-element vec wrapping the CheckStatus enum's symbol (e.g.
- *     `["Up"]`), not a bare string.
- *   - slaCreated: topics = [symbol, sla_id: u64, provider: address]
- *     (both #[topic] fields on the Rust struct); `data` = { token: address,
- *     bond_amount: i128, beneficiary: address }. sla_id/provider are NOT in
- *     `data` — confirmed against the real sla_created event from tx
- *     258c86d2a0de481d60240dd29cea6de490840bd29f78e550fb97fb4fb8028b7c.
- *   - settlementPaid: topics = [symbol, sla_id: u64, round_id: u64] (both
- *     #[topic]); `data` = { payout: i128, beneficiary: address }.
- *     sla_id/round_id are NOT in `data` — confirmed against the real
- *     settlement_paid event from tx
- *     b1dc301a22f8381ee9705a72e214d212e1f1c81c9b0ac53729506708b286d85e.
- * bondToppedUp/slaCancelled/bondWithdrawn still have their field layout
- * guessed — no real event of those kinds has been observed yet, so don't
- * trust `data.*` for those without checking a real one first. (They're each
- * a single #[topic] sla_id plus one data field per contracts/sla_vault/src/
- * events.rs, so the same topic/data split almost certainly applies, but
- * "almost certainly" is exactly the confidence level that was wrong twice
- * already — verify before trusting.)
+ * getEvents is filtered to contractId only, with no topics filter at all.
+ * Soroban RPC's topic filter matches on segment count, so a single-segment
+ * wildcard (`topics: [["*"]]`) only matches 1-segment topics and silently
+ * dropped every real event here, which all carry 2 or 3 segments.
+ * Classification happens client-side, after decoding, by matching topic[0]
+ * (see classify.ts).
  */
 export const EVENT_TYPE_TOPIC = {
   watcherRegistered: "watcher_registered",

@@ -1,6 +1,6 @@
 /**
- * Typed client for the SLASettle indexer HTTP API, per
- * SLASettle-indexer-api-spec.md. The indexer is a read-side cache of
+ * Typed client for the SLASettle indexer HTTP API, as documented in
+ * apps/docs/api.md. The indexer is a read-side cache of
  * history (what happened) — anything that must be current-as-of-right-now
  * (bond balance, SLA status, live tallies) is a direct Soroban read via
  * @slasettle/sdk instead, never this client.
@@ -245,7 +245,7 @@ export interface Clock {
 
 /**
  * The authoritative source for the current round_id. Never derive round_id
- * from the browser's clock — see SLASettle-indexer-api-spec.md.
+ * from the browser's clock — see apps/docs/api.md.
  */
 export async function getClock(): Promise<Clock> {
   const raw = await indexerGet<RawClock>("/v1/clock");

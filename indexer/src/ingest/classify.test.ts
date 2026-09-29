@@ -133,13 +133,32 @@ test("an unrecognized topic is skipped, not thrown, and does not appear in any b
 });
 
 test("bondToppedUp, slaCancelled, bondWithdrawn are recognized but intentionally not persisted", () => {
+  // Real shapes, as observed on live Testnet transactions (see the wire
+  // format documented at the top of rpc/decode.ts): sla_id is topics[1], not
+  // a key of `data`; bond_topped_up and bond_withdrawn carry { amount };
+  // sla_cancelled carries no data at all.
   const events = [
-    baseEvent({ topicSymbol: EVENT_TYPE_TOPIC.bondToppedUp, data: { sla_id: 1n, amount: 100n } }),
-    baseEvent({ topicSymbol: EVENT_TYPE_TOPIC.slaCancelled, data: { sla_id: 1n } }),
+    baseEvent({
+      topicSymbol: EVENT_TYPE_TOPIC.bondToppedUp,
+      topics: [EVENT_TYPE_TOPIC.bondToppedUp, 0n],
+      data: { amount: 5_000_000n },
+    }),
+    baseEvent({
+      topicSymbol: EVENT_TYPE_TOPIC.slaCancelled,
+      topics: [EVENT_TYPE_TOPIC.slaCancelled, 1n],
+      data: {},
+    }),
+    baseEvent({
+      topicSymbol: EVENT_TYPE_TOPIC.bondWithdrawn,
+      topics: [EVENT_TYPE_TOPIC.bondWithdrawn, 1n],
+      data: { amount: 20_000_000n },
+    }),
   ];
   const batch = classifyEvents(events, silentLogger);
   // No error, and nothing lands anywhere — this is the expected no-op path,
   // not a bug.
   assert.equal(batch.checks.length, 0);
   assert.equal(batch.slas.length, 0);
+  assert.equal(batch.settlements.length, 0);
+  assert.equal(batch.watcherEvents.length, 0);
 });

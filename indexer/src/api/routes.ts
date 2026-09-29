@@ -13,11 +13,10 @@ export interface RouteDeps {
 }
 
 /**
- * Every endpoint here matches SLASettle-indexer-api-spec.md exactly — same
- * paths, same response envelope, same field names. If this ever drifts
- * from that document, the document is what the frontend was told to build
- * against, so fix the code, not the doc, unless the doc itself is being
- * deliberately revised.
+ * Every endpoint here is documented in apps/docs/api.md — same paths, same
+ * response envelope, same field names — and consumed by apps/web/lib/
+ * indexer.ts. If this ever drifts from either, fix the drift deliberately
+ * in all three places.
  */
 export function buildRouter(deps: RouteDeps): Router {
   const router = Router();

@@ -21,7 +21,7 @@ function emptyBatch(): ClassifiedBatch {
 /**
  * Turns a page of decoded events into rows the db layer can write. Each
  * event is matched on its topic symbol against EVENT_TYPE_TOPIC — see the
- * warning at the top of decode.ts about that mapping's unverified status.
+ * observed wire format documented at the top of decode.ts.
  * An event whose topic doesn't match anything recognized is logged and
  * skipped, not silently dropped — a growing count of unrecognized events in
  * the logs is exactly the signal that EVENT_TYPE_TOPIC needs correcting
@@ -116,9 +116,11 @@ export function classifyEvents(events: DecodedEvent[], logger: Logger): Classifi
       case EVENT_TYPE_TOPIC.bondToppedUp:
       case EVENT_TYPE_TOPIC.slaCancelled:
       case EVENT_TYPE_TOPIC.bondWithdrawn:
-        // Not needed by any endpoint in the current API spec — these are
-        // observed and decoded correctly, just not persisted. Add a table
-        // for them if a future endpoint needs their history.
+        // Not needed by any endpoint in the current API — these are
+        // observed and decoded correctly (topics = [symbol, sla_id: u64];
+        // data = { amount: i128 } for bond_topped_up and bond_withdrawn,
+        // {} for sla_cancelled), just not persisted. Add a table for them
+        // if a future endpoint needs their history.
         break;
 
       default:
