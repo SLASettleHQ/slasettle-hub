@@ -11,8 +11,8 @@ and unchanged.
 - **Repository commit before this verification pass:** `7400ec4` (hub),
   unchanged in `slasettle-vault` for this pass.
 - **Tool versions actually used:** Go 1.25.1, Node v24.21.0, pnpm 12.5.1,
-  Stellar CLI 27.0.0, Chrome 150.0.0.0 (via the Claude in Chrome
-  extension, one connected browser, `isLocal: true`).
+  Stellar CLI 27.0.0, Chrome 150.0.0.0 (one connected browser,
+  `isLocal: true`).
 
 ## Part A — Documentation site visual verification
 
@@ -129,8 +129,10 @@ Soroban RPC URL, and a locally running indexer.
   Console output was checked for secret-like patterns
   (`S[A-Z0-9]{55}|secret|private`) and found none.
 
-**Real, disclosed defect found — not fixed (out of scope for this
-verification pass, and not required to complete it):** loading
+**Real defect found during this verification pass, on 2026-09-29 — since
+fixed and re-verified live on 2026-09-29 in a separate follow-up
+remediation pass (see "Follow-up: settlement-history defect fix" below
+for the full record).** At the time of original discovery, loading
 `/status/0`'s settlement-history panel produced
 `Could not load settlement history: Indexer request to
 /v1/slas/0/settlements?limit=20 failed: 500 Internal Server Error`. The
@@ -140,12 +142,11 @@ dummy source-account string
 (`GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF`) fails
 `@stellar/stellar-sdk`'s `Account` constructor's StrKey checksum
 validation (`Error: accountId is invalid`), so any settlement row whose
-cached `quorum_threshold` is `null` triggers this 500 on every request.
-This is a genuine, previously-undocumented indexer defect, not a
-frontend defect and not something this verification pass's scope
-(frontend + Freighter) required fixing to complete its checklist above.
-Recorded here as a real finding; not filed as a GitHub issue in this
-pass, since issue creation wasn't part of this remediation's scope.
+cached `quorum_threshold` is `null` triggered this 500 on every request.
+This was a genuine, previously-undocumented indexer defect, not a
+frontend defect, and was out of scope for the original Phase 23
+verification pass that discovered it (frontend + Freighter only). It
+was not fixed at the time of original discovery.
 
 **One-time observation, not a confirmed reproducible defect:** on the
 very first click of "Connect Wallet" (before any explicit disconnect,
@@ -249,6 +250,76 @@ file the git repository tracks, never logged, and is not reproduced
 anywhere in this evidence file — only its public address and real,
 public transaction hashes appear above.
 
+## Follow-up: settlement-history defect fix, 2026-09-29
+
+This section records a separate, later remediation pass on the same
+date that fixed the indexer defect discovered above. The discovery
+itself (recorded in Part B above) is left unchanged; this section adds
+the fix, the regression test, and the live re-verification, and does
+not erase the historical fact that the defect was originally found
+during frontend/Freighter verification, not while working on the
+indexer directly.
+
+- **Commit at the start of this follow-up:** `dd35fa1`.
+- **Reproduction, fresh from current `main`:** `GET
+  /v1/slas/0/settlements` against the real running indexer (pointed at
+  live Testnet RPC and the live, verified `sla_vault` deployment)
+  returned `HTTP 500` with body `{"error":"internal_error"}`. The
+  indexer's own log showed the identical `Error: accountId is invalid`
+  thrown from `new Account(...)` at `liveReads.js:16:25`, called from
+  `fetchQuorumThreshold`, called from `api/routes.js:72` — the exact
+  same failure and source location as the original discovery, confirmed
+  independently rather than assumed still current.
+- **Root cause, confirmed:** `fetchQuorumThreshold`'s throwaway
+  simulation-only source account was built from the literal string
+  `"GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"`, which
+  does not pass `@stellar/stellar-sdk`'s StrKey checksum validation
+  inside its `Account` constructor, so the function threw before any
+  network call was made, on every call.
+- **Fix, `indexer/src/rpc/liveReads.ts`:** replaced the hardcoded string
+  with `Keypair.random().publicKey()` — a freshly generated, always
+  StrKey-valid public key, requiring no real funds or secret material.
+  This is the same throwaway-account pattern already used for read-only
+  simulation elsewhere in this project
+  (`packages/sdk/src/client.ts`'s `throwawaySourceAccount`). No other
+  behavior changed: still a read-only, unsigned `simulateTransaction`
+  call against `get_sla`, same network passphrase, same
+  `quorum_threshold` decoding and return semantics. A repository-wide
+  search of `indexer/src/` found no other hardcoded or otherwise invalid
+  Stellar account identifiers; this was the only occurrence of the
+  pattern.
+- **Regression test, `indexer/src/rpc/liveReads.test.ts`:** a new,
+  deterministic unit test with a stubbed `rpc.Server` (no live Testnet
+  dependency) that hand-builds a structurally realistic `get_sla`
+  simulation result and asserts both that `simulateTransaction` was
+  actually reached (proving the function got past account construction)
+  and that the real `quorum_threshold` value was decoded correctly.
+  **TESTED LOCALLY, confirmed bidirectionally**: temporarily reverted
+  `liveReads.ts` to the original hardcoded-string implementation and
+  re-ran this exact test — it failed with the identical `Error:
+  accountId is invalid` seen in the fresh reproduction above, thrown
+  before the stub's `simulateTransaction` was ever called. Restored the
+  fix and re-ran; it passed. Full suite: `indexer` unit tests pass
+  36/36 (the 35 pre-existing plus this one).
+- **Live Testnet verification, VERIFIED:** restarted the real local
+  indexer process (`node --env-file=.env dist/index.js`, fixed build)
+  against real Testnet RPC and the live, verified deployment. `GET
+  /v1/slas/0/settlements` returned `HTTP 200` with a valid JSON body
+  containing the real settlement row for SLA 0's round 1 (`votes_down:
+  3`, `quorum_threshold: 3`, `penalty_amount: "10000000"`, `tx_hash:
+  "6522d8b77e135fc60154089d89b2b720d71593eed0de63916187eef16897d147"`,
+  `explorer_url` pointing at the same real transaction recorded in
+  `slasettle-vault/evidence/testnet-2026-09-27.md`). The indexer's own
+  log showed no error for this request.
+- **Browser/status-page verification, VERIFIED:** loaded
+  `http://localhost:3000/status/0` in a real browser; the
+  "SETTLEMENT HISTORY" panel rendered the same real settlement row (1
+  native, tx `6522d8..97d147`, working "View on explorer" link) instead
+  of the Phase 23 error message. Confirmed visually via screenshot.
+- **Secondary-impact check:** searched `indexer/src/` for `new Account(`
+  and any other hardcoded G-address-shaped strings; found none beyond
+  the single fixed occurrence. No other file required a change.
+
 ## Status vocabulary summary
 
 | Item | Status |
@@ -260,7 +331,7 @@ public transaction hashes appear above.
 | Network correctly identified, mismatch path exercised | VERIFIED |
 | Public status page usable without a wallet, shows real live data | VERIFIED |
 | No secret key exposed anywhere in this session | VERIFIED |
-| Indexer settlement-history 500 error (real defect, `liveReads.ts`) | KNOWN LIMITATION (newly discovered; not fixed in this pass) |
+| Indexer settlement-history 500 error (real defect, `liveReads.ts`) | Originally discovered 2026-09-29 as KNOWN LIMITATION; fixed and VERIFIED live the same day in a follow-up pass — see "Follow-up: settlement-history defect fix" above |
 | One-time "Connecting…" hang on first click | Observed once, did not reproduce; not treated as a confirmed defect |
 | Watcher daemon builds and runs against real Testnet RPC and the live `watcher_registry` contract, across four consecutive real rounds, with graceful shutdown | VERIFIED |
 | Watcher secret-key handling (never logged, never committed) | VERIFIED |

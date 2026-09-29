@@ -126,13 +126,6 @@ repository as of this date.
   block; this was directly exercised on 2026-09-29 and confirmed to
   behave exactly as documented (see
   `evidence/phase-23-verification-2026-09-29.md`).
-- The indexer's `GET /v1/slas/:slaId/settlements` endpoint returns a 500
-  error whenever a settlement row's cached `quorum_threshold` is `null`,
-  due to an invalid hardcoded dummy account string in
-  `src/rpc/liveReads.ts`'s `fetchQuorumThreshold` (fails
-  `@stellar/stellar-sdk`'s StrKey checksum validation). Discovered
-  2026-09-29 during frontend verification; not yet fixed. See
-  `evidence/phase-23-verification-2026-09-29.md`.
 - No CI-level dependency or secret scanner runs on a schedule; the checks
   described above were manual and one-time.
 
@@ -149,7 +142,19 @@ repository as of this date.
   Freighter extension and the live, verified Testnet deployment,
   covering connect, disconnect, reconnect, correct address display,
   correct network identification, the network-mismatch indicator, and
-  public read-only pages working without a wallet. See
+  public read-only pages working without a wallet. That verification
+  surfaced a real indexer defect (below), since fixed.
+- The indexer's `GET /v1/slas/:slaId/settlements` endpoint returned a 500
+  error whenever a settlement row's cached `quorum_threshold` was `null`,
+  due to an invalid hardcoded dummy account string in
+  `indexer/src/rpc/liveReads.ts`'s `fetchQuorumThreshold` (failed
+  `@stellar/stellar-sdk`'s StrKey checksum validation). Discovered
+  2026-09-29 during frontend verification; fixed the same day by
+  replacing the hardcoded string with a freshly generated random
+  keypair's public key (the same throwaway-account pattern already used
+  in `packages/sdk/src/client.ts`), covered by a new regression test
+  (`indexer/src/rpc/liveReads.test.ts`), and re-verified live against the
+  real deployment. See
   `evidence/phase-23-verification-2026-09-29.md`.
 
 ## Supported versions

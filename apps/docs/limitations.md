@@ -49,12 +49,13 @@ everywhere it's relevant rather than hiding it in one place.
   `evidence/phase-23-verification-2026-09-29.md` in the hub repository
   for the full record and [End-user guide](/end-user-guide) for the
   exact boundary.
-- **This verification pass surfaced one new, real, undocumented
-  defect**: the indexer's `GET /v1/slas/:slaId/settlements` endpoint
-  returns a 500 error whenever a settlement row's cached
-  `quorum_threshold` is `null`, because of an invalid hardcoded dummy
-  account string in `indexer/src/rpc/liveReads.ts`. Not fixed as part of
-  this verification pass; see the evidence file above.
+- **This verification pass surfaced one new, real, undocumented defect**
+  in the indexer's `GET /v1/slas/:slaId/settlements` endpoint (an invalid
+  hardcoded dummy account in `indexer/src/rpc/liveReads.ts`). It has
+  since been fixed, covered by a regression test, and re-verified live
+  against the real deployment the same day — see the "Follow-up" section
+  of the evidence file above for the full record. It is not listed as a
+  current limitation because it no longer is one.
 - **Mobile/narrow-viewport visual review of this documentation site was
   not completed.** The desktop visual review (14 pages, both themes,
   search, navigation) was performed directly in a real connected
