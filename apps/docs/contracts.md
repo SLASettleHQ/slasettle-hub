@@ -50,6 +50,9 @@ scheme in this version — see [Limitations](/limitations).
 
 ### Events
 
+On the wire, topic 0 of every event is the event's own name as a
+snake_case symbol; the tables below list the topics that follow it.
+
 | Event | Topics | Data |
 |---|---|---|
 | `watcher_registered` | `[watcher]` | `{}` |
@@ -111,6 +114,9 @@ calls it:
    on-chain.
 
 ### `withdraw_remaining_bond`'s zero-balance fix
+
+This is in the current source, not in the live Testnet deployment (see
+[Current Testnet deployment](/testnet-deployment)).
 
 Rejects with `InvalidAmount` if the balance is already `0`, rather than
 succeeding as a no-op. Real Testnet evidence

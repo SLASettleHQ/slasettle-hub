@@ -97,13 +97,13 @@ transactions by hand.
 
 ## Indexer integration
 
-`lib/indexer.ts` implements the five endpoints in
-`SLASettle-indexer-api-spec.md` exactly as documented — no invented fields,
-no assumed shapes. The indexer is a read-side history cache; anything that
-must be current-as-of-right-now (bond balance, SLA status, live vote tally,
-the current round) is always a direct Soroban read instead, per that spec's
-own "what the indexer does not do" section. The current round_id always
-comes from the indexer's `/v1/clock`, never from the browser's own clock.
+`lib/indexer.ts` implements five of the indexer's six endpoints
+(everything in `apps/docs/api.md` except `/v1/health`) — no invented
+fields, no assumed shapes. The indexer is a read-side history cache;
+anything that must be current-as-of-right-now (bond balance, SLA status,
+live vote tally) is a direct Soroban read instead. The current round_id
+always comes from the indexer's `/v1/clock`, never from the browser's own
+clock.
 
 ## Testing
 

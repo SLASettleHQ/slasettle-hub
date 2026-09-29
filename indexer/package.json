@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Indexes watcher_registry and sla_vault contract events and serves them over the API spec'd in SLASettle-indexer-api-spec.md.",
+  "description": "Indexes watcher_registry and sla_vault contract events and serves them over the HTTP API documented in apps/docs/api.md.",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",

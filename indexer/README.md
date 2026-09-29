@@ -1,28 +1,25 @@
 # slasettle-indexer
 
 Indexes events from the `watcher_registry` and `sla_vault` Soroban contracts
-and serves them over the six endpoints defined in
-`SLASettle-indexer-api-spec.md`. Testnet only, for now.
+and serves them over the six endpoints documented in
+`apps/docs/api.md`. Testnet only, for now.
 
 ## Verified status
 
 Node 24.21.0 (matches the repository's `.nvmrc`), `npm run build` (`tsc`),
-and `npm test` (`node --test`) all pass. **0 type errors, 33/33 tests
-passing**, as of the last commit.
+and `npm test` (`node --test`) all pass. **0 type errors, 36/36 tests
+passing**, as of 2026-09-29.
 
 The event *topic naming* was originally flagged as unverified, since
 `#[contractevent]`'s exact wire format was never observed from a real
-emitted event when this was written. The contracts have since been
-compiled and deployed to Testnet, and five of the eight event kinds have
-now been confirmed against real emitted events, each with a fix committed
-when the real shape differed from what was assumed (see git log):
-`watcher_registered`, `watcher_removed`, `check_submitted`, `sla_created`,
-and `settlement_paid`. `bond_topped_up`, `sla_cancelled`, and
-`bond_withdrawn` remain genuinely unverified: no real event of those three
-kinds has been observed yet, and the topic/data split for them in
-`src/rpc/decode.ts` is inferred from the same `#[topic]`-annotated-fields
-pattern that turned out correct for the other five, not confirmed
-independently.
+emitted event when this was written. All eight event kinds have since been
+confirmed against real emitted Testnet events (each with a fix committed
+when the real shape differed from what was assumed; see git log):
+`watcher_registered`, `watcher_removed`, `check_submitted`, `sla_created`
+and `settlement_paid` in earlier sessions, and `bond_topped_up`,
+`sla_cancelled` and `bond_withdrawn` on 2026-09-27
+(`slasettle-vault/evidence/testnet-2026-09-27.md`). The wire format of
+every kind is documented at the top of `src/rpc/decode.ts`.
 
 ## Setup
 
@@ -77,15 +74,16 @@ Startup fails loudly (not silently) if a required variable is missing — see
   silent gaps on restart.
 - `src/db/` — SQLite schema and a typed wrapper. `INSERT OR IGNORE` on each
   event's own `id` makes re-processing an already-seen range idempotent.
-- `src/api/` — the six endpoints, matching the spec exactly. `quorum_threshold`
+- `src/api/` — the six endpoints, as documented in `apps/docs/api.md`. `quorum_threshold`
   isn't in the on-chain events (the contracts don't emit it), so it's
   fetched once via a live `get_sla` read the first time a settlement needs
   it, then cached.
 
 ## Known limitations, stated plainly
 
-1. **Three event kinds' topic/data split unverified against real events**
-   (`bond_topped_up`, `sla_cancelled`, `bond_withdrawn`), see above.
+1. **`bond_topped_up`, `sla_cancelled` and `bond_withdrawn` are decoded
+   but not persisted.** No endpoint needs their history, so
+   `classifyEvents` recognizes them and drops them on purpose.
 2. **RPC retention is roughly 7 days.** If this indexer is down longer than
    that, the gap cannot be recovered from RPC alone. `runOnce` logs this
    explicitly rather than silently skipping the gap.

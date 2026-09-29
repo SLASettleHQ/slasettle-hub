@@ -12,7 +12,7 @@ own), `indexer`, and `watcher`. None share a single `.env` file.
 | `NEXT_PUBLIC_NETWORK_PASSPHRASE` | yes | e.g. `Test SDF Network ; September 2015` |
 | `NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID` | yes | see [Current Testnet deployment](/testnet-deployment) |
 | `NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID` | yes | see [Current Testnet deployment](/testnet-deployment) |
-| `NEXT_PUBLIC_INDEXER_API_URL` | yes | base URL of a running indexer, e.g. `http://localhost:3001` |
+| `NEXT_PUBLIC_INDEXER_API_URL` | yes | base URL of a running indexer, e.g. `http://localhost:8787` (the indexer's default `HTTP_PORT`) |
 
 `NEXT_PUBLIC_*` variables are inlined into the Next.js client bundle at
 build time — they are visible to anyone loading the page, which is
@@ -41,6 +41,14 @@ any is absent.
 `ALLOWED_ORIGINS` is the indexer's CORS allowlist: a comma-separated
 list of exact origins. It is never a wildcard (`*`) in this codebase.
 
+`MAX_LEDGERS_PER_REQUEST` is passed to `getEvents` as its `limit`
+(`indexer/src/ingest/poller.ts`), so it bounds the number of events per
+page, not a ledger range, despite the name.
+
+`npm start` loads `indexer/.env` through Node's `--env-file`. `npm run
+dev` (`tsx watch`) does not, so export the variables in your shell for
+that mode.
+
 ## `watcher` — `watcher/.env.example`
 
 | Variable | Required | Notes |
@@ -58,6 +66,14 @@ list of exact origins. It is never a wildcard (`*`) in this codebase.
 `.env` (not `.env.example`) is gitignored inside `watcher/`, precisely
 because it is the one place in this repository a real secret key is
 expected to live. Never commit a filled-in `watcher/.env`.
+
+The watcher reads only its process environment (`os.LookupEnv`); it has
+no `.env` loader, so `go run ./cmd/watcher` does not pick up
+`watcher/.env` by itself. Export the variables through your process
+supervisor or shell instead. `NETWORK_PASSPHRASE` contains spaces and a
+`;`, so it must be quoted (`export NETWORK_PASSPHRASE='Test SDF Network ;
+September 2015'`) or left unset to use the default; `source .env` does not
+work with the unquoted line in `.env.example`.
 
 ## Which pair of contract IDs to use
 

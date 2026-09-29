@@ -30,7 +30,7 @@ Currently registered watchers only (`removed_at IS NULL`).
 ```json
 {
   "data": [
-    { "address": "GA4WTXER6HGGZUXEPIOFYRTMOM34Q675DEAAK3WLBIO2FY7ENFNNDQHK", "registered_at": "2026-09-27T23:26:46.000Z" }
+    { "address": "GA4WTXER6HGGZUXEPIOFYRTMOM34Q675DEAAK3WLBIO2FY7ENFNNDQHK", "registered_at": "2026-09-27T23:26:57Z" }
   ],
   "next_cursor": null
 }
@@ -47,10 +47,10 @@ read (`getLatestLedgerInfo`), not from the caller's clock —
 
 ```json
 {
-  "round_id": 81762,
+  "round_id": 29842537,
   "round_started_at": "2026-09-27T23:37:00.000Z",
   "checked_in": [
-    { "watcher": "GA4WTXER6...", "status": "down", "checked_at": "2026-09-27T23:37:12.000Z" }
+    { "watcher": "GA4WTXER6...", "status": "down", "checked_at": "2026-09-27T23:37:12Z" }
   ],
   "not_yet_checked_in": ["GA5Q22PH..."]
 }
@@ -72,7 +72,7 @@ opaque cursor from a previous response's `next_cursor`).
       "penalty_amount": "10000000",
       "beneficiary": "GBAKUA3AN6MNXF6RREUBQRN3Z6JKT3IH5O6T3WUK3JRYVIWFN45XNVJ2",
       "tx_hash": "6522d8b77e135fc60154089d89b2b720d71593eed0de63916187eef16897d147",
-      "ledger_close_time": "2026-09-27T23:41:47.000Z",
+      "ledger_close_time": "2026-09-27T23:41:47Z",
       "explorer_url": "https://stellar.expert/explorer/testnet/tx/6522d8b77e135fc60154089d89b2b720d71593eed0de63916187eef16897d147"
     }
   ],
@@ -104,7 +104,7 @@ ingested between requests.
       "token": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
       "bond_amount_at_creation": "50000000",
       "beneficiary": "GBAKUA3AN6MNXF6RREUBQRN3Z6JKT3IH5O6T3WUK3JRYVIWFN45XNVJ2",
-      "created_at": "2026-09-27T23:36:12.000Z",
+      "created_at": "2026-09-27T23:36:12Z",
       "tx_hash": "819dd54031a2391d9ead3dbd0a902f5fdaeb597f0914a8307cfacfecc7031083"
     }
   ],
@@ -120,19 +120,50 @@ settlements as a separate column.
 
 ## `GET /v1/clock`
 
-The authoritative round clock. The frontend is expected to read this
-rather than compute a round from the browser's own clock, since the
-contracts only care about the round number a transaction actually lands
-in, which is driven by ledger close time, not wall-clock time on any
-particular machine.
+The round clock the frontend reads instead of computing a round from
+the browser's own clock. `current_round_id` is
+`floor(ledger_close_time_seconds / ROUND_LENGTH_SECONDS)` of the latest
+ledger, so it can trail a watcher's own wall-clock round by up to about
+one ledger interval at a round boundary. The contracts themselves never
+read time: `round_id` is an opaque `u64` supplied by whoever calls
+`submit_check` or `trigger_settlement` (see [Lifecycle](/lifecycle)).
 
 ```json
 {
   "ledger_sequence": 4905879,
   "ledger_close_time": "2026-09-27T23:53:00.000Z",
-  "current_round_id": 81762
+  "current_round_id": 29842553
 }
 ```
+
+Values in the examples on this page are illustrative and taken from the
+2026-09-27 evidence run. Timestamps that come from stored events
+(`registered_at`, `checked_at`, `created_at`, and `ledger_close_time` on
+a settlement) are the RPC's `ledgerClosedAt` string, without
+milliseconds; timestamps the indexer computes (`round_started_at`, and
+`ledger_close_time` on `/v1/clock`) carry `.000Z`.
+
+## Errors and input handling, as implemented
+
+- Every route is `GET`. An unhandled exception in a handler returns HTTP
+  `500` with `{"error":"internal_error"}`. The routes that call the RPC
+  while serving a request, and can therefore fail this way, are
+  `/v1/clock` and `/v1/slas/:slaId/current-round` (latest ledger) and
+  `/v1/slas/:slaId/settlements` (the lazy `get_sla` read for
+  `quorum_threshold`).
+- There is no `400` or `404` for a bad or unknown identifier: `:slaId`
+  and `:address` are not validated. An SLA or provider with no rows
+  returns `200` with `{"data":[],"next_cursor":null}`, and
+  `current-round` for any `:slaId`, including a non-numeric one, returns
+  `200` with every registered watcher under `not_yet_checked_in`.
+- A `before` cursor that does not decode is ignored, so the first page
+  is returned. `limit` is `20` when absent, non-numeric or `0`, and is
+  capped at `100`; a negative `limit` is not rejected and produces an
+  empty page.
+- A path that is not one of the six routes gets Express's default HTML
+  `404`, not JSON.
+- The contracts' error codes never appear in this API: it only reads
+  events and one `get_sla` value.
 
 ## Amounts are strings, not numbers
 

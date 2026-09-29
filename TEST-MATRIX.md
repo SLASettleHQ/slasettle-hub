@@ -1,5 +1,37 @@
 # SLASettle test matrix
 
+> **Historical snapshot, superseded in part.** This matrix was written
+> for Phase 9 on 2026-09-28 and has not been rewritten since; rows below
+> keep the status they had then. The current, cross-repository record is
+> `evidence/index.md` (claim ledger) and
+> `evidence/parity-matrix-2026-09-29.md`. Known superseded rows:
+>
+> - Sections 3 and 8 and "Unverified items": a watcher daemon *has* been
+>   run live against Testnet (2026-09-29, four consecutive rounds); see
+>   `evidence/phase-23-verification-2026-09-29.md`.
+> - Section 4's event table and section 8's event row: all eight event
+>   kinds are VERIFIED, not 5 of 8; see
+>   `slasettle-vault/evidence/testnet-2026-09-27.md`.
+> - Section 5: the pair named there (`CBEZ3XBI…` / `CBA4DFNU…`) is the
+>   *historical* deployment; the current one is `CBKAQETJ…` /
+>   `CD4FSW2E…`. The `e075df0c…` hash and "BLOCKED" row describe the
+>   pre-redeploy state.
+> - Section 6: browser and Freighter verification of the frontend was done
+>   on 2026-09-29 (connect, disconnect, network display, mismatch
+>   indicator, public status page); the dashboard write forms were not
+>   exercised.
+> - Section 1: current counts are indexer 36, sdk 29, web 50, watcher 48,
+>   vault 29 + 17.
+> - Section 4's "API serialization (all endpoints)" and "clock handling"
+>   rows overstate coverage: `routes.test.ts` covers `/v1/health`,
+>   `/v1/watchers` and `/v1/providers/:address/slas` only.
+>   `/v1/slas/:slaId/current-round`, `/v1/slas/:slaId/settlements` and
+>   `/v1/clock` have no route-level test (the settlements path has the
+>   `liveReads.test.ts` regression test) and were checked live instead.
+> - Section 8 refers to `SLASettle-indexer-api-spec.md`, which has never
+>   existed in either repository; the API is documented in
+>   `apps/docs/api.md`.
+
 This document maps the actual behaviors of SLASettle to their current
 verification status, across both repositories:
 

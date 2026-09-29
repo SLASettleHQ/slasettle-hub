@@ -52,6 +52,11 @@ go test ./...
 ```bash
 cp .env.example .env   # fill in after watcher_registry is deployed and this
                         # watcher's address is registered by the admin
+# The daemon reads only its process environment (os.LookupEnv) and has no
+# .env loader, so export the values before starting it. Quote
+# NETWORK_PASSPHRASE (it contains spaces and a `;`) or leave it unset to use
+# the Testnet default. `source .env` does not work on the unquoted line.
+export WATCHER_REGISTRY_CONTRACT_ID=... WATCHER_SECRET_KEY=... TARGET_URL=... SLA_ID=...
 go run ./cmd/watcher
 ```
 

@@ -39,7 +39,34 @@ Source: `slasettle-vault/evidence/testnet-2026-09-27.md`.
 This deployment includes the `quorum_threshold == 0` fix (see
 [Contracts](/contracts)) and the interface was independently confirmed
 via `stellar contract info interface` against the live network,
-matching the source exactly.
+matching the source as of 2026-09-27.
+
+### Re-checked on 2026-09-29 (read-only)
+
+- The on-chain WASM of both contracts was re-downloaded
+  (`stellar contract fetch`) and its SHA-256 equals the WASM hash in the
+  table above, for both contracts.
+- A build of `slasettle-vault`'s current `main` (soroban-sdk 28.0.0)
+  exposes the same functions, structs, enums, errors and events as the
+  live contracts. The only difference in the contract spec is that the
+  live contracts' spec also lists their private `DataKey` storage-key
+  type, which the 28.0.0 build omits.
+- Live reads still match the evidence: `watcher_registry.get_watcher_count`
+  is `5`, `sla_vault.get_sla(0)` returns the fields listed below,
+  `is_round_settled(0, 1)` is `true`, and `get_bond_balance(0)` is
+  `46000000` (`50000000` − `10000000` settled + `5000000` and `1000000`
+  topped up).
+
+The full record is `evidence/parity-matrix-2026-09-29.md` in the hub
+repository, section 6.
+
+### What the live build is missing compared to current source
+
+The current `slasettle-vault` source differs from what is deployed in
+two ways that are not visible in the interface: it is built with
+soroban-sdk 28.0.0 (the live build used 27.0.6), and it rejects a
+repeat `withdraw_remaining_bond` on an empty bond (see below). Neither
+has been deployed or re-verified live.
 
 ### A real, permissionless settlement, live on this deployment
 
@@ -56,9 +83,14 @@ matching the source exactly.
   (an account that was not the admin, provider, or beneficiary), paid
   out `10000000` stroops, `SettlementPaid` event confirmed.
 
-The zero-balance `withdraw_remaining_bond` fix (see
-[Contracts](/contracts)) was verified against a separate SLA (SLA 1) in
-the same evidence run, not against SLA 0.
+The zero-balance `withdraw_remaining_bond` rejection (see
+[Contracts](/contracts)) is **not** part of this deployment. It was
+written the day after this deployment (`slasettle-vault` commit
+`99be8a1`, 2026-09-28) and is TESTED LOCALLY only. What the evidence run
+recorded on a separate SLA (SLA 1) is the *pre-fix* behavior: a repeat
+withdrawal on an already-empty bond succeeded as a no-op and emitted a
+`bond_withdrawn` event with `amount: 0` (tx
+`0dbbb2e82da901912ec1cc55e2d05e33cee3ff73e9b74301ec9a7632ba328deb`).
 
 ## Historical deployment (predates the quorum-zero fix)
 
@@ -74,10 +106,10 @@ the current, fixed contract logic.
 | `watcher_registry` | `CBEZ3XBIWK2AWYGZRNDGNZG3AZTJHFMQL5HVWTEUZZ5HLSCO4QDFJB77` |
 | `sla_vault` | `CBA4DFNUBVCPLEAUD5O2CHSUB6DRWUNM7A537EBVPAGDETFBB2CABXI2` |
 
-If your local hub environment configuration (`.deployed-testnet.env`)
-still points at this historical pair rather than the live-verified pair
-above, see [Environment variables](/environment-variables) before
-running the watcher, indexer, or frontend against it.
+`slasettle-vault`'s untracked, local `.deployed-testnet.env` still holds
+this historical pair. If any hub `.env` or `.env.local` you use was
+copied from it, see [Environment variables](/environment-variables)
+before running the watcher, indexer, or frontend against it.
 
 ## What is not deployed anywhere
 

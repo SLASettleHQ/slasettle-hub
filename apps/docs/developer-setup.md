@@ -47,7 +47,8 @@ cd ../watcher && go build ./...
 
 Copy each project's `.env.example` to `.env` and fill in real values —
 see [Environment variables](/environment-variables) for every variable
-and which are required. At minimum you need the two contract IDs from
+and which are required, and for which of them each tool actually loads
+from `.env` (the indexer's `npm start` does; the watcher never does). At minimum you need the two contract IDs from
 [Current Testnet deployment](/testnet-deployment).
 
 ### Running it locally, in dependency order
@@ -61,10 +62,13 @@ and which are required. At minimum you need the two contract IDs from
    minimum.
 3. Start the frontend (`pnpm --filter @slasettle/web dev`) — it needs
    `NEXT_PUBLIC_INDEXER_API_URL` pointed at the indexer from step 2.
-4. Optionally, run the watcher daemon (`cd watcher && go run .`) with a
-   real funded Testnet keypair in `WATCHER_SECRET_KEY` — see
-   [Limitations](/limitations) for the current state of this (it has
-   been tested locally against a mocked RPC transport, not run live).
+4. Optionally, run the watcher daemon (`cd watcher && go run
+   ./cmd/watcher`) with a real funded Testnet keypair in
+   `WATCHER_SECRET_KEY`. The daemon does not load `.env` itself; export
+   its variables first (see [Environment variables](/environment-variables)).
+   It was run live against Testnet on 2026-09-29 (see
+   [Deployment topology](/deployment-topology)); nothing runs it
+   continuously.
 
 ## Build and test everything
 

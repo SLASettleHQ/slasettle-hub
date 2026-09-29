@@ -133,7 +133,10 @@ separate compatibility decision:
 `main` is branch-protected: pull requests are required, all three CI jobs
 above are required status checks, force pushes and branch deletion are
 disabled. Required approving reviews are set to 0, since this is
-currently a solo-maintained repository.
+currently a solo-maintained repository. Protection is not enforced for
+repository administrators (`enforce_admins` is off, read from the
+branch-protection API on 2026-09-29), so an administrator can push to
+`main` directly.
 
 ## Current Testnet status
 
