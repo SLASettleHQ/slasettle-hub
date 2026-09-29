@@ -107,10 +107,18 @@ balance when they are only read. On the live deployment this was found on
   which is subject to the open SDK and deployment decision (vault issue #3).
   Until then the live lifetimes have to be extended by hand before about
   ledger 7932489.
-- **Other entries are not covered by that extension:** on 2026-09-29 the
-  persistent entries read (an SLA, its bond balance, a settled round, a
-  registered watcher, a tally) were due to expire in about 28.5 days, and a
-  watcher's registration is only extended when it is written.
+- **Persistent entries:** on 2026-09-29 the entries the live workflow
+  needs (the five watcher registrations, SLAs 0 to 2 with their bond
+  balances, and the settled round 0/1) were also extended by 3,000,000
+  ledgers (12 transactions, no state changed; see
+  [Current Testnet deployment](/testnet-deployment)). History entries such as
+  the vote records and tallies for the evidence rounds were not, and were due
+  in about 28 days. The contract still extends a persistent entry only when it
+  writes it, so a watcher registered or an SLA created later is not covered.
+- **No archived-entry handling in the clients:** the SDK, the frontend and
+  the watcher have no code for restoring an archived ledger entry, and the
+  restore path itself has not been exercised. An archived entry makes the
+  affected call fail until it is restored by hand.
 
 ## Smaller behaviors left as they are
 

@@ -92,9 +92,33 @@ Afterwards the WASM SHA-256 of both contracts was unchanged (`4c626d2c…`,
 does not change the source: the current source still has no instance
 lifetime extension, so the live lifetimes need maintenance (about
 174 days from 2026-09-29), and a permanent fix requires a contract build and
-redeployment. Persistent entries such as an SLA, its bond balance or a
-watcher's registration were not part of this extension and were due to
-expire in about 28.5 days. See [Limitations](/limitations).
+redeployment. Persistent entries were not part of that first extension; see the
+next subsection. See [Limitations](/limitations).
+
+#### Persistent entries, same day
+
+The live workflow's persistent entries were then extended the same way
+(`stellar contract extend --id <contract> --key-xdr <ScVal key>
+--ledgers-to-extend 3000000`, admin identity, no state changed). All twelve
+transactions succeeded:
+
+| Entry | Transaction | Ledger | Live until |
+|---|---|---|---|
+| registry `Watcher` GA4WTX… | `78f0ec307be7aed964475cc45927a9bab747b744cf5bcf45ea0119aac7c97cc4` | 4932956 | 7932956 |
+| registry `Watcher` GA5Q22… | `8e0bb30408bface606ba7f420a15372194de9ed9119d28cf1a904d7ccf025379` | 4932958 | 7932958 |
+| registry `Watcher` GAHCWL… | `4864446b362ce2ae1e54d0a77b2145fc6eabfb091c8ca7c5ec977bafb7e3a171` | 4932960 | 7932960 |
+| registry `Watcher` GAEYRU… | `2648644c5c3a70adc44b588503ebf4d4022a9fccc71591df376c17cefd356b85` | 4932962 | 7932962 |
+| registry `Watcher` GBQXFO… | `6f00e768c6e1935296cd534970526bf15ff33b89fe85586850064ed0f9661441` | 4932965 | 7932965 |
+| vault `Sla(0)` | `f4bbc75a9d02008e319d56843aef849137bffa9b7ccf0cf79683fe815c0c9e0e` | 4932968 | 7932968 |
+| vault `BondBalance(0)` | `0a6203f7a805daecc42e9f244c4f3a7bb3be97f467675888c93e38b579c84693` | 4932970 | 7932970 |
+| vault `Sla(1)` | `ead7bdd9cc7f5cf65ce6e71e7facb072d426c0be4fc2d8dafdccde07d1303329` | 4932972 | 7932972 |
+| vault `BondBalance(1)` | `80096747ccafbec06c16ad761cc25527b6c8c60503627f5b0818fe5d3d06bef7` | 4932975 | 7932975 |
+| vault `Sla(2)` | `32270cb587bc18b37ca7f14a9bcad627bd7860ad5dc44df4aa7a44a8ff1894df` | 4932977 | 7932977 |
+| vault `BondBalance(2)` | `05d13fa81ab0fe352cc5b7deb4b5bd3693a47bc0634cfc5808c4a12568d0b5c4` | 4932979 | 7932979 |
+| vault `SettledRounds(0,1)` | `e6e0661a2dd8f1bea014ad3236c9040c659b8c3f4f64e1f2dd100b778fae8ad5` | 4932981 | 7932981 |
+
+Vote-history entries (tallies and per-watcher check records for the evidence
+rounds) were not extended.
 
 ### What the live build is missing compared to current source
 

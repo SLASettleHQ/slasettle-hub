@@ -204,7 +204,7 @@ live checks.
 | Q3 Hub PR #8 (ESLint 9 to 10) is open and its CI run fails; it was not touched | CI | run `36507180532` on `449e285`; `gh pr list` | 2026-09-29 | VERIFIED |
 | Q4 `cargo fmt --check` fails and is informational in vault CI | CI | `vault/.github/workflows/ci.yml`; `matrix` §0.11 | 2026-09-29 | KNOWN LIMITATION |
 | Q5 The documentation site is not built in CI | source | `hub/.github/workflows/ci.yml` | 2026-09-29 | KNOWN LIMITATION |
-| Q6 Local tests: vault 47, SDK 29, web 50, indexer 45 (44 before the 2026-09-29 final remediation), watcher 48 pass; lint, typecheck, builds and docs build pass | local test | `matrix` §0.11 (2026-09-29) | 2026-09-29 | TESTED LOCALLY |
+| Q6 Local tests: vault 52, SDK 29, web 50, indexer 45 (44 before the 2026-09-29 final remediation), watcher 48 pass; lint, typecheck, builds and docs build pass | local test | `matrix` §0.11 (2026-09-29) | 2026-09-29 | TESTED LOCALLY |
 
 ## R. Dependency maintenance
 
@@ -298,6 +298,9 @@ live checks.
 |---|---|---|---|---|
 | AF The live contract instances and WASM code entries, due to expire about 2026-10-05, were extended by 3,000,000 ledgers; WASM hashes and live state are unchanged. This is an operational mitigation, not a redeployment or a source fix | Testnet | `hub/apps/docs/testnet-deployment.md` "Lifetime extension" (txs `b8601edc…`, `1e2b750d…`, `9efdb520…`, `a130b4f3…`, gathered 2026-09-29); `hub/evidence/final-technical-audit-2026-09-29.md` remediation | 2026-09-29 | VERIFIED |
 | AG The current contract source extends instance storage itself. It does not; a permanent fix needs a contract build and redeployment | source | `vault/contracts/*/src/lib.rs` (no `instance().extend_ttl`); vault issue #3 | 2026-09-29 | BLOCKED |
-| AH Persistent entries (SLA, bond balance, watcher registration, tallies) are covered by that extension. They are not; on 2026-09-29 they were due in about 28.5 days | Testnet | audit section 11 | 2026-09-29 | KNOWN LIMITATION |
+| AH The live persistent entries the workflow needs (5 watcher registrations, SLAs 0 to 2 and their bond balances, settled round 0/1) were extended by 3,000,000 ledgers on 2026-09-29 (12 transactions, no state changed). Vote-history entries were not, and the contract still extends a persistent entry only when it writes it | Testnet | `hub/apps/docs/testnet-deployment.md` "Persistent entries, same day" (txs `78f0ec30…` to `e6e0661a…`, ledgers 4932956 to 4932981); `hub/evidence/findings-classification-2026-09-29.md` §4 | 2026-09-29 | VERIFIED |
 | AI A repeat `cancel_sla` emits another `SlaCancelled` event and moves no funds | source | `hub/apps/docs/limitations.md`; `vault/SLASettle-contract-spec.md` | 2026-09-29 | KNOWN LIMITATION |
+| AJ A missing or wrong signature is rejected by the contracts and `trigger_settlement` needs no signature or role from its caller. Before 2026-09-29 no test showed either: every contract test used `mock_all_auths()` | local test | `vault/contracts/sla_vault/src/test.rs` (`test_provider_methods_reject_a_missing_signature_and_change_nothing`, `test_a_signature_from_someone_else_does_not_authorize_the_provider`, `test_admin_methods_reject_a_missing_signature`, `test_trigger_settlement_needs_no_signature_and_no_role_from_its_caller`); `vault/contracts/watcher_registry/src/test.rs` (`test_admin_and_watcher_methods_reject_a_missing_signature`); vault `d79c52d` | 2026-09-29 | TESTED LOCALLY |
+| AK A live wrongly-signed or unsigned call was rejected on Testnet. None was recorded | none | `hub/evidence/findings-classification-2026-09-29.md` row 20 | 2026-09-29 | UNVERIFIED |
+| AL Every material finding of the final audit, the external review, the parity matrix, the ledger and the traceability record has exactly one A to E category: A 0, B 1, C 19, D 3, E 20 (two rows closed as historical) | record | `hub/evidence/findings-classification-2026-09-29.md` | 2026-09-29 | VERIFIED |
 

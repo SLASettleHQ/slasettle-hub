@@ -490,3 +490,14 @@ settlement-pagination page, live daemon-to-indexer round read-back. BLOCKED:
 the live zero-balance withdrawal rejection, redeploying the soroban-sdk 28.0.0
 source, and a permanent source-level instance-lifetime fix.
 
+### Remediation 2, 2026-09-29 (Phase 30 and 31)
+
+The section 3.1 test gap (all tests under `mock_all_auths()`, permissionless
+test with the admin as caller) is closed locally by vault `d79c52d`. The
+section 11 finding that a watcher registration and other persistent entries
+lapse about 28.5 days after being written was mitigated for the live workflow
+by extending them on 2026-09-29 (`testnet-deployment.md`); the source-level
+behavior is unchanged. Category and rationale for every finding:
+`findings-classification-2026-09-29.md`; re-verification of the changed areas:
+`final-technical-audit-2026-09-29-r2.md`.
+

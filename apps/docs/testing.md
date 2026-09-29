@@ -5,7 +5,7 @@ page (2026-09-29):
 
 | Project | Command | Result |
 |---|---|---|
-| `slasettle-vault` (`watcher_registry` + `sla_vault`) | `cargo test --workspace` | 47/47 passed |
+| `slasettle-vault` (`watcher_registry` + `sla_vault`) | `cargo test --workspace` | 52/52 passed |
 | `packages/sdk` | `pnpm --filter @slasettle/sdk test` (Vitest) | 29/29 passed |
 | `apps/web` | `pnpm --filter @slasettle/web test` (Vitest) | 50/50 passed |
 | `indexer` | `npm test` (`node --test`) | 45/45 passed |
@@ -23,7 +23,13 @@ entirely.
   environment, not a real network): every function's success path, every
   documented error code, and both real regression tests from this
   project's own history — `create_sla` rejecting `quorum_threshold == 0`,
-  and `withdraw_remaining_bond` rejecting an already-zero balance. See
+  and `withdraw_remaining_bond` rejecting an already-zero balance. Most of
+  these tests run under `mock_all_auths()`, which makes every signature check
+  succeed; a separate group calls through explicit, narrow authorizations to
+  show that a missing or wrong signature is rejected and that
+  `trigger_settlement` needs no signature. The partial-payout branch of
+  settlement is covered by its own test. None of this ran against a live
+  network for the payout cap, or for a wrongly signed call. See
   [Contracts](/contracts).
 - **SDK** (`packages/sdk`, Vitest with a mocked RPC layer): config
   validation (`MissingSdkConfigError` naming exactly which variables are

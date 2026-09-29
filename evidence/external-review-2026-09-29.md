@@ -271,6 +271,20 @@ Required and not made:
    `mock_all_auths`), and a permissionless-settlement test using an unrelated
    account. Not created in this pass.
 
+## 12. Follow-up after the final audit (2026-09-29)
+
+Two statements in this record are outdated. Section 3 says every contract test
+uses `mock_all_auths()`; since vault `d79c52d` five tests use explicit narrow
+authorizations and show that a missing or wrong signature is rejected and that
+`trigger_settlement` needs neither a signature nor a role (the older tests
+still use `mock_all_auths()`). Question 18 (penalty) says the cap is tested
+locally and not live; that is now true, because a partial-payout test exists
+(`304b948`), and the live cap is still UNVERIFIED. Question 33's list of known
+limitations gains: instance-storage lifetime is not extended by the source
+(the live one was extended by hand), and persistent entries the workflow
+needs were extended by hand on 2026-09-29. Classification of everything found:
+`findings-classification-2026-09-29.md`.
+
 ## 11. Follow-up: corrections made after this review (2026-09-29)
 
 Items 1 to 4 of section 10 and the issue observations of section 8 were acted

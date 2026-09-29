@@ -296,6 +296,19 @@ was handled by rewriting the two issues without closing them. The status
 column of the claim table is unchanged: no claim gained a test or live
 evidence from these edits.
 
+### Follow-up (2026-09-29, Phase 30 and 31)
+
+Claim 7: the "weak test" mark is resolved locally by
+`test_trigger_settlement_needs_no_signature_and_no_role_from_its_caller`
+(vault `d79c52d`: an unrelated caller, no authorization at all); the live
+evidence is unchanged. Claim 11: the missing-signature link is now TESTED
+LOCALLY for `top_up_bond`, `cancel_sla`, `create_sla`,
+`withdraw_remaining_bond`, `pause` and the registry's `register_watcher`,
+`pause` and `submit_check`; `initialize` and `unpause` and a live wrongly
+signed call remain untested or UNVERIFIED. Claims 71 to 73 and 74 are
+unchanged. The live lifetime of the workflow's persistent entries was extended
+on 2026-09-29.
+
 ### Follow-up (2026-09-29, after the final technical audit)
 
 Claim 10: the partial-payout branch had no test when this record was written
