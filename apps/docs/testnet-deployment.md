@@ -60,9 +60,12 @@ matching the source as of 2026-09-27.
 Interface parity (the point above) is not byte-for-byte artifact parity:
 the same source compiled under different Rust versions produces
 different WASM hashes (`5a5ee41b…` locally with rustc 1.97.1 versus
-`2f958b86…` in CI with rustc 1.98.1), so a rebuild from source cannot be
+`2f958b86…` in CI with rustc 1.98.1, both at vault `8449bd7`), so a rebuild from source cannot be
 expected to reproduce a deployed hash unless the toolchain is also
-pinned. That is a documented limitation, not an interface mismatch.
+pinned. The hash also changes with any source edit, including doc
+comments, because doc strings are embedded in the contract spec (CI's hash
+at vault `8d9c517`, a comment-only change, is `951f28b5…`). That is a
+documented limitation, not an interface mismatch.
 
 The full record is `evidence/parity-matrix-2026-09-29.md` in the hub
 repository, section 6.
