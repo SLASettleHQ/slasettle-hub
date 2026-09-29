@@ -84,7 +84,7 @@ live checks.
 | E2 Settlement is permissionless: an account that is not admin, provider or beneficiary triggered it | Testnet | same, caller `GAD7M6PM…` | 2026-09-29 | VERIFIED |
 | E3 `create_sla` rejects `quorum_threshold == 0` on the live contract | Testnet | `vault/evidence/testnet-2026-09-27.md` "Quorum-zero fix, live" (`#7`, gathered 2026-09-27) | 2026-09-29 | VERIFIED |
 | E4 Settlement below quorum is rejected | local test | `vault/contracts/sla_vault/src/test.rs` (`test_trigger_settlement_below_quorum_fails`) | 2026-09-29 | TESTED LOCALLY |
-| E5 The payout-capping implementation (`min(penalty, balance)`) is in source and its behavior is covered by a local test. The 2026-09-28 security review calls it verified live; that statement is superseded (see E7) | local test | `vault/contracts/sla_vault/src/test.rs` (`test_trigger_settlement_caps_payout_at_remaining_balance`); `vault/evidence/security-review-2026-09-28.md` (correction note); `matrix` §12, §14 | 2026-09-29 | TESTED LOCALLY |
+| E5 Payout capping (`min(penalty, balance)`) is in source and its partial-payout branch is exercised by a local test (bond 800, penalty 500, second payout exactly 300). The 2026-09-28 security review's "verified live" sentence is superseded (see E7). Before 2026-09-29 no test reached this branch | local test | `vault/contracts/sla_vault/src/test.rs` (`test_trigger_settlement_pays_only_the_remaining_bond_when_it_is_below_the_penalty`, vault `304b948`); `hub/evidence/final-technical-audit-2026-09-29.md` remediation | 2026-09-29 | TESTED LOCALLY |
 | E7 Payout capping has been executed live. It has not: the one live settlement paid the full penalty from a larger balance, and no live settlement has had a balance below the penalty | Testnet | `vault/evidence/testnet-2026-09-27.md` "Settlement" (bond `55000000` before, penalty `10000000`); `matrix` §14 | 2026-09-29 | UNVERIFIED |
 | E6 The real settlement is served by the indexer and shown on the status page | live Testnet test, browser | `hub/evidence/phase-23-verification-2026-09-29.md` "Follow-up: settlement-history defect fix" (gathered 2026-09-29); `matrix` §0.7 | 2026-09-29 | VERIFIED |
 
@@ -159,7 +159,7 @@ live checks.
 | M3 Restarting the indexer resumes from its checkpoint without duplicating rows | live Testnet test | `vault/evidence/recovery-2026-09-28.md` "Process restart / persistence" (gathered 2026-09-28) | 2026-09-29 | VERIFIED |
 | M4 Watcher registration and removal are applied in chronological order (bug fixed) | live Testnet test | `vault/evidence/recovery-2026-09-28.md` Finding B (gathered 2026-09-28); `matrix` §0.6 | 2026-09-29 | VERIFIED |
 | M5 Route-level tests cover all six indexer routes: `/v1/health`, `/v1/watchers`, `/v1/providers/:address/slas` (earlier) and `/v1/clock`, `/v1/slas/:slaId/current-round`, `/v1/slas/:slaId/settlements` (added 2026-09-29) | local test | `hub/indexer/src/api/routes.test.ts`; `matrix` §14 | 2026-09-29 | TESTED LOCALLY |
-| M6 A negative `limit` on `/v1/slas/:slaId/settlements` is rejected with HTTP 400 `{"error":"invalid_limit",…}`; it previously returned an empty page. Fixed 2026-09-29 | live Testnet test, local test | `matrix` §14 (live `?limit=-5` gave 400; `limit` absent, 1 and 20 gave 200 with the real row); regression test in `routes.test.ts` | 2026-09-29 | VERIFIED |
+| M6 A negative or fractional `limit` on `/v1/slas/:slaId/settlements` is rejected with HTTP 400 (`limit must not be negative` / `limit must be an integer`); a negative limit previously returned an empty page and a fractional one returned 500. Fixed 2026-09-29 | live Testnet test, local test | `matrix` §14 (negative); audit remediation (`?limit=1.5` gave 400 live; `limit` absent, 1 and 20 gave 200 with the real row); regression tests in `routes.test.ts` | 2026-09-29 | VERIFIED |
 | M7 The API has no authentication and binds all interfaces | source | `hub/indexer/src/api/server.ts`, `src/index.ts`; `hub/apps/docs/deployment-topology.md` | 2026-09-29 | KNOWN LIMITATION |
 
 ## N. Settlement-history fix and re-verification
@@ -204,7 +204,7 @@ live checks.
 | Q3 Hub PR #8 (ESLint 9 to 10) is open and its CI run fails; it was not touched | CI | run `36507180532` on `449e285`; `gh pr list` | 2026-09-29 | VERIFIED |
 | Q4 `cargo fmt --check` fails and is informational in vault CI | CI | `vault/.github/workflows/ci.yml`; `matrix` §0.11 | 2026-09-29 | KNOWN LIMITATION |
 | Q5 The documentation site is not built in CI | source | `hub/.github/workflows/ci.yml` | 2026-09-29 | KNOWN LIMITATION |
-| Q6 Local tests: vault 46, SDK 29, web 50, indexer 44 (36 before the 2026-09-29 remediation), watcher 48 pass; lint, typecheck, builds and docs build pass | local test | `matrix` §0.11 (2026-09-29) | 2026-09-29 | TESTED LOCALLY |
+| Q6 Local tests: vault 47, SDK 29, web 50, indexer 45 (44 before the 2026-09-29 final remediation), watcher 48 pass; lint, typecheck, builds and docs build pass | local test | `matrix` §0.11 (2026-09-29) | 2026-09-29 | TESTED LOCALLY |
 
 ## R. Dependency maintenance
 
@@ -291,3 +291,13 @@ live checks.
 | AC The Testnet passphrase and RPC URL agree across both repositories, and the RPC reports the same passphrase | live Testnet test | `matrix` §5, §0.8 | 2026-09-29 | VERIFIED |
 | AD Status values, error handling, events, environment variables, round semantics and API shapes were compared field by field | source | `matrix` §2, §3, §4, §8, §9, §10 | 2026-09-29 | VERIFIED |
 | AE Every contract ID, transaction hash and address the hub documents matches the authoritative evidence, except historical and labeled example values | source | `matrix` §6 | 2026-09-29 | VERIFIED |
+
+## Live lifetime maintenance and audit remediation (2026-09-29)
+
+| Claim | Evidence type | Source | Date checked | Status |
+|---|---|---|---|---|
+| AF The live contract instances and WASM code entries, due to expire about 2026-10-05, were extended by 3,000,000 ledgers; WASM hashes and live state are unchanged. This is an operational mitigation, not a redeployment or a source fix | Testnet | `hub/apps/docs/testnet-deployment.md` "Lifetime extension" (txs `b8601edc…`, `1e2b750d…`, `9efdb520…`, `a130b4f3…`, gathered 2026-09-29); `hub/evidence/final-technical-audit-2026-09-29.md` remediation | 2026-09-29 | VERIFIED |
+| AG The current contract source extends instance storage itself. It does not; a permanent fix needs a contract build and redeployment | source | `vault/contracts/*/src/lib.rs` (no `instance().extend_ttl`); vault issue #3 | 2026-09-29 | BLOCKED |
+| AH Persistent entries (SLA, bond balance, watcher registration, tallies) are covered by that extension. They are not; on 2026-09-29 they were due in about 28.5 days | Testnet | audit section 11 | 2026-09-29 | KNOWN LIMITATION |
+| AI A repeat `cancel_sla` emits another `SlaCancelled` event and moves no funds | source | `hub/apps/docs/limitations.md`; `vault/SLASettle-contract-spec.md` | 2026-09-29 | KNOWN LIMITATION |
+

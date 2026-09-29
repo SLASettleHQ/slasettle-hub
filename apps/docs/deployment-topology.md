@@ -120,7 +120,9 @@ SECRET; the per-variable tables are in
 - **Repository / root:** `slasettle-vault`, `contracts/watcher_registry`.
 - **Runtime:** Soroban WASM on Stellar Testnet. Deployed 2026-09-27,
   `CBKAQETJU3PLB54LJRSA7ZH2ZG4TBQHHDSWZ23R4VVTV7WBIX3QZBUZ6`, built with
-  soroban-sdk 27.0.6.
+  soroban-sdk 27.0.6. Its instance and code lifetimes were extended by hand
+  on 2026-09-29 (not redeployed); the source does not extend them itself, so
+  this needs maintenance (see [Limitations](/limitations)).
 - **Build:** `stellar contract build` (it must be built before `sla_vault`).
   **Start:** none; it is on-chain.
 - **Environment variables:** none. Deployment is done with the Stellar CLI
@@ -138,7 +140,8 @@ SECRET; the per-variable tables are in
 
 - **Repository / root:** `slasettle-vault`, `contracts/sla_vault`.
 - **Runtime:** Soroban WASM on Stellar Testnet. Deployed 2026-09-27,
-  `CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL`.
+  `CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL`. Same lifetime
+  maintenance note as `watcher_registry`.
 - **Build:** `stellar contract build` (it needs `watcher_registry.wasm`
   built first, because of `contractimport!`). **Start:** none.
 - **Environment variables:** none.

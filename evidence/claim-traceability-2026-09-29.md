@@ -295,3 +295,12 @@ changes only (see `evidence/external-review-2026-09-29.md` section 11); item 5
 was handled by rewriting the two issues without closing them. The status
 column of the claim table is unchanged: no claim gained a test or live
 evidence from these edits.
+
+### Follow-up (2026-09-29, after the final technical audit)
+
+Claim 10: the partial-payout branch had no test when this record was written
+(the "caps payout" test only reaches an exhausted bond); a test for it was added
+in vault `304b948`, so the TESTED LOCALLY status now holds, and live execution
+stays UNVERIFIED. Claim 32 now also covers a fractional `limit` (HTTP 400).
+Claims 62 to 67 are unchanged: the live contracts were only lifetime-extended.
+

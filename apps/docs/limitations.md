@@ -88,3 +88,52 @@ protocol level regardless — but it is a real UX gap, tracked as
 - **Dependency and secret scanning are manual and one-time, not
   scheduled.** See [Security](/security) for exactly what has been run
   and when.
+
+## Contract storage lifetime needs maintenance
+
+The current contract source never extends the lifetime of its instance
+storage (`Admin`, `Paused`, `NextSlaId`, `WatcherCount`, `WatcherRegistry`)
+and does not refresh a watcher's registration, an SLA's config or a bond
+balance when they are only read. On the live deployment this was found on
+2026-09-29 with the instances due to expire about 2026-10-05.
+
+- **Operational mitigation, done 2026-09-29:** the lifetime of both live
+  contract instances and both WASM code entries was extended by 3,000,000
+  ledgers (about 174 days) with `stellar contract extend`. Only lifetimes
+  changed; nothing was redeployed and the WASM hashes are the same. See
+  [Current Testnet deployment](/testnet-deployment).
+- **Not fixed at source level:** the source still does not extend instance
+  storage itself. A permanent fix needs a contract change and a redeployment,
+  which is subject to the open SDK and deployment decision (vault issue #3).
+  Until then the live lifetimes have to be extended by hand before about
+  ledger 7932489.
+- **Other entries are not covered by that extension:** on 2026-09-29 the
+  persistent entries read (an SLA, its bond balance, a settled round, a
+  registered watcher, a tally) were due to expire in about 28.5 days, and a
+  watcher's registration is only extended when it is written.
+
+## Smaller behaviors left as they are
+
+- **A repeat `cancel_sla` emits another `SlaCancelled` event.** The SLA
+  stays cancelled and no funds move, but a consumer that assumes exactly one
+  cancellation event per SLA would over-count. The hub's indexer does not
+  persist this event.
+- **`quorum_threshold` is not bounded by the number of registered
+  watchers.** A threshold above the watcher count can never be reached, so
+  such an SLA can never settle.
+- **A removed watcher's earlier votes still count** in the round tallies.
+- **The indexer may make one RPC read per settlement row** on the first
+  request over rows whose `quorum_threshold` is not cached yet, and any
+  failed read returns `500`.
+- **The watcher has no per-round submission deadline.** A submission that
+  stalls holds the loop; the next loop iteration skips a round it has
+  already voted in.
+- **The indexer API has no authentication**, and binds all interfaces.
+- **The watcher is not continuously hosted**; it ran for four rounds on
+  2026-09-29 for verification.
+- **The status page can trigger settlement for the current round only.**
+  An earlier round that reached quorum can still be settled by anyone with
+  another tool.
+- **CI action references are pinned by tag, not commit SHA**, and the CI
+  workflows do not declare a `permissions:` block (the repository default
+  for the workflow token is read-only).

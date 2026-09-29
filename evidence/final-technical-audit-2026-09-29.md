@@ -416,3 +416,77 @@ evidence records use internal phase names.
 - The negative-`limit` defect (fixed).
 
 Phase 30 classification and Phase 31 fixes are not started here.
+
+## Remediation, 2026-09-29 (after the audit above)
+
+The findings above are kept as written. This section records what was done
+about the actionable ones and how their classification changed. Three kinds of
+fix are kept apart: a **live operational mitigation** (state on the deployed
+contracts), a **source-level fix** (code in this repository), and a
+**redeployment-dependent fix** (needs a new contract build on-chain).
+
+### Live instance lifetime (section 11)
+
+Before, read at ledger 4932484 (2026-09-29T12:46Z): both instances, and both
+WASM code entries, were live until ledgers 5026542 to 5026618 (about 5.4 days).
+Four `stellar contract extend --ledgers-to-extend 3000000` transactions were
+sent from the admin identity (Stellar CLI 27.0.0, Testnet; no key exposed):
+`b8601edc…` (registry instance, ledger 4932489), `1e2b750d…` (vault instance,
+4932493), `9efdb520…` (vault code, 4932495), `a130b4f3…` (registry code,
+4932497), all `SUCCESS`. After: instances live until 7932489 and 7932493, code
+until 7932495 and 7932497 (about 173.6 days). The WASM SHA-256 of both
+contracts is unchanged; `get_watcher_count` reads `5`; `get_sla(0)` and
+`get_bond_balance(0)` (`46000000`) read as before. Full table:
+`apps/docs/testnet-deployment.md`. The previously UNVERIFIED WASM code-entry
+lifetime is now known (it matched the instance).
+
+| Finding | Classification now |
+|---|---|
+| Live instance and code lifetime near expiry | LIVE OPERATIONAL MITIGATION done (VERIFIED). Not a fix |
+| Source never extends instance storage | still DEFECT at source level; **REDEPLOYMENT-DEPENDENT**, BLOCKED with the SDK and deployment decision |
+| Persistent entries (`Sla`, `BondBalance`, `Watcher`, tallies) | not extended by this action; still due in about 28.5 days; KNOWN LIMITATION, documented |
+| Restore path | still UNVERIFIED (not needed for this mitigation) |
+
+### Partial payout (section 3.2)
+
+`test_trigger_settlement_pays_only_the_remaining_bond_when_it_is_below_the_penalty`
+(vault commit `304b948`): bond 800, penalty 500; the second settlement pays
+exactly the remaining 300 (beneficiary total 800, bond and vault balance 0,
+round settled, `SettlementPaid` payout 300), then a further breach gives
+`BondExhausted`. With `min()` replaced by an uncapped payout the new test and
+the older exhaustion test fail. The change is test-only; the built WASM hashes
+are unchanged. Classification: payout-capping implementation and partial-payout
+behavior, TESTED LOCALLY (as of this commit; the earlier records that said so
+before it existed were premature and are corrected by this note); live cap
+execution, UNVERIFIED.
+
+### Non-integer limit (section 5)
+
+`?limit=1.5` now returns HTTP 400
+`{"error":"invalid_limit","message":"limit must be an integer"}` before any SQL
+is prepared; the regression test fails on the previous `routes.ts`. Other
+inputs are unchanged. Live, against the local indexer on Testnet: no limit,
+`limit=1`, `limit=20` returned 200 with the real SLA 0 row; `limit=-5` and
+`limit=1.5` returned 400. (That run reused the scratch database from an earlier
+live run, so its `quorum_threshold` was already cached; the live quorum read
+itself was exercised earlier the same day.) Classification: source-level DEFECT
+fixed; the DEFECT status above is historical.
+
+### Left unchanged and now documented
+
+Repeat `cancel_sla` events, quorum above the watcher count, removed-watcher
+votes, per-row RPC quorum reads, no per-round watcher deadline, unauthenticated
+indexer, watcher not continuously hosted, current-round-only UI settlement, and
+CI tag pinning and missing `permissions:` are documented in
+`apps/docs/limitations.md` and the contract spec. Repeat `cancel_sla` remains a
+redeployment-dependent behavior. No contract behavior was changed.
+
+### Still carried forward
+
+UNVERIFIED: signed dashboard writes, narrow-viewport docs, dedicated secret
+scanning, a live wrongly-signed rejection, live below-quorum and
+unregistered-watcher rejections, live payout-cap execution, a second live
+settlement-pagination page, live daemon-to-indexer round read-back. BLOCKED:
+the live zero-balance withdrawal rejection, redeploying the soroban-sdk 28.0.0
+source, and a permanent source-level instance-lifetime fix.
+

@@ -70,6 +70,32 @@ documented limitation, not an interface mismatch.
 The full record is `evidence/parity-matrix-2026-09-29.md` in the hub
 repository, section 6.
 
+### Lifetime extension, 2026-09-29 (operational, not a redeployment)
+
+The current source never extends the lifetime of instance storage, and the
+live instances and code entries were due to expire about 2026-10-05
+(ledgers 5026542 to 5026618, read at ledger 4932484). On 2026-09-29 they were
+extended with `stellar contract extend --ledgers-to-extend 3000000`
+(Stellar CLI 27.0.0, Testnet, source account: the admin identity; no key was
+exposed). Only lifetimes changed.
+
+| Entry | Transaction | Ledger | Live until before | Live until after |
+|---|---|---|---|---|
+| `watcher_registry` instance | `b8601edc018bc487355fb086ea719369e4f543f951fc26da3e8777021bb8fec0` | 4932489 | 5026543 | 7932489 |
+| `sla_vault` instance | `1e2b750d8b84ff3f672f9ecca240eb78432f87abaa3f9b0dc1b56a381a5e07c8` | 4932493 | 5026618 | 7932493 |
+| `sla_vault` WASM code | `9efdb520759d278a990ba481b59e10bbee6a67c2017e9961f9af0bc848631281` | 4932495 | 5026617 | 7932495 |
+| `watcher_registry` WASM code | `a130b4f30b641a4cdae1e671c7f5d89b1ca7f04359b6f8a7561e1288d599fdff` | 4932497 | 5026542 | 7932497 |
+
+Afterwards the WASM SHA-256 of both contracts was unchanged (`4c626d2c…`,
+`69097132…`), `get_watcher_count` still read `5`, `get_sla(0)` and
+`get_bond_balance(0)` (`46000000`) still returned the same values. This
+does not change the source: the current source still has no instance
+lifetime extension, so the live lifetimes need maintenance (about
+174 days from 2026-09-29), and a permanent fix requires a contract build and
+redeployment. Persistent entries such as an SLA, its bond balance or a
+watcher's registration were not part of this extension and were due to
+expire in about 28.5 days. See [Limitations](/limitations).
+
 ### What the live build is missing compared to current source
 
 The current `slasettle-vault` source differs from what is deployed in

@@ -175,3 +175,9 @@ their TTL to `518_400` ledgers (roughly 30 days at Stellar's ~5-second
 ledger close time) once they come within `17_280` ledgers of expiry.
 This constant is a v1 default, not tuned against real storage-rent
 usage data — see [Limitations](/limitations).
+
+Instance storage (`Admin`, `Paused`, `NextSlaId`, `WatcherCount`,
+`WatcherRegistry`) is **not** extended by the contract code at all, and
+entries that are only read (a watcher's registration, an SLA's config) are
+not refreshed by the read. The live instances were extended by hand on
+2026-09-29 (see [Current Testnet deployment](/testnet-deployment)).
