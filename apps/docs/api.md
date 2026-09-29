@@ -11,7 +11,7 @@ CORS is controlled by `ALLOWED_ORIGINS` (see
 comma-separated allowlist, never a wildcard.
 
 Base URL is whatever `NEXT_PUBLIC_INDEXER_API_URL` is set to for a given
-environment; there is no publicly hosted instance (see
+environment; there is no publicly hosted indexer (see
 [Deployment topology](/deployment-topology)).
 
 ## `GET /v1/health`

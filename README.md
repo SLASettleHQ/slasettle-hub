@@ -1,5 +1,16 @@
 # slasettle-hub
 
+[![CI](https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-online-blue)](https://slasettle-docs.vercel.app)
+[![App](https://img.shields.io/badge/app-Testnet_(no_indexer)-orange)](https://slasettle-web.vercel.app)
+
+**Public links** (Stellar Testnet only)
+
+- App: https://slasettle-web.vercel.app (frontend only: the SLA configuration and bond are read live from Testnet, but there is no hosted indexer, so the round-status and settlement-history panels show an "indexer not configured" message)
+- Documentation: https://slasettle-docs.vercel.app
+- Contracts repository: https://github.com/SLASettleHQ/slasettle-vault
+- Testnet deployment and evidence: [`apps/docs/testnet-deployment.md`](./apps/docs/testnet-deployment.md), [`evidence/index.md`](./evidence/index.md)
+
 The watcher daemon, event indexer, TypeScript SDK, and frontend for
 SLASettle. The Soroban contracts (`watcher_registry` and `sla_vault`)
 live in the separate repository
@@ -25,8 +36,8 @@ contract-level detail is in `slasettle-vault`'s `SLASettle-contract-spec.md`.
 
 ```
 apps/web        Next.js frontend: landing page, wallet-gated dashboard,
-                 per-SLA status page (unauthenticated; no hosted
-                 instance exists)
+                 per-SLA status page (unauthenticated; a Testnet
+                 deployment without an indexer is linked above)
 packages/sdk     TypeScript bindings for the contracts and SEP-41 token
                  metadata; unsigned-transaction builders only, never
                  signs or holds a key

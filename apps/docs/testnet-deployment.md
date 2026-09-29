@@ -173,9 +173,9 @@ before running the watcher, indexer, or frontend against it.
 
 ## What is not deployed anywhere
 
-- No public frontend deployment. `apps/web` has not been deployed to
-  any hosting provider as part of this project; running it means
-  running it locally.
+- The frontend and this documentation are hosted on Vercel since 2026-09-29
+  (see [Deployment topology](/deployment-topology)); the frontend has no
+  indexer.
 - No public indexer deployment. The indexer's SQLite database and HTTP
   API exist only where you run them yourself.
 - No mainnet deployment of either contract.

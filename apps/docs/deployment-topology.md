@@ -23,12 +23,12 @@ Each component is in exactly one of four categories:
 | Watcher daemon | LOCALLY RUN, OPTIONAL. Run live on 2026-09-29; no continuous deployment |
 | Indexer | LOCALLY RUN, OPTIONAL |
 | SQLite database | LOCALLY RUN (a file next to the indexer) |
-| Frontend (`apps/web`) | LOCALLY RUN, OPTIONAL |
+| Frontend (`apps/web`) | CURRENTLY DEPLOYED on Vercel (2026-09-29), without an indexer; also LOCALLY RUN |
 | SDK (`packages/sdk`) | library; runs inside whatever imports it |
 | User's browser | runs the frontend's JavaScript |
 | Freighter | external browser extension |
-| Documentation site (`apps/docs`) | LOCALLY RUN and built by hand |
-| Public frontend, public indexer API, managed database, permanent watcher, deployment pipeline | NOT DEPLOYED |
+| Documentation site (`apps/docs`) | CURRENTLY DEPLOYED on Vercel (2026-09-29) |
+| Public indexer API, managed database, permanent watcher, automatic deployment pipeline | NOT DEPLOYED |
 
 ## What is deployed, and what has only been run
 
@@ -56,23 +56,37 @@ Each component is in exactly one of four categories:
 
 ## Not deployed anywhere
 
-- **No public frontend.** `apps/web` is not on Vercel, Netlify or any other
-  host. Using it means running `pnpm --filter @slasettle/web dev` (or
-  `build` and `start`) yourself.
 - **No public indexer.** The indexer's HTTP API and SQLite file exist only
   wherever you run `npm start`; there is no hosted instance and no stable
-  URL.
+  URL. It is a long-running Node process with a local SQLite file, so it
+  does not fit Vercel's serverless model, and no long-running host was
+  available.
 - **No managed database, load balancer, reverse proxy or secrets manager.**
 - **No permanent watcher service.**
-- **No documentation site hosting.** The site builds
-  (`pnpm --filter @slasettle/docs run build`); nothing serves it, and the
-  hub's CI does not build it.
-- **No automatic deployment pipeline.** Each repository has one workflow,
+- **No automatic deployment pipeline.** The two Vercel deployments below
+  were made by hand with the Vercel CLI on 2026-09-29; the Vercel projects are
+  not connected to the GitHub repositories, so a push does not redeploy. The
+  hub's CI does not build the documentation site. Each repository has one workflow,
   `ci.yml` (build, lint, typecheck and test only), plus GitHub's
-  Dependabot. Neither repository has Docker or hosting configuration. For
-  the hub, the GitHub API showed no Pages site, no deployments, no
-  environments, no releases and no homepage on 2026-09-29; the vault
-  returned no Pages site and no deployments, and the same two workflows.
+  Dependabot. For the hub, the GitHub API showed no Pages site, no
+  deployments, no environments, no releases and no homepage before the
+  2026-09-29 publishing pass; the vault returned no Pages site and no
+  deployments, and the same two workflows.
+
+### Hosted on Vercel (2026-09-29)
+
+| Surface | URL | Deployed from | Configuration |
+|---|---|---|---|
+| Documentation | https://slasettle-docs.vercel.app | the hub commit recorded in `evidence/final-technical-audit-2026-09-29-r3.md`, first deployed 2026-09-29T15:15Z and redeployed after the documentation changes | `apps/docs/vercel.json`; Vercel root directory `apps/docs` |
+| Frontend | https://slasettle-web.vercel.app | hub `9262026` plus `apps/web/vercel.json` (committed as `f787e55`), deployed 2026-09-29T15:26Z; no `apps/web` source changed since | `apps/web/vercel.json`; root directory `apps/web`; public build-time values for the Testnet RPC, passphrase and the two live contract IDs; `NEXT_PUBLIC_INDEXER_API_URL` deliberately unset |
+
+Both run on a personal Vercel account (`*.vercel.app` addresses, Hobby plan), not
+a project-owned domain. The frontend deployment was checked over HTTPS and in a
+browser: the landing page, dashboard and status page load, the network badge
+reads Testnet, the SLA configuration and bond balance are read live from
+Testnet, the four public values are inlined, no secret appears in the client
+bundle, and the two indexer-dependent panels show the "indexer not configured"
+message. Connecting Freighter on the hosted origin was not tested.
 
 ## The picture
 
@@ -226,7 +240,7 @@ SECRET; the per-variable tables are in
 
 ### Frontend (`apps/web`)
 
-- **Category:** LOCALLY RUN, OPTIONAL. No hosted instance.
+- **Category:** CURRENTLY DEPLOYED on Vercel without an indexer (see above); also run locally.
 - **Repository / root:** `slasettle-hub`, `apps/web` (Next.js 16.3.6, React
   19.3.0), in the root pnpm workspace with `packages/sdk`.
 - **Build:** `pnpm run build` from the root (builds the SDK, then web).
@@ -292,7 +306,7 @@ SECRET; the per-variable tables are in
 
 ### Documentation site (`apps/docs`)
 
-- **Category:** LOCALLY RUN and built by hand. Not hosted, not built in CI.
+- **Category:** CURRENTLY DEPLOYED on Vercel (see above). Not built in CI.
 - **Runtime:** VitePress 1.6.4. **Build:**
   `pnpm --filter @slasettle/docs run build`. **Start:**
   `pnpm --filter @slasettle/docs run dev` (or `preview` after a build).

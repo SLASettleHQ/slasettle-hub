@@ -13,10 +13,14 @@ an accurate description of the code below, not a verified click-through.
 See [Limitations](/limitations) for the exact boundary.
 
 There are two real pages: a provider dashboard (`/dashboard`) and a
-public per-SLA status page (`/status/[slaId]`). There is no publicly
-hosted deployment of either (see
-[Deployment topology](/deployment-topology)); using this means running
-`apps/web` yourself against a configured RPC, indexer, and contract set.
+public per-SLA status page (`/status/[slaId]`). Since 2026-09-29 the
+frontend is also hosted on Vercel at https://slasettle-web.vercel.app,
+configured for the Testnet contracts but **without an indexer**: the pages
+read contract state directly, while the round status and settlement history
+panels show an "indexer not configured" message. For the full experience run
+`apps/web` yourself against a configured RPC, indexer, and contract set (see
+[Deployment topology](/deployment-topology)). Signed writes from the hosted
+site have not been tested.
 
 ## Prerequisite: a connected wallet
 

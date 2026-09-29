@@ -78,8 +78,10 @@ protocol level regardless — but it is a real UX gap, tracked as
 
 ## Operational
 
-- **No public deployment of the frontend or the indexer exists.**
-  Running either means running it yourself; see
+- **The indexer has no public deployment.** The frontend is hosted on
+  Vercel (https://slasettle-web.vercel.app) without an indexer, so its
+  round-status and settlement-history panels cannot load there; the full
+  behavior needs a locally run indexer. See
   [Deployment topology](/deployment-topology).
 - **No independent third-party security audit has been performed** on
   either repository. See [Security](/security).
