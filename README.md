@@ -170,6 +170,13 @@ That defect has since been fixed, covered by a regression test, and
 re-verified live against the same real deployment; see the same evidence
 file's follow-up section for the fix record.
 
+## Evidence
+
+Every externally important claim about this project, with its source and
+current status, is indexed in [`evidence/index.md`](./evidence/index.md).
+The cross-repository consistency audit of 2026-09-29 is
+[`evidence/parity-matrix-2026-09-29.md`](./evidence/parity-matrix-2026-09-29.md).
+
 ## Security
 
 See [`SECURITY.md`](./SECURITY.md). No independent security audit has
