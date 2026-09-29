@@ -28,9 +28,10 @@ quorum threshold — that judgment belongs entirely to `sla_vault`.
 if the caller isn't currently registered, and `DuplicateCheck` on a
 second vote for the same `(sla_id, round_id, watcher)` — the vote is
 never overwritten, only rejected. `endpoint_hash` (`BytesN<32>`) is
-stored on the check record but not validated against anything in this
-contract; it exists so a dispute can later verify which endpoint a
-watcher actually checked.
+accepted but not stored and not emitted: the check record holds only the
+status, and `check_submitted` carries no hash. It is visible only as an
+argument of the submitting transaction, so a dispute could read it from
+transaction history, but the contract neither validates nor keeps it.
 
 **Known, disclosed limitation:** contract state is public, so a watcher
 who submits late in a round can see how earlier watchers voted before

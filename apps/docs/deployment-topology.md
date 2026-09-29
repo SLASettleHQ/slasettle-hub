@@ -50,7 +50,7 @@ Each component is in exactly one of four categories:
   used for evidence. "The daemon can submit live votes" is **VERIFIED**;
   "the daemon is deployed as a service" is **NOT DEPLOYED**.
 - **The indexer and frontend have been run locally against Testnet**, most
-  recently on 2026-09-29 (Phase 23's browser and Freighter check, and a
+  recently on 2026-09-29 (the browser and Freighter check, and a
   fresh indexer run recorded in `evidence/parity-matrix-2026-09-29.md`).
   Neither is hosted.
 
@@ -174,7 +174,8 @@ SECRET; the per-variable tables are in
 - **Network path:** process to the Testnet RPC over HTTPS; the RPC relays to
   the network.
 - **Public/private boundary:** the target URL it checks is hashed into
-  `endpoint_hash` on-chain, so the hash is public; the URL is not sent.
+  `endpoint_hash`, which travels as a transaction argument (public in
+  transaction history; the contract does not store it); the URL is not sent.
 - **Secret boundary:** `WATCHER_SECRET_KEY` lives in the process
   environment and is the only place in the hub where a secret key is held.
   It is read once, never logged, and `watcher/.env` is gitignored. Its

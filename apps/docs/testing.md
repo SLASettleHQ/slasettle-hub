@@ -37,7 +37,7 @@ entirely.
 - **Indexer** (`indexer`, Node's built-in `node --test`, real SQLite via
   `better-sqlite3` against a temp file, not mocked): event classification,
   the ordered `WatcherEvent` application logic (the real fix from this
-  project's Phase 11 investigation — a regression test named exactly
+  project's 2026-09-28 recovery investigation — a regression test named exactly
   `register, remove, and re-register the same watcher within a single
   batch applies in real chronological order, not grouped by event type`
   exists specifically to keep that bug from coming back), CORS allowlist

@@ -7,8 +7,9 @@ litigated after the fact. Two things make this weak:
 
 1. **The provider controls the evidence.** If the provider's own
    monitoring says uptime was fine, the customer has to prove otherwise.
-2. **The penalty is not automatic.** Even a clear breach requires the
-   provider to actually pay, on their own initiative or after a dispute.
+2. **The penalty depends on the provider paying.** Even a clear breach
+   requires the provider to actually pay, on their own initiative or after
+   a dispute.
 
 SLASettle's specific fix is narrow, not a general trust solution:
 
@@ -17,9 +18,9 @@ SLASettle's specific fix is narrow, not a general trust solution:
   already under the contract's control.
 - Uptime is checked by a set of watchers who are not the provider, and
   who each report independently.
-- Settlement (paying the penalty) happens automatically once a quorum of
-  those independent watchers agree the service was down for a given
-  round, without requiring the provider's, the beneficiary's, or an
+- Settlement (paying the penalty) can be triggered by anyone once a quorum
+  of those watchers has voted the service down for a given round (nothing
+  here triggers it automatically), without requiring the provider's, the beneficiary's, or an
   admin's permission at the moment of settlement.
 
 This does not solve every trust problem. The current implementation has

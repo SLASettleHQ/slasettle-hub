@@ -28,6 +28,12 @@
 >   `/v1/slas/:slaId/current-round`, `/v1/slas/:slaId/settlements` and
 >   `/v1/clock` have no route-level test (the settlements path has the
 >   `liveReads.test.ts` regression test) and were checked live instead.
+> - Section 7's SDK row claims `SorobanSimulationError` is tested in
+>   `packages/sdk/src/client.test.ts`; that suite covers configuration only,
+>   and the error was exercised live on 2026-09-29 instead.
+> - The contract docs of that period said `endpoint_hash` is stored on the
+>   check record. It is not: the contract discards it (see
+>   `evidence/claim-traceability-2026-09-29.md`, claim 20).
 > - Section 8 refers to `SLASettle-indexer-api-spec.md`, which has never
 >   existed in either repository; the API is documented in
 >   `apps/docs/api.md`.

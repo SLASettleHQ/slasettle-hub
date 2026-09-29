@@ -4,19 +4,22 @@
 
 SLASettle lets a service provider back an uptime promise with a real bond
 of tokens. Independent watchers check the service each round and vote on
-whether it was up or down. When enough watchers agree it was down, a
-fixed penalty is paid automatically out of the bond to a named
-beneficiary. Nobody needs to trust the provider's own uptime report, and
+whether it was up or down. When enough watchers have voted it down and
+anyone calls `trigger_settlement`, a fixed penalty is paid out of the bond
+to a named beneficiary. Nothing in this repository triggers that call
+automatically. Nobody needs to trust the provider's own uptime report, and
 nobody needs to trust a single watcher either, since settlement requires
-a quorum of independent votes.
+a quorum of votes. The watchers are independent of the provider by design; on
+the current Testnet deployment the five registered watcher addresses were set
+up by the project admin for evidence runs, not by independent operators.
 
 ## Who this is for
 
 - A service provider who wants to make an uptime guarantee credible by
   putting real funds behind it.
 - A beneficiary (a customer, a partner, an insurer) who wants an
-  automatic, on-chain payout when that guarantee is broken, without
-  relying on the provider's own word.
+  on-chain payout that anyone can trigger once that guarantee is voted
+  broken, without relying on the provider's own word.
 - A watcher who wants to independently verify a service's uptime and be
   part of the quorum that decides whether a breach happened.
 

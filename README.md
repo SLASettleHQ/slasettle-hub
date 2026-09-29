@@ -13,16 +13,20 @@ Testnet only, for now. Nothing here has been audited; see
 ## What SLASettle is
 
 A Stellar-based service backs its uptime promise with a real bond.
-Independent watchers report whether the service was up or down each
-round; when enough of them agree it was down, `sla_vault` pays a fixed
-penalty to the beneficiary out of the bond, permissionlessly. Full
+Watchers, independent of the provider by design, report whether the service
+was up or down each round; when enough of them have voted it down and anyone
+calls `trigger_settlement`, `sla_vault` pays a fixed penalty to the beneficiary
+out of the bond. Nothing in either repository calls it automatically, and on
+the current Testnet deployment the watcher addresses were registered by the
+project admin for evidence runs, not by independent operators. Full
 contract-level detail is in `slasettle-vault`'s `SLASettle-contract-spec.md`.
 
 ## Repository structure
 
 ```
 apps/web        Next.js frontend: landing page, wallet-gated dashboard,
-                 public per-SLA status page
+                 per-SLA status page (unauthenticated; no hosted
+                 instance exists)
 packages/sdk     TypeScript bindings for the contracts and SEP-41 token
                  metadata; unsigned-transaction builders only, never
                  signs or holds a key
@@ -176,6 +180,10 @@ Every externally important claim about this project, with its source and
 current status, is indexed in [`evidence/index.md`](./evidence/index.md).
 The cross-repository consistency audit of 2026-09-29 is
 [`evidence/parity-matrix-2026-09-29.md`](./evidence/parity-matrix-2026-09-29.md).
+Each high-value claim traced to code, test, live evidence and documentation is in
+[`evidence/claim-traceability-2026-09-29.md`](./evidence/claim-traceability-2026-09-29.md),
+and a review written from an outsider's viewpoint is in
+[`evidence/external-review-2026-09-29.md`](./evidence/external-review-2026-09-29.md).
 
 ## Security
 
@@ -195,7 +203,7 @@ Beyond the contract-level limitations documented in `slasettle-vault`
   passphrase into the signed payload, but a real UX gap.
 - Three of the vault's eight event kinds
   (`bond_topped_up`, `sla_cancelled`, `bond_withdrawn`) were unverified
-  against real on-chain events until Phase 10's live evidence pass
+  against real on-chain events until the 2026-09-27 live evidence pass
   confirmed all eight; see `slasettle-vault`'s evidence directory.
 - The indexer's watcher registration/removal ordering bug (fixed; see its
   own commit history and `slasettle-vault`'s
