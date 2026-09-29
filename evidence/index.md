@@ -84,7 +84,8 @@ live checks.
 | E2 Settlement is permissionless: an account that is not admin, provider or beneficiary triggered it | Testnet | same, caller `GAD7M6PM…` | 2026-09-29 | VERIFIED |
 | E3 `create_sla` rejects `quorum_threshold == 0` on the live contract | Testnet | `vault/evidence/testnet-2026-09-27.md` "Quorum-zero fix, live" (`#7`, gathered 2026-09-27) | 2026-09-29 | VERIFIED |
 | E4 Settlement below quorum is rejected | local test | `vault/contracts/sla_vault/src/test.rs` (`test_trigger_settlement_below_quorum_fails`) | 2026-09-29 | TESTED LOCALLY |
-| E5 Payout is capped at the remaining bond (`min(penalty, balance)`). The 2026-09-28 security review calls this verified live, but the one live settlement paid the full penalty from a larger balance, so the cap never ran on-chain | local test | `vault/contracts/sla_vault/src/test.rs` (`test_trigger_settlement_caps_payout_at_remaining_balance`); `matrix` §12 | 2026-09-29 | TESTED LOCALLY |
+| E5 The payout-capping implementation (`min(penalty, balance)`) is in source and its behavior is covered by a local test. The 2026-09-28 security review calls it verified live; that statement is superseded (see E7) | local test | `vault/contracts/sla_vault/src/test.rs` (`test_trigger_settlement_caps_payout_at_remaining_balance`); `vault/evidence/security-review-2026-09-28.md` (correction note); `matrix` §12, §14 | 2026-09-29 | TESTED LOCALLY |
+| E7 Payout capping has been executed live. It has not: the one live settlement paid the full penalty from a larger balance, and no live settlement has had a balance below the penalty | Testnet | `vault/evidence/testnet-2026-09-27.md` "Settlement" (bond `55000000` before, penalty `10000000`); `matrix` §14 | 2026-09-29 | UNVERIFIED |
 | E6 The real settlement is served by the indexer and shown on the status page | live Testnet test, browser | `hub/evidence/phase-23-verification-2026-09-29.md` "Follow-up: settlement-history defect fix" (gathered 2026-09-29); `matrix` §0.7 | 2026-09-29 | VERIFIED |
 
 ## F. Cancellation
@@ -157,8 +158,8 @@ live checks.
 | M2 CORS echoes an allowed origin and sends nothing to another | live Testnet test | `matrix` §10 "CORS" (gathered 2026-09-29); `hub/indexer/src/api/server.test.ts` | 2026-09-29 | VERIFIED |
 | M3 Restarting the indexer resumes from its checkpoint without duplicating rows | live Testnet test | `vault/evidence/recovery-2026-09-28.md` "Process restart / persistence" (gathered 2026-09-28) | 2026-09-29 | VERIFIED |
 | M4 Watcher registration and removal are applied in chronological order (bug fixed) | live Testnet test | `vault/evidence/recovery-2026-09-28.md` Finding B (gathered 2026-09-28); `matrix` §0.6 | 2026-09-29 | VERIFIED |
-| M5 Route-level unit tests exist for `/v1/health`, `/v1/watchers` and `/v1/providers/:address/slas` only; `current-round`, `settlements` and `clock` have none | local test | `hub/indexer/src/api/routes.test.ts`; `matrix` §10 | 2026-09-29 | KNOWN LIMITATION |
-| M6 A negative `limit` on `/v1/slas/:slaId/settlements` returns an empty page instead of a default or a `400` | live Testnet test | `matrix` §10 "Error behavior" (`?limit=-5`, gathered 2026-09-29). A real, low-severity defect, not fixed | 2026-09-29 | KNOWN LIMITATION |
+| M5 Route-level tests cover all six indexer routes: `/v1/health`, `/v1/watchers`, `/v1/providers/:address/slas` (earlier) and `/v1/clock`, `/v1/slas/:slaId/current-round`, `/v1/slas/:slaId/settlements` (added 2026-09-29) | local test | `hub/indexer/src/api/routes.test.ts`; `matrix` §14 | 2026-09-29 | TESTED LOCALLY |
+| M6 A negative `limit` on `/v1/slas/:slaId/settlements` is rejected with HTTP 400 `{"error":"invalid_limit",…}`; it previously returned an empty page. Fixed 2026-09-29 | live Testnet test, local test | `matrix` §14 (live `?limit=-5` gave 400; `limit` absent, 1 and 20 gave 200 with the real row); regression test in `routes.test.ts` | 2026-09-29 | VERIFIED |
 | M7 The API has no authentication and binds all interfaces | source | `hub/indexer/src/api/server.ts`, `src/index.ts`; `hub/apps/docs/deployment-topology.md` | 2026-09-29 | KNOWN LIMITATION |
 
 ## N. Settlement-history fix and re-verification
@@ -203,7 +204,7 @@ live checks.
 | Q3 Hub PR #8 (ESLint 9 to 10) is open and its CI run fails; it was not touched | CI | run `36507180532` on `449e285`; `gh pr list` | 2026-09-29 | VERIFIED |
 | Q4 `cargo fmt --check` fails and is informational in vault CI | CI | `vault/.github/workflows/ci.yml`; `matrix` §0.11 | 2026-09-29 | KNOWN LIMITATION |
 | Q5 The documentation site is not built in CI | source | `hub/.github/workflows/ci.yml` | 2026-09-29 | KNOWN LIMITATION |
-| Q6 Local tests: vault 46, SDK 29, web 50, indexer 36, watcher 48 pass; lint, typecheck, builds and docs build pass | local test | `matrix` §0.11 (2026-09-29) | 2026-09-29 | TESTED LOCALLY |
+| Q6 Local tests: vault 46, SDK 29, web 50, indexer 44 (36 before the 2026-09-29 remediation), watcher 48 pass; lint, typecheck, builds and docs build pass | local test | `matrix` §0.11 (2026-09-29) | 2026-09-29 | TESTED LOCALLY |
 
 ## R. Dependency maintenance
 
@@ -264,7 +265,7 @@ live checks.
 | Y1 The live contracts were built with soroban-sdk 27.0.6 and current `main` builds with 28.0.0 | Testnet, source | `matrix` §0.2 (WASM metadata); `vault/Cargo.toml` | 2026-09-29 | VERIFIED |
 | Y2 CI's `sla_vault.wasm` for `main` (`2f958b86…`) differs from the live one (`69097132…`) | CI | run `36486254192` log (2026-09-28); `matrix` §0.10 | 2026-09-29 | VERIFIED |
 | Y3 The public interface is unchanged by the bump, but the live build also lacks the zero-balance withdrawal rejection | Testnet, source | `matrix` §0.2, §1.3 | 2026-09-29 | VERIFIED |
-| Y4 The same source builds to different WASM hashes under different Rust versions (local 1.97.1 versus CI 1.98.1), so builds are not reproducible across toolchains | local test, CI | `matrix` §0.10, §0.11 | 2026-09-29 | KNOWN LIMITATION |
+| Y4 The same source builds to different WASM hashes under different Rust versions (local 1.97.1 versus CI 1.98.1), so byte-for-byte artifact reproducibility across toolchains is not established. This is separate from interface parity, which is VERIFIED (A4) | local test, CI | `matrix` §0.10, §0.11 | 2026-09-29 | KNOWN LIMITATION |
 | Y5 Redeploying and re-verifying against 28.0.0. Out of scope for this batch | none | `vault/README.md`; `hub/apps/docs/testnet-deployment.md` | 2026-09-29 | BLOCKED |
 
 ## Z. Known architectural limitations

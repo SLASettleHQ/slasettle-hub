@@ -294,13 +294,13 @@ Docs: `apps/docs/api.md`.
 |---|---|---|---|---|---|
 | `GET /v1/health` | n/a | Code: `{status:"ok", last_indexed_ledger: number \| null}`. Not called by the frontend. Docs: same. | MATCH | VERIFIED | 0.7 (`{"status":"ok","last_indexed_ledger":4929504}`); `routes.test.ts`. |
 | `GET /v1/watchers` | n/a | Code: `{data:[{address, registered_at}], next_cursor:null}`, currently registered only, no query params. Frontend `getWatchers` maps the same fields. | MATCH. Docs' example timestamps were in a different format from the real ones (`….000Z` versus the RPC's `…Z`); fixed. | VERIFIED | 0.7: 5 rows, keys `address`, `registered_at`, `next_cursor` `null`; `routes.test.ts`. |
-| `GET /v1/slas/:slaId/current-round` | n/a | Code: `{round_id: number, round_started_at, checked_in:[{watcher,status,checked_at}], not_yet_checked_in:[address]}`, no envelope. Frontend `getCurrentRound` maps the same fields and converts `round_id` to `bigint`. | MATCH | VERIFIED live, **no route-level unit test** (KNOWN LIMITATION) | 0.7 (`round_id` `29844518`, 0 checked in, 5 not yet). |
-| `GET /v1/slas/:slaId/settlements` | n/a | Code: query `limit` (default 20, cap 100) and `before` (opaque cursor); `{data:[{round_id, votes_up, votes_down, quorum_threshold, penalty_amount, beneficiary, tx_hash, ledger_close_time, explorer_url}], next_cursor}`. `votes_*` are aggregated from `checks`; `quorum_threshold` is filled lazily by a live `get_sla`. Frontend `getSettlements` maps the same nine fields and `BigInt`s `penalty_amount`. The path that returned HTTP 500 (`fetchQuorumThreshold`) is fixed. | MATCH | VERIFIED live (fixed path returned 200 with the real row); the regression test is TESTED LOCALLY; **no route-level unit test** | 0.7; Phase 23 follow-up; `liveReads.test.ts`. |
+| `GET /v1/slas/:slaId/current-round` | n/a | Code: `{round_id: number, round_started_at, checked_in:[{watcher,status,checked_at}], not_yet_checked_in:[address]}`, no envelope. Frontend `getCurrentRound` maps the same fields and converts `round_id` to `bigint`. | MATCH | VERIFIED live, route-level tests added in the remediation (§14) | 0.7 (`round_id` `29844518`, 0 checked in, 5 not yet). |
+| `GET /v1/slas/:slaId/settlements` | n/a | Code: query `limit` (default 20, cap 100) and `before` (opaque cursor); `{data:[{round_id, votes_up, votes_down, quorum_threshold, penalty_amount, beneficiary, tx_hash, ledger_close_time, explorer_url}], next_cursor}`. `votes_*` are aggregated from `checks`; `quorum_threshold` is filled lazily by a live `get_sla`. Frontend `getSettlements` maps the same nine fields and `BigInt`s `penalty_amount`. The path that returned HTTP 500 (`fetchQuorumThreshold`) is fixed. | MATCH | VERIFIED live (fixed path returned 200 with the real row); the regression test is TESTED LOCALLY; route-level tests added (§14); negative `limit` now `400` (§14) | 0.7; Phase 23 follow-up; `liveReads.test.ts`. |
 | `GET /v1/providers/:address/slas` | n/a | Code: `{data:[{sla_id: number, token, bond_amount_at_creation: string, beneficiary, created_at, tx_hash}], next_cursor:null}`, ordered `created_at DESC`. Frontend `getProviderSlas` maps the same six fields. | MATCH | VERIFIED | 0.7: 3 SLAs `[2,1,0]` for the admin address; `routes.test.ts`. |
-| `GET /v1/clock` | n/a | Code: `{ledger_sequence, ledger_close_time, current_round_id}`, no envelope. Frontend `getClock` maps the same three fields. | MATCH | VERIFIED live, **no route-level unit test** | 0.7 (`4929505`, `2026-09-29T08:38:32.000Z`, `29844518`). |
+| `GET /v1/clock` | n/a | Code: `{ledger_sequence, ledger_close_time, current_round_id}`, no envelope. Frontend `getClock` maps the same three fields. | MATCH | VERIFIED live, route-level tests added (§14) | 0.7 (`4929505`, `2026-09-29T08:38:32.000Z`, `29844518`). |
 | Envelope | n/a | `{data, next_cursor}` for `watchers`, `settlements`, `providers`; bare object for `health`, `current-round`, `clock`. Frontend types agree. | MATCH | VERIFIED | 0.7. |
 | Pagination | n/a | Only `settlements` paginates (cursor over `(ledger_close_time, event_id)`); `watchers` and `providers` always return `next_cursor: null`. | MATCH | TESTED LOCALLY (`pagination.test.ts` for the cursor codec); pagination through the route was not exercised (one settlement exists) | `pagination.ts`. |
-| Error behavior | n/a | Unhandled errors give `500 {"error":"internal_error"}`; no `400`/`404` for unknown or malformed ids; an unknown path gives Express's HTML `404`; a bad `before` is ignored; a negative `limit` gives an empty page. | NO. **Stale documentation** (none of this was documented), fixed. The negative-`limit` behavior is a *real defect* (low severity: empty page instead of a default or a `400`); **not fixed**, since fixing it is a code change outside a parity audit. | VERIFIED | 0.7: `?limit=-5` returned `{"data":[],"next_cursor":null}`; `/v1/nope` returned `404 text/html`; `/v1/slas/12345/settlements` and `/v1/slas/abc/current-round` returned `200`. |
+| Error behavior | n/a | Unhandled errors give `500 {"error":"internal_error"}`; no `400`/`404` for unknown or malformed ids; an unknown path gives Express's HTML `404`; a bad `before` is ignored; a negative `limit` gave an empty page (fixed, §14). | NO. **Stale documentation** (none of this was documented), fixed. The negative-`limit` behavior is a *real defect* (low severity: empty page instead of a default or a `400`); fixed in the remediation pass (§14). | VERIFIED | 0.7: `?limit=-5` returned `{"data":[],"next_cursor":null}`; `/v1/nope` returned `404 text/html`; `/v1/slas/12345/settlements` and `/v1/slas/abc/current-round` returned `200`. |
 | CORS | n/a | `cors({origin: ALLOWED_ORIGINS})`; an allowed origin is echoed, others get no header. | MATCH | VERIFIED | 0.7: `Origin: http://localhost:3000` got `Access-Control-Allow-Origin: http://localhost:3000`; `Origin: http://evil.example` got none. |
 | Timestamp formats | n/a | Stored event times (`registered_at`, `checked_at`, `created_at`, settlement `ledger_close_time`) are the RPC's `ledgerClosedAt` string without milliseconds; computed times (`round_started_at`, `/v1/clock`) are `toISOString()` with `.000Z`. | *Intentional difference*; now documented. | VERIFIED | 0.7. |
 | Missing spec file | n/a | Code comments, `indexer/README.md`, `apps/web/README.md`, `indexer/package.json` and `TEST-MATRIX.md` cited `SLASettle-indexer-api-spec.md`, which has never existed in either repository (`git log --diff-filter=A` finds nothing). | NO. **Stale documentation**, fixed by pointing at `apps/docs/api.md`. | VERIFIED | `git log --all --diff-filter=A -- '*indexer-api-spec*'` in both repositories. |
@@ -316,7 +316,7 @@ Docs: `apps/docs/api.md`.
 | Fixture `classify.test.ts`, three "not persisted" kinds | n/a | Used the obsolete shape (`data: { sla_id, amount }`, no topics; no `bondWithdrawn` case although the title named it). | *Stale fixture* (encoded an interface that was never real). Corrected to the live shapes and extended to all three; assertions unchanged in meaning. | TESTED LOCALLY (36/36) | Live shapes in 0.5. |
 | Fixture transaction hashes | Historical deployment evidence. | `classify.test.ts` and comments cite `258c86d2…`, `b1dc301a…` (the historical deployment). `apps/web/components/landing/product-preview.tsx` uses `EXAMPLE_*` addresses and a made-up hash, labeled "Example data — not a live SLA" on the page. `watcher-grid.test.tsx` uses `GBBBB…`/`GCCCC…`. | *Historical evidence* (the first two, kept), *intentional difference* (labeled example data, test placeholders). Nothing deleted. | LOGICALLY COVERED | Source. |
 | Fixture `liveReads.test.ts` | Current `sla_vault` ID. | Encodes the current live vault ID and a hand-built `get_sla` simulation result. | MATCH | TESTED LOCALLY, and reverted-and-failed once as recorded in Phase 23 | `liveReads.test.ts`; Phase 23 follow-up. |
-| Untested route handlers | n/a | `routes.test.ts` covers three of six routes. | *Known limitation*; recorded in `TEST-MATRIX.md`'s banner. | see section 10 | `indexer/src/api/routes.test.ts`. |
+| Untested route handlers | n/a | `routes.test.ts` covered three of six routes at the time of the audit; all six are covered after §14. | *Known limitation*; recorded in `TEST-MATRIX.md`'s banner. | see section 10 | `indexer/src/api/routes.test.ts`. |
 
 ## 12. Documentation
 
@@ -347,9 +347,9 @@ Files read directly for this section: vault `README.md`, `SECURITY.md`,
 ## 13. Findings summary
 
 ### Real defects
-- Indexer `GET /v1/slas/:slaId/settlements?limit=-5` returns an empty page
-  because a negative `limit` is not validated (`routes.ts`). Low severity, not
-  fixed here.
+- Indexer `GET /v1/slas/:slaId/settlements?limit=-5` returned an empty page
+  because a negative `limit` was not validated (`routes.ts`). Low severity.
+  **Fixed in the remediation pass, section 14.**
 
 ### Stale documentation (fixed in this batch)
 - Vault spec: three event shapes described as unconfirmed; no round
@@ -384,8 +384,8 @@ Files read directly for this section: vault `README.md`, `SECURITY.md`,
   28.0.0; WASM hash not reproducible across Rust versions; `round_id` is
   unvalidated on-chain; watcher and indexer round lengths must be kept equal by
   hand; indexer `explorer_url` is Testnet-only; unknown status maps to `up`;
-  `MAX_LEDGERS_PER_REQUEST` is an event limit; no route tests for three
-  endpoints; `decodeEvent` untested directly; local database files not covered
+  `MAX_LEDGERS_PER_REQUEST` is an event limit; (no route tests for three
+  endpoints: resolved, §14); `decodeEvent` untested directly; local database files not covered
   by `.gitignore`.
 
 ### Blocked or unverified
@@ -394,3 +394,17 @@ Files read directly for this section: vault `README.md`, `SECURITY.md`,
   read; the vault's zero-balance rejection live; pagination through the
   settlements route with more than one page; the daemon's own log line for
   round 29844195.
+
+## 14. Remediation update (2026-09-29, after the first Phase 24 commits)
+
+Everything above is the audit as it stood on `85e4f10`/`8449bd7`. This section
+records what the remediation pass changed; the rows above were only annotated,
+not rewritten.
+
+| Finding | Resolution | Status | Evidence |
+|---|---|---|---|
+| Negative `limit` on `GET /v1/slas/:slaId/settlements` | Rejected with HTTP `400` and `{"error":"invalid_limit","message":"limit must not be negative"}` before any SQL is prepared. Absent, empty, `0` and non-numeric still mean `20`; positive values pass; values above `100` are capped at `100`. No other pagination behavior changed. Documented in `apps/docs/api.md`. | TESTED LOCALLY, VERIFIED live | Regression test in `indexer/src/api/routes.test.ts` (fails on the previous `routes.ts`, passes now; it wraps `db.raw.prepare` and asserts no statement is prepared). Live: a local indexer against Testnet returned `400` with that body for `?limit=-5` and `200` with the real SLA 0 settlement row (`votes_down` 3, `quorum_threshold` 3, tx `6522d8b7…`) for no limit, `limit=1` and `limit=20`. The first attempt of that run returned `500` on all three valid requests because the indexer's RPC calls failed with transient `fetch failed` errors (visible in its log); the retry succeeded, and no `accountId is invalid` error occurred, so the earlier quorum-threshold fix did not regress. |
+| Missing route tests | Added deterministic tests, with a fake ledger and an in-memory database, for `/v1/clock` (sequence, close time, round, boundary floor), `/v1/slas/:slaId/current-round` (round, `round_started_at`, checked in versus not yet, removed watcher excluded, other round and other SLA excluded, exact field set) and `/v1/slas/:slaId/settlements` (vote aggregation, quorum, amount string, explorer URL, empty SLA, cursor pagination newest first, limit handling, the cap of 100). Indexer suite 36 to 44. | TESTED LOCALLY | `indexer/src/api/routes.test.ts`. |
+| Security review said payout capping was verified live | Classified as: implementation, source; behavior, TESTED LOCALLY (`test_trigger_settlement_caps_payout_at_remaining_balance`); live execution, UNVERIFIED (no live settlement has had a balance below the penalty). The dated review is unchanged apart from a correction note placed above its text; `evidence/index.md` carries the split rows. | UNVERIFIED (live) | `vault/evidence/security-review-2026-09-28.md` (note), `evidence/index.md` E5 and E7. |
+| WASM hash reproducibility | Not changed. Recorded as a toolchain observation: the same source built to `5a5ee41b…` locally (rustc 1.97.1) and `2f958b86…` in CI (rustc 1.98.1). This is byte-for-byte artifact parity, and it is separate from interface parity, which was verified (section 0.2). `apps/docs/testnet-deployment.md` now says so. | KNOWN LIMITATION | Sections 0.10, 0.11 and 6; `evidence/index.md` Y4. |
+| Live zero-balance withdrawal | Not changed and not redeployed. The live contract keeps the pre-fix behavior recorded on 2026-09-27; the rejection is TESTED LOCALLY. | BLOCKED | `evidence/index.md` G4. |
