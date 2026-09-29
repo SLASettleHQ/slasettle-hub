@@ -1,4 +1,4 @@
-import { Contract, rpc, scValToNative, nativeToScVal, TransactionBuilder, Account } from "@stellar/stellar-sdk";
+import { Contract, rpc, scValToNative, nativeToScVal, TransactionBuilder, Account, Keypair } from "@stellar/stellar-sdk";
 
 /**
  * A read-only, unsigned simulateTransaction call against sla_vault's
@@ -9,8 +9,14 @@ import { Contract, rpc, scValToNative, nativeToScVal, TransactionBuilder, Accoun
  *
  * A dummy source account is used purely because building any transaction,
  * even one that's only ever simulated, requires a source account in this
- * SDK version. Its sequence number is irrelevant — simulation doesn't
- * validate it the way actual submission would.
+ * SDK version. Its sequence number is irrelevant, and it never needs to
+ * exist on the ledger — simulateTransaction doesn't validate either the
+ * way actual submission would. It does, however, need to be a
+ * StrKey-valid G... address, or the SDK's own Account constructor rejects
+ * it before any network call happens. A freshly generated random keypair's
+ * public key is always valid and needs no real funds or secret material,
+ * matching the same throwaway-account pattern used for read-only
+ * simulation elsewhere in this project (packages/sdk/src/client.ts).
  */
 export async function fetchQuorumThreshold(params: {
   server: rpc.Server;
@@ -19,7 +25,7 @@ export async function fetchQuorumThreshold(params: {
   slaId: string;
 }): Promise<number> {
   const contract = new Contract(params.slaVaultContractId);
-  const dummySource = new Account("GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF", "0");
+  const dummySource = new Account(Keypair.random().publicKey(), "0");
 
   const slaIdArg = nativeToScVal(BigInt(params.slaId), { type: "u64" });
 
