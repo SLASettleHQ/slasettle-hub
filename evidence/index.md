@@ -148,7 +148,7 @@ live checks.
 |---|---|---|---|---|
 | L1 `/status/0`, served locally, shows live bond, quorum, round and five watchers without a wallet | browser | `hub/evidence/phase-23-verification-2026-09-29.md` Part B (gathered 2026-09-29) | 2026-09-29 | VERIFIED |
 | L2 The settlement-history panel shows the real settlement row after the fix | browser | same, "Follow-up" section (gathered 2026-09-29) | 2026-09-29 | VERIFIED |
-| L3 A publicly hosted status page exists. It does not: GitHub shows no Pages, deployments, environments or releases | absence check | `hub/apps/docs/deployment-topology.md`; GitHub API read, 2026-09-29 | 2026-09-29 | KNOWN LIMITATION |
+| L3 A publicly hosted status page exists: since 2026-09-29 the frontend is hosted at https://slasettle-web.vercel.app (Vercel, personal account, no indexer). `/status/0` loads over HTTPS and shows the SLA configuration and bond balance read live from Testnet; its round-status and settlement-history panels show "indexer not configured". Before 2026-09-29 none was hosted | browser | `hub/evidence/final-technical-audit-2026-09-29-r3.md` §2 (gathered 2026-09-29) | 2026-09-29 | VERIFIED |
 
 ## M. Indexer API
 
@@ -250,7 +250,7 @@ live checks.
 |---|---|---|---|---|
 | W1 14 pages, both themes, navigation and search were reviewed at desktop width in a real browser | browser | `hub/evidence/phase-23-verification-2026-09-29.md` Part A (gathered 2026-09-29) | 2026-09-29 | VERIFIED |
 | W2 The site builds with `pnpm --filter @slasettle/docs run build` | local test | `matrix` §0.11 (2026-09-29, and again after each docs change) | 2026-09-29 | TESTED LOCALLY |
-| W3 The site is hosted somewhere. It is not | absence check | `hub/apps/docs/deployment-topology.md`; GitHub shows no Pages | 2026-09-29 | KNOWN LIMITATION |
+| W3 The documentation site is hosted: https://slasettle-docs.vercel.app (Vercel, deployed 2026-09-29 from hub `8773628`); home, search, navigation and the contract and Testnet deployment pages verified. It is not built in CI. Before 2026-09-29 it was not hosted | browser | `hub/evidence/final-technical-audit-2026-09-29-r3.md` §2 | 2026-09-29 | VERIFIED |
 
 ## X. Mobile documentation review
 
@@ -278,7 +278,7 @@ live checks.
 | Z4 Indexer event history older than the RPC's retention (about seven days) cannot be recovered from RPC | source | `hub/indexer/src/ingest/poller.ts`; `hub/indexer/README.md` | 2026-09-29 | KNOWN LIMITATION |
 | Z5 The watcher and indexer round lengths must be configured equal by hand | source | `matrix` §9 | 2026-09-29 | KNOWN LIMITATION |
 | Z6 The indexer's `explorer_url` is hardcoded to Testnet | source | `hub/indexer/src/api/routes.ts`; `matrix` §5 | 2026-09-29 | KNOWN LIMITATION |
-| Z7 No public frontend, indexer, managed database, permanent watcher or deployment pipeline exists | absence check | `hub/apps/docs/deployment-topology.md`; GitHub API, 2026-09-29 | 2026-09-29 | KNOWN LIMITATION |
+| Z7 No public indexer, managed database, permanent watcher or automatic deployment pipeline exists; the frontend and documentation are hosted by hand on a personal Vercel account and are not Git-connected | absence check | `hub/apps/docs/deployment-topology.md`; `hub/evidence/final-technical-audit-2026-09-29-r3.md` | 2026-09-29 | KNOWN LIMITATION |
 | Z8 Neither repository has a license file | absence check | `git ls-files` in both repositories, 2026-09-29 | 2026-09-29 | KNOWN LIMITATION |
 | Z9 Testnet only; nothing is audited or production-ready | record | both `README.md` and `SECURITY.md` files | 2026-09-29 | KNOWN LIMITATION |
 
@@ -303,4 +303,6 @@ live checks.
 | AJ A missing or wrong signature is rejected by the contracts and `trigger_settlement` needs no signature or role from its caller. Before 2026-09-29 no test showed either: every contract test used `mock_all_auths()` | local test | `vault/contracts/sla_vault/src/test.rs` (`test_provider_methods_reject_a_missing_signature_and_change_nothing`, `test_a_signature_from_someone_else_does_not_authorize_the_provider`, `test_admin_methods_reject_a_missing_signature`, `test_trigger_settlement_needs_no_signature_and_no_role_from_its_caller`); `vault/contracts/watcher_registry/src/test.rs` (`test_admin_and_watcher_methods_reject_a_missing_signature`); vault `d79c52d` | 2026-09-29 | TESTED LOCALLY |
 | AK A live wrongly-signed or unsigned call was rejected on Testnet. None was recorded | none | `hub/evidence/findings-classification-2026-09-29.md` row 20 | 2026-09-29 | UNVERIFIED |
 | AL Every material finding of the final audit, the external review, the parity matrix, the ledger and the traceability record has exactly one A to E category: A 0, B 1, C 19, D 3, E 20 (two rows closed as historical) | record | `hub/evidence/findings-classification-2026-09-29.md` | 2026-09-29 | VERIFIED |
+| AM The hosted frontend connects to Freighter and can sign a dashboard write from its hosted origin. Not tested; the Freighter verification was on a local origin | none | `hub/evidence/final-technical-audit-2026-09-29-r3.md` §2 | 2026-09-29 | UNVERIFIED |
+| AN The current contracts resolve on the Testnet explorer with the recorded creator and WASM hashes (the repositories link to those contract pages) | live Testnet test | explorer API read, 2026-09-29; `hub/evidence/final-technical-audit-2026-09-29-r3.md` §2 | 2026-09-29 | VERIFIED |
 

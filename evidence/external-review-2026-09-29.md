@@ -316,3 +316,12 @@ docs, dedicated secret scanning, live rejections, live payout cap, second live
 pagination page) and BLOCKED (live zero-balance withdrawal rejection,
 soroban-sdk 28.0.0 redeploy). Landing-page hero text no longer needs a
 correction; item 6 of section 10 (extra tests) was not attempted.
+
+## 13. Follow-up after the publishing pass (2026-09-29)
+
+Questions 26 to 28 change: the indexer is still not publicly hosted; the docs
+site is now hosted at https://slasettle-docs.vercel.app; the frontend is hosted
+at https://slasettle-web.vercel.app without an indexer, so its round-status and
+settlement-history panels cannot load there. Question 7 (what is deployed) gains
+those two surfaces. Sections 2 and 7 above describe the state before this pass.
+

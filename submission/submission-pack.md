@@ -1,7 +1,7 @@
 # SLASettle Submission Pack
 
 Prepared 2026-09-29 from the repositories' evidence, source and GitHub state
-as they stood at hub `51f23ac` and vault `a27f5b1` (both `main`). Every number,
+as they stood at hub `8773628` and vault `caae637` (both `main`), updated after the 2026-09-29 publishing pass. Every number,
 hash and status below is taken from a record in the repositories or from a
 check made on 2026-09-29; the records are named in each section. The
 repositories are in **submission freeze**: this pack changes no source.
@@ -21,9 +21,15 @@ locations in the repositories, not hosted documentation URLs.
   penalty is paid from the bond to the SLA's beneficiary.
 - **Network:** Stellar Testnet only (`Test SDF Network ; September 2015`).
   Nothing is deployed to mainnet.
-- **Status:** a Testnet prototype. It is not production-deployed, not audited
-  by a third party, and has no hosted services. The two contracts are the only
-  deployed component.
+- **Status:** a Testnet prototype. It is not production-deployed and not
+  audited by a third party. The two contracts are deployed on Testnet; the
+  frontend and the documentation are hosted on Vercel (frontend without an
+  indexer); nothing else is hosted.
+- **Public URLs:** application https://slasettle-web.vercel.app (Testnet; SLA
+  data read live, but no hosted indexer, so the round-status and
+  settlement-history panels show "indexer not configured");
+  documentation https://slasettle-docs.vercel.app. Both are on a personal
+  Vercel account, deployed by hand on 2026-09-29 (`evidence/final-technical-audit-2026-09-29-r3.md`).
 
 ## 2. Repository URLs
 
@@ -44,8 +50,12 @@ The two repositories are complementary, not duplicates:
 ## 3. Current Testnet contracts
 
 Deployed 2026-09-27 (evidence: `vault:evidence/testnet-2026-09-27.md`).
-Explorer links are for transactions only; contract pages are not linked
-because no record in the repositories gives a verified contract-page URL.
+Transaction links use the explorer's transaction pages. Contract pages:
+[`watcher_registry`](https://stellar.expert/explorer/testnet/contract/CBKAQETJU3PLB54LJRSA7ZH2ZG4TBQHHDSWZ23R4VVTV7WBIX3QZBUZ6)
+and [`sla_vault`](https://stellar.expert/explorer/testnet/contract/CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL)
+(the explorer's API returned both, with creator `GBWM5N2S…` and the WASM hashes
+below, on 2026-09-29). Stellar Lab's contract explorer loads but takes a contract
+by input, so no Lab deep link is given.
 
 | Contract | Contract ID | Live WASM SHA-256 | Deployment tx (create) | Ledger, time (UTC) |
 |---|---|---|---|---|
@@ -180,8 +190,12 @@ watcher continuously.
   verified rendering the real settlement row. Record:
   `evidence/phase-23-verification-2026-09-29.md` Part B.
 - The mismatch indicator is a warning only; it does not block a transaction.
-- **Public hosted frontend: not currently publicly hosted.** No live application
-  URL exists.
+- **Public hosted frontend:** https://slasettle-web.vercel.app (Testnet
+  configuration; no indexer, so two panels show "indexer not configured").
+  Verified over HTTPS and in a browser on 2026-09-29: landing, dashboard and
+  status pages load, the network badge reads Testnet, the SLA configuration and
+  bond balance are read live, no secret is in the client bundle. Connecting
+  Freighter on this hosted origin was not tested.
 - **Signed dashboard writes** (create, top-up, cancel, withdraw) through the UI
   remain UNVERIFIED. **Narrow-viewport and mobile checks** remain UNVERIFIED.
 
@@ -195,8 +209,10 @@ watcher continuously.
 - A desktop visual review of the site (14 pages, light and dark themes,
   search, navigation) was performed on 2026-09-29.
 - Mobile and narrow-viewport review remains UNVERIFIED.
-- The site is **not publicly hosted** and is not built in CI. The repository
-  paths above are not a documentation URL.
+- The site is hosted at https://slasettle-docs.vercel.app (Vercel, deployed
+  2026-09-29 from hub `8773628`); home page, search, navigation and the contract
+  and Testnet deployment pages were verified. It is not built in CI and is
+  redeployed by hand.
 
 ## 9. API and SDK
 
@@ -260,9 +276,9 @@ Run 2026-09-29 (`evidence/final-technical-audit-2026-09-29-r2.md`):
 | vault `cargo fmt --check` | fails, 9 diffs (pre-existing drift; informational in CI) |
 | vault `cargo clippy` | 2 known warnings |
 
-CI on GitHub for the current heads: vault `a27f5b1` run `36576997735`, job
-`check, test, build`, success; hub `51f23ac` run `36579222261`, jobs
-`web and sdk`, `indexer`, `watcher`, success.
+CI on GitHub for the heads before this pack's own commit: vault `caae637` run
+`36591677083`, job `check, test, build`, success; hub `8773628` run
+`36591669274`, jobs `web and sdk`, `indexer`, `watcher`, success.
 
 What these counts do not show: most contract tests run under
 `mock_all_auths()` (a separate group checks signatures); the payout cap has a
@@ -276,7 +292,7 @@ sections 12 and 13.
 - `uptime_target_bps` is display-only.
 - One shared watcher set for every SLA; watchers are admin-registered.
 - No continuously hosted watcher; one daemon process serves one SLA.
-- No public hosted frontend, indexer or documentation site.
+- No hosted indexer; the hosted frontend and documentation are on a personal Vercel account, not Git-connected, deployed by hand.
 - The indexer API is unauthenticated and binds all interfaces.
 - A repeat `cancel_sla` succeeds and emits another `SlaCancelled` event; no
   funds move.
@@ -358,9 +374,10 @@ Demo verification pending Phase 33. No demo video or URL exists.
   (`check, test, build` for the vault; `web and sdk (build, lint, typecheck,
   test)`, `indexer (build, test)`, `watcher (build, vet, test)` for the hub),
   force pushes and deletions disabled, not enforced for administrators.
+- GitHub repository Website fields: hub = https://slasettle-web.vercel.app, vault = https://slasettle-docs.vercel.app; both READMEs carry a CI badge (the hub README also carries docs and app badges).
 - Dependabot is configured on both (cargo or npm and gomod, and
   github-actions, weekly).
-- Heads when this pack was prepared: hub `51f23ac`, vault `a27f5b1`; the pack's
+- Heads when this pack was prepared: hub `8773628`, vault `caae637`; the pack's
   own commit follows. Working trees are clean apart from untracked local files
   that are not committed (a local indexer database directory in the hub, local
   environment and test-snapshot files in the vault).
@@ -401,7 +418,7 @@ Demo verification pending Phase 33. No demo video or URL exists.
 | The frontend connects to Freighter and the status page works | `evidence/phase-23-verification-2026-09-29.md` Part B |
 | Current source differs from the deployed contracts as stated | `evidence/final-technical-audit-2026-09-29.md` section 2 |
 | Missing signatures are rejected (local) | vault tests, `evidence/index.md` row AJ |
-| Nothing is hosted, released or audited | GitHub API reads, 2026-09-29; `apps/docs/deployment-topology.md`; both `SECURITY.md` |
+| The indexer and watcher are not hosted, and nothing is released or audited | GitHub API reads, 2026-09-29; `apps/docs/deployment-topology.md`; both `SECURITY.md` |
 
 ## 21. Submission truth statement
 
@@ -418,8 +435,9 @@ pause behavior, all eight event shapes, four live daemon rounds, SDK reads,
 the indexer routes on live data, and Freighter connection with the public status
 page in a real browser.
 
-**Local-only:** the frontend, indexer, database, watcher and documentation site
-are run from source on a developer machine; no URL, release or demo exists.
+**Hosted:** the frontend (without an indexer) and the documentation on Vercel.
+**Local-only:** the indexer, database and watcher run from source on a developer
+machine; no release or demo exists.
 
 **Unverified:** section 13. **Blocked:** section 14. **Known limitations:**
 section 12. The current source and the live contracts differ as described in

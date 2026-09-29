@@ -317,3 +317,11 @@ in vault `304b948`, so the TESTED LOCALLY status now holds, and live execution
 stays UNVERIFIED. Claim 32 now also covers a fractional `limit` (HTTP 400).
 Claims 62 to 67 are unchanged: the live contracts were only lifetime-extended.
 
+### Follow-up (2026-09-29, publishing pass)
+
+Claims 68, 71 and 72 changed: the documentation site is hosted at
+https://slasettle-docs.vercel.app and the frontend at
+https://slasettle-web.vercel.app (without an indexer); the indexer is still not
+hosted (claim 72 holds for the indexer only). Claim 73 (watcher not continuously
+hosted) is unchanged. See `final-technical-audit-2026-09-29-r3.md`.
+
