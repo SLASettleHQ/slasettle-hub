@@ -41,13 +41,12 @@ a quorum of independent votes.
   moved to `soroban-sdk` 28.0.0. These are not the same build. See
   [Current Testnet deployment](/testnet-deployment) for the exact detail.
   This mismatch is real and has not been resolved as of this writing.
-- **Browser and Freighter wallet verification of the frontend has not
-  been performed** in any environment this project has been built in so
-  far. See [Limitations](/limitations).
-- **The watcher daemon has been tested locally against a mocked RPC
-  transport, but has not been run as a live process against Testnet
-  RPC.** The real votes referenced throughout this documentation were
-  submitted directly via the Stellar CLI, not by running the daemon.
+- **Browser and Freighter wallet verification of the frontend, and a
+  live watcher-daemon run against real Testnet RPC, were both performed
+  on 2026-09-29** using a disposable watcher account and the live,
+  verified deployment. See [Limitations](/limitations) for what this
+  covered and what a real, previously-undocumented indexer defect it
+  surfaced along the way.
 
 None of the above is hidden elsewhere in this documentation; each page
 restates the relevant caveat where it's relevant, rather than assuming

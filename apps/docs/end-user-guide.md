@@ -1,10 +1,16 @@
 # End-user guide
 
-This describes what the frontend's source (`apps/web`) implements. **No
-browser/Freighter walkthrough of these flows has been performed in this
-project as of this writing** — see [Limitations](/limitations). Treat
-this page as an accurate description of the code, not a verified
-click-through.
+This describes what the frontend's source (`apps/web`) implements. A
+real browser/Freighter verification was performed on 2026-09-29 (see
+`evidence/phase-23-verification-2026-09-29.md` in the hub repository):
+it confirmed the wallet connect/disconnect/reconnect flow, correct
+address and network display, the network-mismatch indicator, and the
+public status page loading real live data without a wallet — all with a
+genuine Freighter extension against the live Testnet deployment. It did
+**not** exercise the dashboard's write forms (create/top-up/cancel/
+withdraw an SLA) through the UI with a signed transaction; those remain
+an accurate description of the code below, not a verified click-through.
+See [Limitations](/limitations) for the exact boundary.
 
 There are two real pages: a provider dashboard (`/dashboard`) and a
 public per-SLA status page (`/status/[slaId]`). There is no publicly

@@ -155,11 +155,13 @@ frontend point at the deployed contract IDs regardless of which SDK
 version built them; that gap is a `slasettle-vault` concern, not this
 repository's.
 
-A live, end-to-end watcher daemon run against real Testnet RPC (as
-opposed to the direct CLI invocations used to gather the evidence above)
-has not happened yet. Browser/Freighter verification of the frontend has
-not happened yet either; the environments used to build this project so
-far have not had a connected browser with the Freighter extension.
+A live, end-to-end watcher daemon run against real Testnet RPC, and a
+real browser/Freighter verification of the frontend, were both performed
+on 2026-09-29 using a disposable Testnet watcher account and the live,
+verified deployment above. See
+`evidence/phase-23-verification-2026-09-29.md` for the full record,
+including transaction hashes and the one real defect it surfaced (a 500
+error in the indexer's settlement-history endpoint, not yet fixed).
 
 ## Security
 

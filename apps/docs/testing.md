@@ -45,9 +45,13 @@ entirely.
   local database.
 - **Watcher** (`watcher`, Go's standard `testing` package): config
   loading, round-number computation, health-check HTTP logic, and the
-  contract-client wrapper — all against a mocked RPC transport, never a
-  live Testnet connection. See [Limitations](/limitations) for exactly
-  what "never run live" means here.
+  contract-client wrapper — all against a mocked RPC transport, not a
+  live Testnet connection. Separately from this unit-test suite, the
+  daemon itself was run live against real Testnet RPC and the real
+  contract on 2026-09-29, across four consecutive rounds — see
+  [Limitations](/limitations) and
+  `evidence/phase-23-verification-2026-09-29.md` in the hub repository
+  for that distinct verification.
 
 ## What none of this tests
 

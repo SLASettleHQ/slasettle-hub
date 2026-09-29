@@ -36,20 +36,33 @@ and this has not been resolved: the current source has not been rebuilt
 and redeployed against 28.0.0. This documentation states this
 everywhere it's relevant rather than hiding it in one place.
 
-## Verification gaps — not run, not "failed"
+## Verification gaps — closed, partially closed, and still open
 
-- **No browser/Freighter walkthrough of the frontend has been
-  performed** in any environment this project has been built in so far.
-  [End-user guide](/end-user-guide) describes the code accurately; it is
-  not a verified click-through.
-- **The watcher daemon has never been run as a live process against
-  Testnet RPC.** It has unit tests against a mocked RPC transport. Every
-  real vote referenced in this project's evidence was submitted directly
-  via the Stellar CLI, not by running `go run ./cmd/watcher`.
-- **No visual/rendered review of this documentation site itself** has
-  been performed — no browser automation tooling was available while
-  writing it. Its build/typecheck status is reported in
-  [Testing](/testing) instead; that is a build check, not a visual one.
+- **A real browser/Freighter connection test, and a real watcher-daemon
+  run against live Testnet RPC and the live contract, were both
+  performed on 2026-09-29**, using a disposable watcher account and the
+  live, verified deployment. The frontend check covered wallet
+  connect/disconnect/reconnect, correct address and network display, the
+  network-mismatch indicator, and the public status page working without
+  a wallet — it did **not** cover the dashboard's write forms
+  (create/top-up/cancel/withdraw) through a real signed transaction. See
+  `evidence/phase-23-verification-2026-09-29.md` in the hub repository
+  for the full record and [End-user guide](/end-user-guide) for the
+  exact boundary.
+- **This verification pass surfaced one new, real, undocumented
+  defect**: the indexer's `GET /v1/slas/:slaId/settlements` endpoint
+  returns a 500 error whenever a settlement row's cached
+  `quorum_threshold` is `null`, because of an invalid hardcoded dummy
+  account string in `indexer/src/rpc/liveReads.ts`. Not fixed as part of
+  this verification pass; see the evidence file above.
+- **Mobile/narrow-viewport visual review of this documentation site was
+  not completed.** The desktop visual review (14 pages, both themes,
+  search, navigation) was performed directly in a real connected
+  browser on 2026-09-29, but the browser-automation tool available in
+  that session could not actually resize its window to a narrow
+  viewport (the resize call reported success without any measurable
+  effect), and no other reliable way to force one was available. See
+  the evidence file above for the exact detail.
 
 ## Frontend: a real, disclosed UX gap
 

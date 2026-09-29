@@ -27,11 +27,17 @@ against a mocked RPC transport covering simulation failure, transport
 failure, poll timeout, transient-not-found-then-success, and
 rejected-before-inclusion.
 
-This is tested locally against the real SDK's types and a mocked RPC
-transport, not verified against a live Testnet RPC endpoint or a real
-deployed contract. No transaction built by this package has actually been
-submitted and confirmed on-chain as of this writing. That is a distinct,
-separate verification step from what this section describes.
+That paragraph describes local unit-test coverage only, against a mocked
+RPC transport. Separately, on 2026-09-29, this daemon was built and run
+as a real process against live Testnet RPC and the live, verified
+`watcher_registry` contract, using a disposable watcher account. Across
+four consecutive real rounds it correctly checked a real HTTP endpoint,
+built, signed, and submitted a real `submit_check` transaction each
+round, and each submission was independently confirmed on-chain via
+`get_round_tally` and `has_watcher_voted`. See
+`../evidence/phase-23-verification-2026-09-29.md` in the hub repository
+for the full record, including real transaction hashes and ledger
+numbers.
 
 ## Building
 
@@ -67,15 +73,11 @@ go run ./cmd/watcher
 
 ## Known limitations, stated plainly
 
-1. **The contract-calling half has not been verified against a live
-   Testnet RPC endpoint or a real deployed contract**, as above. Tested
-   locally against the real SDK types and a mocked RPC transport is not
-   the same claim.
-2. **Same last-mover vote-copying limitation as the contract itself** — see
+1. **Same last-mover vote-copying limitation as the contract itself** — see
    `SLASettle-contract-spec.md`. This daemon doesn't and can't fix that; it
    would need a commit-reveal protocol change on the contract side.
-3. **One process per SLA.** Watching multiple SLAs means running multiple
+2. **One process per SLA.** Watching multiple SLAs means running multiple
    copies with different `SLA_ID` values.
-4. **No retry/backoff on submission failure** — a failed round is logged
+3. **No retry/backoff on submission failure** — a failed round is logged
    and skipped, retried next round. Fine for a demo; a production watcher
    would want a bounded retry with backoff within the round window.

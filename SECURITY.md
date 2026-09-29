@@ -123,15 +123,34 @@ repository as of this date.
 ## Known limitations
 
 - Frontend network-mismatch detection is visual only, no hard submit
-  block (see above).
-- The watcher daemon has not yet been run end-to-end against live
-  Testnet RPC as a running process; the real votes recorded in
-  `slasettle-vault`'s evidence were submitted directly via the Stellar
-  CLI, not by `go run ./cmd/watcher`.
-- Browser/Freighter verification of the frontend has not happened yet in
-  any environment used to build this project so far.
+  block; this was directly exercised on 2026-09-29 and confirmed to
+  behave exactly as documented (see
+  `evidence/phase-23-verification-2026-09-29.md`).
+- The indexer's `GET /v1/slas/:slaId/settlements` endpoint returns a 500
+  error whenever a settlement row's cached `quorum_threshold` is `null`,
+  due to an invalid hardcoded dummy account string in
+  `src/rpc/liveReads.ts`'s `fetchQuorumThreshold` (fails
+  `@stellar/stellar-sdk`'s StrKey checksum validation). Discovered
+  2026-09-29 during frontend verification; not yet fixed. See
+  `evidence/phase-23-verification-2026-09-29.md`.
 - No CI-level dependency or secret scanner runs on a schedule; the checks
   described above were manual and one-time.
+
+## Resolved since the original review
+
+- The watcher daemon's contract-calling half was tested only against a
+  mocked RPC transport as of the original review above. It has since
+  been run live against real Testnet RPC and the live, verified
+  `watcher_registry` contract, across four consecutive real rounds, with
+  a disposable watcher account and a clean graceful shutdown. See
+  `evidence/phase-23-verification-2026-09-29.md`.
+- Browser/Freighter verification of the frontend had not happened as of
+  the original review above. It has since been performed against a real
+  Freighter extension and the live, verified Testnet deployment,
+  covering connect, disconnect, reconnect, correct address display,
+  correct network identification, the network-mismatch indicator, and
+  public read-only pages working without a wallet. See
+  `evidence/phase-23-verification-2026-09-29.md`.
 
 ## Supported versions
 
