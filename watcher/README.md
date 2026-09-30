@@ -10,11 +10,11 @@ and submits its vote.
 
 An earlier version of this section reported `internal/contract` as
 hand-written and unverified, because the sandbox it was written in only
-had Go 1.22 available and go-stellar-sdk v0.7.2 requires Go 1.25. That
-constraint no longer holds: Go 1.25.1 is available directly in the current
-environment (confirmed with `go version`, no toolchain auto-download
-needed), and the whole module now builds, vets, and tests cleanly against
-the real `go-stellar-sdk` v0.7.2 types.
+had Go 1.22 available and go-stellar-sdk requires Go 1.25. That
+constraint no longer holds: the whole module builds, vets, and tests
+cleanly against the real `go-stellar-sdk` v0.7.3 types (checked with Go
+1.25.1 and with Go 1.25.14 on 2026-09-30). `go.mod` declares `go 1.25` as
+the minimum and a `toolchain go1.25.14` line.
 
 `go build ./...` and `go vet ./...` succeed with no errors. `go test ./...`
 passes 48/48: 19 in `internal/config`, `internal/round`, and

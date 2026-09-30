@@ -1,13 +1,13 @@
 module github.com/SLASettleHQ/slasettle-hub/watcher
 
-// go-stellar-sdk v0.7.2 itself requires go >= 1.25, confirmed directly from
-// its own go.mod error, not assumed. An environment with only Go 1.22
-// available previously could not build this module and had no reachable
-// path to a newer toolchain. That is no longer the case: Go 1.25.1 is
-// available directly (no toolchain auto-download needed), and go build,
-// go vet, and go test all succeed for this module, including
-// internal/contract. See README for the current, real test status.
+// go-stellar-sdk v0.7.3 declares go 1.25 in its own go.mod, so 1.25 is the
+// minimum here. The toolchain line makes a local go command use the patched
+// 1.25.14 release (downloading it if needed) instead of an older 1.25.x with
+// known standard library vulnerabilities; CI's setup-go already resolves the
+// latest 1.25.x. See the README for the current test status.
 go 1.25
+
+toolchain go1.25.14
 
 require github.com/stellar/go-stellar-sdk v0.7.3
 

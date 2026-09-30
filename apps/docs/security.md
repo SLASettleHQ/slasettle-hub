@@ -32,7 +32,9 @@ public issue — and ask for a private channel to share the rest.
 - **`govulncheck`** (`watcher`): findings only in the Go standard
   library, already fixed in later Go 1.25.x patch releases; none in
   `go-stellar-sdk` or any other third-party dependency actually called
-  by this code.
+  by this code. Re-run 2026-09-30: with Go 1.25.14 none affect this code
+  (one advisory in an indirect module that is not called); with the local
+  Go 1.25.1 the same 25 standard library findings remain.
 - **Manual secret scanning**: a `git grep` across the complete reachable
   git history of both repositories, for Stellar secret-key patterns, PEM
   private-key blocks, and generic API-key assignment patterns, found

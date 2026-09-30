@@ -175,7 +175,7 @@ SECRET; the per-variable tables are in
   2026-09-29; nothing runs it continuously.
 - **Repository / root:** `slasettle-hub`, `watcher/` (a separate Go
   module).
-- **Runtime:** Go 1.25 (`go.mod`; 1.25.1 verified). One process per
+- **Runtime:** Go 1.25 (`go.mod`, toolchain 1.25.14; verified with 1.25.1 and 1.25.14). One process per
   `SLA_ID`.
 - **Build:** `go build ./cmd/watcher`. **Start:**
   `go run ./cmd/watcher`, or the built binary, with the variables exported.

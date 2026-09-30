@@ -54,7 +54,12 @@ none in `go-stellar-sdk` or any other third-party dependency actually
 called by this code; all are already fixed in later Go 1.25.x patch
 releases. CI (`actions/setup-go@v7` with `go-version: "1.25"`) picks up
 whatever 1.25.x is current on GitHub's runners, which is likely ahead of
-whatever patch version a given local machine has installed.
+whatever patch version a given local machine has installed. Re-run on
+2026-09-30: with the local Go 1.25.1 `govulncheck` still reports the same 25
+standard library findings; with Go 1.25.14 (now requested by the `toolchain`
+line in `watcher/go.mod`) it reports none affecting this code, and one
+advisory in an indirect module (`github.com/klauspost/compress`, s2 out of
+bounds read) that this code does not call.
 
 ## Indexer security boundary
 

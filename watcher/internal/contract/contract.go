@@ -2,8 +2,9 @@
 // whether this watcher has already voted in the current round, and builds,
 // signs, and submits the submit_check transaction when it hasn't.
 //
-// Verified against the real, installed github.com/stellar/go-stellar-sdk
-// v0.7.2 source (go.mod's GOMODCACHE), not just its docs or general Soroban
+// Written against the real, installed github.com/stellar/go-stellar-sdk
+// source (first v0.7.2, now v0.7.3; go build, go vet and the tests pass on
+// v0.7.3), not just its docs or general Soroban
 // tooling conventions. In particular:
 //   - xdr.ScVec is a plain []xdr.ScVal — there is no NewScVec constructor.
 //   - Addresses are built via xdr.AddressToAccountId (G... accounts) or by
@@ -170,7 +171,7 @@ func (c *Client) SubmitCheck(ctx context.Context, slaID, roundID uint64, endpoin
 // The helpers below (getSourceAccount, simulateReadOnly, simulateAndPrepare,
 // submitAndPoll, buildInvokeContractHostFunction, and the mustXxx ScVal
 // builders) implement the simulate -> prepare -> sign -> submit -> poll
-// shape against the real v0.7.2 API surface (see the file-level comment).
+// shape against the real go-stellar-sdk API surface (see the file-level comment).
 
 func (c *Client) getSourceAccount(ctx context.Context) (txnbuild.Account, error) {
 	return c.rpc.LoadAccount(ctx, c.watcherKeypair.Address())
