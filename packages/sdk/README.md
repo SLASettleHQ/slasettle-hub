@@ -120,6 +120,11 @@ pnpm run typecheck
 
 ## Versions
 
-Node 24 LTS, TypeScript 5.9 (the native TS7 compiler isn't yet what
-Next.js's own scaffold targets, so this project stays on the 5.x line until
-that changes), `@stellar/stellar-sdk` 17.x.
+Node 24 LTS, TypeScript 5.9, `@stellar/stellar-sdk` 17.x.
+
+The SDK and the web app stay on TypeScript 5.9 on purpose. Tried on
+2026-09-30 with TypeScript 7.0.2: `typescript-eslint` (used by
+`eslint-config-next`) refuses to run ("does not support TS 7.0"; its peer
+range is `>=4.8.4 <6.1.0`), and the SDK build fails with TS5011 because 7.0
+no longer infers `rootDir`. The indexer, which is built with `tsc` alone and
+has no ESLint step, uses 7.0.2.
