@@ -66,7 +66,7 @@ Toolchain, pinned and verified against what actually builds and tests
 this repository:
 
 - Node 24.21.0 (`.nvmrc`)
-- pnpm 12.4.2 (`packageManager` field)
+- pnpm 12.8.1 (`packageManager` field)
 - Go 1.25 (`watcher/go.mod`'s declared minimum; 1.25.1 was what was
   actually verified locally, current CI runners use whatever 1.25.x is
   current, which also picks up Go's own stdlib security patches)

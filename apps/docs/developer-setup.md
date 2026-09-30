@@ -34,7 +34,7 @@ cd slasettle-hub
 pnpm install        # sets up apps/web and packages/sdk only
 ```
 
-Toolchain, pinned and verified: Node 24.21.0 (`.nvmrc`), pnpm 12.4.2
+Toolchain, pinned and verified: Node 24.21.0 (`.nvmrc`), pnpm 12.8.1
 (`packageManager` field), Go 1.25 (`watcher/go.mod`'s declared minimum;
 1.25.1 verified locally).
 

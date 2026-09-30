@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node 24.21.0 (see `.nvmrc`)
-- pnpm 12.4.2 (see the root `package.json`'s `packageManager` field;
+- pnpm 12.8.1 (see the root `package.json`'s `packageManager` field;
   `pnpm/action-setup@v6` pins this exact version in CI too)
 - Go 1.25 or newer, for `watcher/`
 - A running `indexer` and deployed contracts if you're working on

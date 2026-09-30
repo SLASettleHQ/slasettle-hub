@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=24.0.0"
   },
-  "packageManager": "pnpm@12.4.2",
+  "packageManager": "pnpm@12.8.1",
   "scripts": {
     "dev": "pnpm --filter @slasettle/sdk build && pnpm --filter @slasettle/web dev",
     "build": "pnpm --filter @slasettle/sdk build && pnpm --filter @slasettle/web build",
