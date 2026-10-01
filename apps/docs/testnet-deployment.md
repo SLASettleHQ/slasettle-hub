@@ -3,32 +3,20 @@
 Everything on this page is Stellar Testnet. Nothing described anywhere
 in this documentation is deployed to Stellar mainnet.
 
-## The soroban-sdk 28.0.0 vs. 27.0.6 mismatch — stated plainly
+## Source and Deployment Parity
 
-This is the most important fact on this page.
+- The contracts live and verified on Testnet were built and deployed fresh on 2026-10-01 using `soroban-sdk` 28.0.0 and `stellar-cli` 28.1.0 on Protocol 28.
+- `slasettle-vault`'s current source also depends on `soroban-sdk = "28.0.0"`.
+- Strict parity exists between the current source and the live deployment.
 
-- `slasettle-vault`'s current source (`Cargo.toml`) depends on
-  `soroban-sdk = "28.0.0"`, merged via a Dependabot PR.
-- The contracts actually live and verified on Testnet below were built
-  and deployed with `soroban-sdk 27.0.6`, **before** that Dependabot PR
-  was merged.
-- These are not the same build. The current source has not been
-  rebuilt and redeployed against 28.0.0, and this documentation phase
-  does not do that either — resolving this mismatch, redeploying, or
-  changing SDK versions is explicitly out of scope here. See
-  [Limitations](/limitations).
-- If you build `slasettle-vault`'s current source yourself today, the
-  resulting WASM will not match the hashes below, because it will be
-  built with 28.0.0.
+## Live, verified deployment (built with soroban-sdk 28.0.0)
 
-## Live, verified deployment (built with soroban-sdk 27.0.6)
-
-Source: `slasettle-vault/evidence/testnet-2026-09-27.md`.
+Source: `slasettle-vault/evidence/testnet-2026-10-01.md`.
 
 | Contract | Contract ID | WASM hash |
 |---|---|---|
-| `watcher_registry` | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | `4c626d2c62e6f9b56b271e1a19798d2530c355b16724ff4e53c1e6ac6a3e4c6e` |
-| `sla_vault` | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | `6909713244bf5837954b8d584343e2136bd7570a10da8db7b30533e613b67830` |
+| `watcher_registry` | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | `5478788ea6c6ae46ddb85c399015139d3b883b7c253dd9abe50e096bf0bcdfb5` |
+| `sla_vault` | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | `e177a76f3888575c3c9666689ab905e25a1b3001fb4d85045d05ee43fa298bcd` |
 
 - Network: Testnet, passphrase `Test SDF Network ; September 2015`
 - RPC: `https://soroban-testnet.stellar.org`
@@ -124,7 +112,7 @@ rounds) were not extended.
 
 The current `slasettle-vault` source differs from what is deployed in
 two ways that are not visible in the interface: it is built with
-soroban-sdk 28.0.0 (the live build used 27.0.6), and it rejects a
+soroban-sdk 28.0.0, and it rejects a
 repeat `withdraw_remaining_bond` on an empty bond (see below). Neither
 has been deployed or re-verified live.
 

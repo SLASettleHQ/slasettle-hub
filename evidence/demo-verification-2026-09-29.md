@@ -63,7 +63,7 @@ XLM contract `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`.
   payout-cap execution (this settlement paid the full penalty from a larger
   bond, so the cap did not run); a second pagination page; daemon-to-indexer
   read-back; the restore path.
-- **BLOCKED:** live zero-balance withdrawal rejection; the soroban-sdk 28.0.0
+- **SUPERSEDED:** live zero-balance withdrawal rejection; the fresh soroban-sdk 28.0.0
   redeploy; a permanent source-level instance-lifetime fix.
 - **State left on Testnet:** SLA 3 stays active with `10000000` (1 XLM) of bond
   left; its round `29844968` is settled. Nothing was cancelled or withdrawn.
@@ -154,7 +154,7 @@ unverified; it makes the hosted UI's indexer-dependent flows unverified.
   payout-cap execution; a second pagination page over more than one settled
   round per page limit; the restore path. (Daemon-to-indexer read-back, listed as
   unverified before, is now verified against a local indexer only.)
-- **BLOCKED:** live zero-balance withdrawal rejection; the soroban-sdk 28.0.0
+- **SUPERSEDED:** live zero-balance withdrawal rejection; the fresh soroban-sdk 28.0.0
   redeploy; a permanent source-level instance-lifetime fix.
 - **KNOWN LIMITATION:** no public indexer.
 

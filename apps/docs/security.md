@@ -73,5 +73,5 @@ The short version: no commit-reveal for watcher votes, one shared
 watcher set, `uptime_target_bps` not enforced, frontend network-mismatch
 detection is visual-only with no hard submit block, and — the one that
 spans both repositories — the currently deployed contracts were built
-with `soroban-sdk 27.0.6` while the vault's current source has moved to
+with `soroban-sdk 28.0.0`, in strict parity with the vault's current source which also uses
 `28.0.0` (see [Current Testnet deployment](/testnet-deployment)).

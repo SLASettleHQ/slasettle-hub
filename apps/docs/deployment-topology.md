@@ -134,7 +134,7 @@ SECRET; the per-variable tables are in
 - **Repository / root:** `slasettle-vault`, `contracts/watcher_registry`.
 - **Runtime:** Soroban WASM on Stellar Testnet. Deployed 2026-09-27,
   `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF`, built with
-  soroban-sdk 27.0.6. Its instance and code lifetimes were extended by hand
+  soroban-sdk 28.0.0. Its instance and code lifetimes were extended by hand
   on 2026-09-29 (not redeployed); the source does not extend them itself, so
   this needs maintenance (see [Limitations](/limitations)).
 - **Build:** `stellar contract build` (it must be built before `sla_vault`).

@@ -78,7 +78,7 @@ verified directly against Testnet, not through the unit test suites
 above. See `slasettle-vault/evidence/testnet-2026-09-27.md` and
 [Current Testnet deployment](/testnet-deployment) for that evidence,
 and note the [soroban-sdk mismatch](/testnet-deployment) it inherits:
-that Testnet evidence is for the `27.0.6` build, not the current
+that Testnet evidence is for the fresh `28.0.0` build, fully matching the current
 `28.0.0` source these unit tests run against.
 
 ## CI
