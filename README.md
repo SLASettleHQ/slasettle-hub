@@ -158,8 +158,8 @@ branch-protection API on 2026-09-29), so an administrator can push to
 The contracts this repository's services point at, as of 2026-09-27:
 
 ```text
-watcher_registry: CBKAQETJU3PLB54LJRSA7ZH2ZG4TBQHHDSWZ23R4VVTV7WBIX3QZBUZ6
-sla_vault:        CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL
+watcher_registry: CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF
+sla_vault:        CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN
 ```
 
 Full live evidence (real SLA creation, real watcher votes, a real

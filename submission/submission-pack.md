@@ -51,16 +51,16 @@ The two repositories are complementary, not duplicates:
 
 Deployed 2026-09-27 (evidence: `vault:evidence/testnet-2026-09-27.md`).
 Transaction links use the explorer's transaction pages. Contract pages:
-[`watcher_registry`](https://stellar.expert/explorer/testnet/contract/CBKAQETJU3PLB54LJRSA7ZH2ZG4TBQHHDSWZ23R4VVTV7WBIX3QZBUZ6)
-and [`sla_vault`](https://stellar.expert/explorer/testnet/contract/CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL)
+[`watcher_registry`](https://stellar.expert/explorer/testnet/contract/CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF)
+and [`sla_vault`](https://stellar.expert/explorer/testnet/contract/CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN)
 (the explorer's API returned both, with creator `GBWM5N2S…` and the WASM hashes
 below, on 2026-09-29). Stellar Lab's contract explorer loads but takes a contract
 by input, so no Lab deep link is given.
 
 | Contract | Contract ID | Live WASM SHA-256 | Deployment tx (create) | Ledger, time (UTC) |
 |---|---|---|---|---|
-| `watcher_registry` | `CBKAQETJU3PLB54LJRSA7ZH2ZG4TBQHHDSWZ23R4VVTV7WBIX3QZBUZ6` | `4c626d2c62e6f9b56b271e1a19798d2530c355b16724ff4e53c1e6ac6a3e4c6e` | [`da13eca3…`](https://stellar.expert/explorer/testnet/tx/da13eca35efa337ae17b570e207f7f2bad8f4dbe32299472907a151d7f0ac395) | 4905584, 2026-09-27T23:25:07Z |
-| `sla_vault` | `CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL` | `6909713244bf5837954b8d584343e2136bd7570a10da8db7b30533e613b67830` | [`cc3494a1…`](https://stellar.expert/explorer/testnet/tx/cc3494a158bee2fd6f08bd9676b4070dd900075b5fd58814d2d171c395fd1167) | 4905659, 2026-09-27T23:31:22Z |
+| `watcher_registry` | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | `4c626d2c62e6f9b56b271e1a19798d2530c355b16724ff4e53c1e6ac6a3e4c6e` | [`da13eca3…`](https://stellar.expert/explorer/testnet/tx/da13eca35efa337ae17b570e207f7f2bad8f4dbe32299472907a151d7f0ac395) | 4905584, 2026-09-27T23:25:07Z |
+| `sla_vault` | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | `6909713244bf5837954b8d584343e2136bd7570a10da8db7b30533e613b67830` | [`cc3494a1…`](https://stellar.expert/explorer/testnet/tx/cc3494a158bee2fd6f08bd9676b4070dd900075b5fd58814d2d171c395fd1167) | 4905659, 2026-09-27T23:31:22Z |
 
 - WASM upload transactions: registry
   [`07e0a6a3…`](https://stellar.expert/explorer/testnet/tx/07e0a6a32f0fd2d412f26254192cac7cad52ea7d67763a3f6bfacf2a3e8f44b7),

@@ -68,7 +68,7 @@ test("fetchQuorumThreshold builds a valid throwaway source account and decodes a
   const threshold = await fetchQuorumThreshold({
     server,
     networkPassphrase: "Test SDF Network ; September 2015",
-    slaVaultContractId: "CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL",
+    slaVaultContractId: "CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN",
     slaId: "0",
   });
 
