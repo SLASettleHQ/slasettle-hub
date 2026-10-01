@@ -538,3 +538,20 @@ behavior is unchanged. Category and rationale for every finding:
 - PR #8 (ESLint 10 update) remains CLOSED.
 
 **Evidence:** The local reproduction on 2026-10-01 confirmed the stack trace originating from `eslint-plugin-react/lib/util/version.js` within ESLint 10's linter execution path.
+
+## 22. Gate 4 Indexer Package Manager Consistency
+
+**Verification performed:**
+- Audited repository structure, CI workflows, and documentation.
+- Executed `npm ci`, `npm run build`, and `npm test` in the `indexer` directory on 2026-10-01.
+
+**Reasoning:**
+- The `indexer` project is intentionally excluded from the root `pnpm-workspace.yaml`.
+- It maintains its own `package-lock.json` and uses `npm` specifically.
+- `README.md`, `CONTRIBUTING.md`, and `.github/workflows/ci.yml` all explicitly document and rely on this separate `npm` setup.
+- The `npm ci`, `build`, and `test` commands passed successfully (45/45 tests passing).
+- The setup is not stale or contradictory; it is an intentional architectural boundary.
+
+**Decision:**
+- Retain the separate `npm` setup and `package-lock.json` for the indexer.
+- No changes required.
