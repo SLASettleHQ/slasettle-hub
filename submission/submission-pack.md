@@ -86,24 +86,10 @@ by input, so no Lab deep link is given.
 
 Stated directly:
 
-- The live contracts were **built with soroban-sdk 27.0.6** (and rustc 1.97.1,
-  read from the live WASM metadata). Current vault source uses
-  **soroban-sdk 28.0.0**.
-- **Public interface parity was verified**: a spec diff of the live WASM against
-  a build of current source shows the same functions, arguments, return types,
-  errors and events (the only difference is a private storage-key type that the
-  28.0.0 build omits from the spec).
-- **Byte-for-byte artifact parity was not established.** Current source builds
-  different WASM hashes (local `sla_vault` `10c53424…`, `watcher_registry`
-  `73a3fbaa…`; CI, on a newer Rust, builds `sla_vault` `951f28b5…` at commit
-  `8d9c517`). The hash also changes with comment-only edits, because doc
-  comments are embedded in the contract spec.
-- **The live contract does not include the later zero-balance withdrawal
-  rejection** (vault commit `99be8a1`, 2026-09-28, after the deployment). On the
-  live contract a repeat withdrawal on an emptied bond succeeds as a no-op and
-  emits a `bond_withdrawn` event with `amount: 0` (tx
-  [`0dbbb2e8…`](https://stellar.expert/explorer/testnet/tx/0dbbb2e82da901912ec1cc55e2d05e33cee3ff73e9b74301ec9a7632ba328deb)).
-  Current source rejects it with `InvalidAmount`; that is tested locally only.
+- The live contracts were **built and deployed with soroban-sdk 28.0.0** and **stellar-cli 28.1.0** on 2026-10-01. Current vault source also uses **soroban-sdk 28.0.0**.
+- **Strict source and deployment parity is established**. The 2026-10-01 deployment completely eliminates the historical mismatch between the SDK 27.0.6 live deployment and the SDK 28.0.0 source.
+- Live verified features now include the zero-balance withdrawal rejection, matching the current source behavior.
+
 - The `quorum_threshold == 0` rejection **is** live (it predates the
   deployment; rejected live with error `#7`).
 - The live contracts' on-chain spec still contains stale comments about

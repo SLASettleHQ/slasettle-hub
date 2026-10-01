@@ -38,11 +38,13 @@ live checks.
 
 | Claim | Evidence type | Source | Date checked | Status |
 |---|---|---|---|---|
-| A1 The current `watcher_registry` (`CBKAQETJ…`) and `sla_vault` (`CD4FSW2E…`) are deployed on Stellar Testnet | Testnet | `vault/evidence/testnet-2026-09-27.md` "watcher_registry deployment", "sla_vault deployment" (gathered 2026-09-27) | 2026-09-29 | VERIFIED |
+| A1 The historical `watcher_registry` (`CBKAQETJ…`) and `sla_vault` (`CD4FSW2E…`) are deployed on Stellar Testnet | Testnet | `vault/evidence/testnet-2026-09-27.md` "watcher_registry deployment", "sla_vault deployment" (gathered 2026-09-27) | 2026-09-29 | VERIFIED |
+| A1.b The current `watcher_registry` (`CDRNXUPC…`) and `sla_vault` (`CDBFPYHJ…`) are deployed on Stellar Testnet | Testnet | `vault/evidence/testnet-2026-10-01.md` | 2026-10-01 | VERIFIED |
 | A2 The on-chain WASM of both contracts still hashes to `4c626d2c…` and `69097132…` | Testnet | `matrix` §0.1, `stellar contract fetch` then `sha256sum` (gathered 2026-09-29) | 2026-09-29 | VERIFIED |
 | A3 The deployed interface matched the source built on 2026-09-27 | Testnet | `vault/evidence/testnet-2026-09-27.md`, `stellar contract info interface` (gathered 2026-09-27) | 2026-09-29 | VERIFIED |
 | A4 The live interface equals a build of current `main` apart from the private `DataKey` spec entry | Testnet, local test | `matrix` §0.2 (gathered 2026-09-29) | 2026-09-29 | VERIFIED |
-| A5 The live WASMs were built with soroban-sdk 27.0.6 and rustc 1.97.1 | Testnet | `matrix` §0.2, `stellar contract info meta` on the fetched WASM (gathered 2026-09-29) | 2026-09-29 | VERIFIED |
+| A5 The historical WASMs were built with soroban-sdk 27.0.6 and rustc 1.97.1 | Testnet | `matrix` §0.2, `stellar contract info meta` on the fetched WASM (gathered 2026-09-29) | 2026-09-29 | VERIFIED |
+| A5.b The current live WASMs were built with soroban-sdk 28.0.0 and stellar-cli 28.1.0 on Protocol 28 | Testnet | `vault/evidence/testnet-2026-10-01.md` | 2026-10-01 | VERIFIED |
 | A6 An earlier pair (`CBEZ3XBI…`, `CBA4DFNU…`) was deployed before the quorum fix and used for earlier evidence | Testnet | `vault/evidence/testnet-2026-09-27.md` "Historical deployment"; `hub/TEST-MATRIX.md` §5 (gathered before 2026-09-27) | 2026-09-29 | VERIFIED |
 | A7 That earlier pair is still live today | none | not re-checked; nothing in this repository depends on it | 2026-09-29 | UNVERIFIED |
 | A8 Nothing is deployed to Stellar mainnet | absence check | `matrix` §5 (`git grep` for mainnet, futurenet and public-network references in both repositories) | 2026-09-29 | LOGICALLY COVERED |
@@ -103,7 +105,8 @@ live checks.
 | G1 `withdraw_remaining_bond` after cancellation returned the full 20 XLM bond | Testnet | `vault/evidence/testnet-2026-09-27.md` "SLA 1" (tx `f2d1be37…`, gathered 2026-09-27) | 2026-09-29 | VERIFIED |
 | G2 On the live contract a repeat withdrawal on an empty bond succeeds as a no-op and emits `amount: 0` | Testnet | same (tx `0dbbb2e8…`); event re-read in `matrix` §0.5 (2026-09-29) | 2026-09-29 | VERIFIED |
 | G3 Current source rejects a zero-balance withdrawal with `InvalidAmount` (commit `99be8a1`, 2026-09-28) | local test | `vault/evidence/recovery-2026-09-28.md` Finding A; `test_withdraw_remaining_bond_twice_fails_second_time` | 2026-09-29 | TESTED LOCALLY |
-| G4 That rejection on the live contract. It needs a redeploy, which this batch does not do | none | `vault/evidence/recovery-2026-09-28.md`: "not re-verified live"; `matrix` §1.2 | 2026-09-29 | BLOCKED |
+| G4 That rejection on the live contract. It needs a redeploy, which this batch does not do | none | `vault/evidence/recovery-2026-09-28.md`: "not re-verified live"; `matrix` §1.2 | 2026-09-29 | SUPERSEDED |
+| G4.b The zero-balance withdrawal rejection is verified live on the current SDK 28.0.0 deployment | Testnet | `vault/evidence/testnet-2026-10-01.md` | 2026-10-01 | VERIFIED |
 
 ## H. Duplicate prevention
 
@@ -262,11 +265,12 @@ live checks.
 
 | Claim | Evidence type | Source | Date checked | Status |
 |---|---|---|---|---|
-| Y1 The live contracts were built with soroban-sdk 27.0.6 and current `main` builds with 28.0.0 | Testnet, source | `matrix` §0.2 (WASM metadata); `vault/Cargo.toml` | 2026-09-29 | VERIFIED |
+| Y1 The historical contracts were built with soroban-sdk 27.0.6 and current `main` builds with 28.0.0 | Testnet, source | `matrix` §0.2 (WASM metadata); `vault/Cargo.toml` | 2026-09-29 | VERIFIED |
+| Y1.b The current live contracts and current `main` source are in strict parity, both building with soroban-sdk 28.0.0 | Testnet, source | `vault/evidence/testnet-2026-10-01.md` | 2026-10-01 | VERIFIED |
 | Y2 CI's `sla_vault.wasm` for `main` (`2f958b86…`) differs from the live one (`69097132…`) | CI | run `36486254192` log (2026-09-28); `matrix` §0.10 | 2026-09-29 | VERIFIED |
 | Y3 The public interface is unchanged by the bump, but the live build also lacks the zero-balance withdrawal rejection | Testnet, source | `matrix` §0.2, §1.3 | 2026-09-29 | VERIFIED |
 | Y4 The same source builds to different WASM hashes under different Rust versions (local 1.97.1 versus CI 1.98.1), so byte-for-byte artifact reproducibility across toolchains is not established. This is separate from interface parity, which is VERIFIED (A4) | local test, CI | `matrix` §0.10, §0.11 | 2026-09-29 | KNOWN LIMITATION |
-| Y5 Redeploying and re-verifying against 28.0.0. Out of scope for this batch | none | `vault/README.md`; `hub/apps/docs/testnet-deployment.md` | 2026-09-29 | BLOCKED |
+| Y5 Redeploying and re-verifying against 28.0.0. Out of scope for this batch | none | `vault/README.md`; `hub/apps/docs/testnet-deployment.md` | 2026-09-29 | SUPERSEDED |
 
 ## Z. Known architectural limitations
 
@@ -297,7 +301,7 @@ live checks.
 | Claim | Evidence type | Source | Date checked | Status |
 |---|---|---|---|---|
 | AF The live contract instances and WASM code entries, due to expire about 2026-10-05, were extended by 3,000,000 ledgers; WASM hashes and live state are unchanged. This is an operational mitigation, not a redeployment or a source fix | Testnet | `hub/apps/docs/testnet-deployment.md` "Lifetime extension" (txs `b8601edc…`, `1e2b750d…`, `9efdb520…`, `a130b4f3…`, gathered 2026-09-29); `hub/evidence/final-technical-audit-2026-09-29.md` remediation | 2026-09-29 | VERIFIED |
-| AG The current contract source extends instance storage itself. It does not; a permanent fix needs a contract build and redeployment | source | `vault/contracts/*/src/lib.rs` (no `instance().extend_ttl`); vault issue #3 | 2026-09-29 | BLOCKED |
+| AG The current contract source extends instance storage itself. It does not; a permanent fix needs a contract build and redeployment | source | `vault/contracts/*/src/lib.rs` (no `instance().extend_ttl`); vault issue #3 | 2026-09-29 | KNOWN LIMITATION |
 | AH The live persistent entries the workflow needs (5 watcher registrations, SLAs 0 to 2 and their bond balances, settled round 0/1) were extended by 3,000,000 ledgers on 2026-09-29 (12 transactions, no state changed). Vote-history entries were not, and the contract still extends a persistent entry only when it writes it | Testnet | `hub/apps/docs/testnet-deployment.md` "Persistent entries, same day" (txs `78f0ec30…` to `e6e0661a…`, ledgers 4932956 to 4932981); `hub/evidence/findings-classification-2026-09-29.md` §4 | 2026-09-29 | VERIFIED |
 | AI A repeat `cancel_sla` emits another `SlaCancelled` event and moves no funds | source | `hub/apps/docs/limitations.md`; `vault/SLASettle-contract-spec.md` | 2026-09-29 | KNOWN LIMITATION |
 | AJ A missing or wrong signature is rejected by the contracts and `trigger_settlement` needs no signature or role from its caller. Before 2026-09-29 no test showed either: every contract test used `mock_all_auths()` | local test | `vault/contracts/sla_vault/src/test.rs` (`test_provider_methods_reject_a_missing_signature_and_change_nothing`, `test_a_signature_from_someone_else_does_not_authorize_the_provider`, `test_admin_methods_reject_a_missing_signature`, `test_trigger_settlement_needs_no_signature_and_no_role_from_its_caller`); `vault/contracts/watcher_registry/src/test.rs` (`test_admin_and_watcher_methods_reject_a_missing_signature`); vault `d79c52d` | 2026-09-29 | TESTED LOCALLY |

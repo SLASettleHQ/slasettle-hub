@@ -66,7 +66,7 @@ Toolchain, pinned and verified against what actually builds and tests
 this repository:
 
 - Node 24.21.0 (`.nvmrc`)
-- pnpm 12.8.1 (`packageManager` field)
+- pnpm 12.8.2 (`packageManager` field)
 - Go 1.25 (`watcher/go.mod`'s declared minimum; its `toolchain` line asks for
   1.25.14, and CI runners use whatever 1.25.x is current, which also picks up
   Go's own stdlib security patches)
@@ -155,7 +155,7 @@ branch-protection API on 2026-09-29), so an administrator can push to
 
 ## Current Testnet status
 
-The contracts this repository's services point at, as of 2026-09-27:
+The contracts this repository's services point at, as of 2026-10-01:
 
 ```text
 watcher_registry: CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF
@@ -164,14 +164,9 @@ sla_vault:        CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN
 
 Full live evidence (real SLA creation, real watcher votes, a real
 settlement, cancellation, withdrawal) is in `slasettle-vault`'s
-`evidence/testnet-2026-09-27.md`. That evidence was gathered against
-`sla_vault` built with `soroban-sdk` 27.0.6; `slasettle-vault`'s `main`
-has since moved to `soroban-sdk` 28.0.0, so the currently deployed
-contracts no longer match what that repository's current source builds.
-See its README for the exact detail. This repository's indexer and
-frontend point at the deployed contract IDs regardless of which SDK
-version built them; that gap is a `slasettle-vault` concern, not this
-repository's.
+`evidence/testnet-2026-10-01.md`. That evidence confirms strict parity
+with the current Protocol 28 deployment built with `soroban-sdk` 28.0.0.
+See the vault README for exact details.
 
 A live, end-to-end watcher daemon run against real Testnet RPC, and a
 real browser/Freighter verification of the frontend, were both performed
