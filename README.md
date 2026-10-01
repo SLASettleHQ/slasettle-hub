@@ -177,14 +177,14 @@ See the vault README for exact details.
 
 A live, end-to-end watcher daemon run against real Testnet RPC, and a
 real browser/Freighter verification of the frontend, were both performed
-on 2026-09-29 using a disposable Testnet watcher account and the live,
-verified deployment above. See
+on 2026-09-29 using the then-current Testnet deployment and a disposable
+Testnet watcher account. See
 [`evidence/phase-23-verification-2026-09-29.md`](./evidence/phase-23-verification-2026-09-29.md) for the full record,
 including transaction hashes and one real defect it surfaced along the
 way: a 500 error in the indexer's settlement-history endpoint, caused by
 an invalid hardcoded dummy account in `indexer/src/rpc/liveReads.ts`.
 That defect has since been fixed, covered by a regression test, and
-re-verified live against the same real deployment; see the same evidence
+re-verified live against that same historical deployment; see the same evidence
 file's follow-up section for the fix record.
 
 ## Evidence
