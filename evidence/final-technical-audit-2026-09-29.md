@@ -521,3 +521,20 @@ behavior is unchanged. Category and rationale for every finding:
 - No TypeScript dependency changes are required for Gate 2.
 
 **Evidence:** The build, typecheck, and test results above were executed during Gate 2 verification.
+## 21. Gate 3 ESLint PR #8 Investigation
+
+**Verification performed:**
+- Reproduced the ESLint 10.11.0 installation locally via `pnpm add -D eslint@10.11.0 --filter @slasettle/web`.
+- `pnpm run lint` successfully loaded `eslint.config.mjs` but crashed during file linting with: `TypeError: Error while loading rule 'react/display-name': contextOrFilename.getFilename is not a function`.
+- `npm view eslint-plugin-react peerDependencies` confirms it only supports ESLint up to `^9.7`.
+
+**Compatibility reasoning:**
+- The crash is caused by an API incompatibility: `eslint-plugin-react` uses `context.getFilename()`, an internal ESLint API removed in v10.
+- `eslint-config-next@16.3.8` supports ESLint `>=9.0.0`, but its internal dependency `eslint-plugin-react@7.37.5` does not yet support ESLint 10.
+- The failure is not a configuration loading issue; the flat config is correctly found and parsed.
+
+**Decision:**
+- Keep the project on ESLint 9.39.5, which is the correct, maximally supported version for the current stack.
+- PR #8 (ESLint 10 update) remains CLOSED.
+
+**Evidence:** The local reproduction on 2026-10-01 confirmed the stack trace originating from `eslint-plugin-react/lib/util/version.js` within ESLint 10's linter execution path.
