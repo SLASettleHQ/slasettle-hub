@@ -569,3 +569,46 @@ behavior is unchanged. Category and rationale for every finding:
 - The Go watcher configuration is secure, correct, and current.
 - The `v0.7.2` comment was corrected.
 - Issue #14 is resolved by the `toolchain` directive, proven by `govulncheck`. (Note: GitHub API timeouts prevented closing it automatically during this run).
+
+## 24. Gate 6 & 7 Contract Source / Live Deployment Parity (HARD GATES)
+
+**Verification performed:**
+- Confirmed Stellar Testnet is on Protocol 28.
+- Confirmed `soroban-sdk` in the Vault contracts is `28.0.0`.
+- Updated CI toolchain and `CONTRIBUTING.md` to require `stellar-cli` 28.1.0 to match the SDK (Gate 6).
+- Rebuilt both contracts locally against Protocol 28, confirming test passes.
+- Performed a full fresh deployment (Strategy A) to Testnet with the Protocol 28 WASMs, capturing all new transaction IDs and regenerating the on-chain evidence (Gate 7).
+- Re-ran the quorum failure test, the SLA creation test, the watcher vote tests, and the settlement tests against the live contracts.
+- Confirmed the zero-balance withdrawal rejection bug fix is now active on-chain (`Error(Contract, #7)` InvalidAmount when withdrawing twice).
+- Updated the contract IDs across all documentation and configuration in both the Vault and Hub repositories.
+
+**Decision:**
+- Both hard gates resolved by redeploying the SDK 28 source, restoring strict deployment parity. New evidence generated and committed in `evidence/testnet-2026-10-01.md`.
+
+## 25. Gate 8 Repository Hygiene
+
+**Verification performed:**
+- Identified that both repositories were missing a standard `LICENSE` file.
+- Confirmed `package.json` files specified `MIT`.
+
+**Decision:**
+- Added standard MIT `LICENSE` files to both `slasettle-hub` and `slasettle-vault`.
+- Applied standard Drips Stellar ecosystem GitHub topics (`stellar`, `soroban`, `smart-contracts`, `drips`, `blockchain`, `rust`, `typescript`, `wasm`, `nextjs`) to both repositories.
+
+## 26. Gate 9 & 10 Documentation Consistency and Final Dependency Audit
+
+**Verification performed:**
+- Executed a cross-repository search for old SDK versions (`27.0.0` and `27.0.6`) and old contract IDs.
+- Found no stale version claims or outdated documentation. All files correctly reflect the 2026-10-01 deployment and Protocol 28.
+- No further dependency updates were found necessary after the comprehensive updates in Gates 1-5.
+
+## 27. Gate 11, 12, 13, 14 Final Freeze and Release
+
+**Verification performed:**
+- **Gate 11:** Both repositories have a clean git tree (`git status`) and are up-to-date with `origin/main` following the final documentation commits.
+- **Gate 13:** The full suite passes: `pnpm -r typecheck && pnpm -r test` (Hub), `npm test` (Indexer), `go test ./...` (Watcher), and `cargo test` (Vault).
+- **Gate 12:** Cut release `v0.1.0` on both repositories, pushing the `v0.1.0` tag and executing `gh release create v0.1.0`.
+- **Gate 14:** The remediation is fully complete.
+
+**Decision:**
+- **IMPLEMENTATION REMEDIATION COMPLETE.** The project is frozen and ready for the final submission eligibility check.
