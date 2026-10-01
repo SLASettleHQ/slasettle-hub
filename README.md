@@ -146,10 +146,11 @@ Dependabot is configured (`.github/dependabot.yml`) for `npm` (both the
 pnpm workspace root and `indexer` separately), `gomod` (`watcher`), and
 `github-actions`, weekly. Several real dependency PRs have already been
 merged (Next.js, `@types/node`, `eslint-config-next`, `jsdom`, `tsx`,
-`@types/better-sqlite3`, `go-stellar-sdk`). One remains open pending a
-separate compatibility decision:
-[SLASettleHQ/slasettle-hub#8](https://github.com/SLASettleHQ/slasettle-hub/pull/8)
-(ESLint 9 to 10), not merged, not modified.
+`@types/better-sqlite3`, `go-stellar-sdk`). The ESLint 10 Dependabot PR
+([SLASettleHQ/slasettle-hub#8](https://github.com/SLASettleHQ/slasettle-hub/pull/8))
+was closed without merging after compatibility testing showed that the current
+`eslint-plugin-react` dependency chain does not yet support ESLint 10.
+The project remains on ESLint 9.39.5.
 
 `main` is branch-protected: pull requests are required, all three CI jobs
 above are required status checks, force pushes and branch deletion are
