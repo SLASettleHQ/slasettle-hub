@@ -555,3 +555,17 @@ behavior is unchanged. Category and rationale for every finding:
 **Decision:**
 - Retain the separate `npm` setup and `package-lock.json` for the indexer.
 - No changes required.
+
+## 23. Gate 5 Go Watcher Audit
+
+**Verification performed:**
+- Reviewed `watcher/go.mod` (minimum `go 1.25`, `toolchain go1.25.14`, `go-stellar-sdk v0.7.3`).
+- Reviewed `watcher/README.md` and root `README.md` (claims correctly align with the `go.mod` configuration).
+- Executed `go build`, `go vet`, and `go test` in the `watcher` directory successfully (using Go 1.25.14).
+- Executed `govulncheck ./...` on 2026-10-01 which reported **0 vulnerabilities**, confirming the standard library vulnerabilities identified previously were mitigated by the updated `toolchain` directive.
+- Found and removed a stale historical reference to `v0.7.2` in a comment in `watcher/internal/contract/contract.go`.
+
+**Decision:**
+- The Go watcher configuration is secure, correct, and current.
+- The `v0.7.2` comment was corrected.
+- Issue #14 is resolved by the `toolchain` directive, proven by `govulncheck`. (Note: GitHub API timeouts prevented closing it automatically during this run).
