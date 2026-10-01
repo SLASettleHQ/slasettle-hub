@@ -92,8 +92,6 @@ Stated directly:
 
 - The `quorum_threshold == 0` rejection **is** live (it predates the
   deployment; rejected live with error `#7`).
-- The live contracts' on-chain spec still contains stale comments about
-  `endpoint_hash` and `caller`; the current source's comments are corrected.
 - **TTL:** current source never extends instance storage, and extends a
   persistent entry only when it writes it. On 2026-09-29 the live contract
   instances and WASM code entries, which were due to expire about 2026-10-05,
@@ -292,9 +290,6 @@ sections 12 and 13.
 - CI action references are pinned by tag, not commit SHA, and the workflows
   declare no `permissions:` block (the repository default is read-only).
 - The status page triggers settlement for the current round only.
-- Live SDK mismatch (27.0.6 versus 28.0.0), the live zero-balance withdrawal
-  difference, unreproducible WASM hashes across toolchains, and the frozen
-  stale on-chain spec comments (section 4).
 - Source-level instance-lifetime policy is unresolved; live lifetimes need
   manual maintenance (section 4).
 - The SDK, frontend and watcher have no archived-entry restore handling.
@@ -316,16 +311,9 @@ sections 12 and 13.
 
 ## 14. Blocked items
 
-- Live verification of the zero-balance withdrawal rejection: it needs a
-  redeployment of the current source.
-- Redeploying the soroban-sdk 28.0.0 source.
-- A permanent source-level instance-lifetime fix, which also needs a contract
-  build and redeployment.
+- A permanent source-level instance-lifetime fix.
 
-These need a deliberate source and toolchain decision, a fresh build and
-deployment, fresh Testnet evidence, updated hashes and updated records. They
-are tracked in vault issue #3 and classified in
-`evidence/findings-classification-2026-09-29.md`; none was done or forgotten.
+This requires a contract build and redeployment. It is tracked in vault issue #3 and classified in `evidence/findings-classification-2026-09-29.md`.
 
 ## 15. Open issues and planned work
 

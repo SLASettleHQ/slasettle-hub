@@ -26,17 +26,8 @@ a verification step that genuinely has not happened yet.
   storage TTL-extension window (`518_400` ledgers, ~30 days) is a v1
   default; no real storage-rent cost data has been measured against it.
 
-## The soroban-sdk 27.0.6 vs. 28.0.0 mismatch
 
-The currently deployed, live-verified Testnet contracts (see
-[Current Testnet deployment](/testnet-deployment)) were built with
-`soroban-sdk 27.0.6`. `slasettle-vault`'s current source has since moved
-to `28.0.0` via a merged Dependabot PR. These are not the same build,
-and this has not been resolved: the current source has not been rebuilt
-and redeployed against 28.0.0. This documentation states this
-everywhere it's relevant rather than hiding it in one place.
-
-## Verification gaps — closed, partially closed, and still open
+## Verification gaps - closed, partially closed, and still open
 
 - **A real browser/Freighter connection test, and a real watcher-daemon
   run against live Testnet RPC and the live contract, were both

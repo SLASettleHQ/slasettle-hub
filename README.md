@@ -1,20 +1,26 @@
-# slasettle-hub
+<h1 align="center">SLASettle Hub</h1>
+<p align="center">Frontend, SDK, indexer, and watcher daemon for the SLASettle protocol on Stellar</p>
 
-[![CI](https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-online-blue)](https://slasettle-docs.vercel.app)
-[![App](https://img.shields.io/badge/app-Testnet_(no_indexer)-orange)](https://slasettle-web.vercel.app)
+<p align="center">
+  <a href="https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml"><img src="https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://slasettle-docs.vercel.app"><img src="https://img.shields.io/badge/docs-online-blue" alt="Docs"></a>
+  <a href="https://slasettle-web.vercel.app"><img src="https://img.shields.io/badge/app-Testnet-orange" alt="App"></a>
+  <a href="https://stellar.org"><img src="https://img.shields.io/badge/Stellar-Protocol_28-black" alt="Stellar"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT"></a>
+</p>
 
-**Public links** (Stellar Testnet only)
+**Quick links** (Stellar Testnet only)
 
-- App: https://slasettle-web.vercel.app (frontend only: the SLA configuration and bond are read live from Testnet, but there is no hosted indexer, so the round-status and settlement-history panels show an "indexer not configured" message)
-- Documentation: https://slasettle-docs.vercel.app
-- Contracts repository: https://github.com/SLASettleHQ/slasettle-vault
-- Testnet deployment and evidence: [`apps/docs/testnet-deployment.md`](./apps/docs/testnet-deployment.md), [`evidence/index.md`](./evidence/index.md)
+- [Live App](https://slasettle-web.vercel.app) (frontend only: SLA configuration and bond are read live from Testnet, but there is no hosted indexer, so round-status and settlement-history panels show an "indexer not configured" message)
+- [Documentation](https://slasettle-docs.vercel.app)
+- [SLASettle Vault](https://github.com/SLASettleHQ/slasettle-vault) (contracts repository)
+- [Testnet deployment](./apps/docs/testnet-deployment.md)
+- [Evidence index](./evidence/index.md)
 
 The watcher daemon, event indexer, TypeScript SDK, and frontend for
 SLASettle. The Soroban contracts (`watcher_registry` and `sla_vault`)
 live in the separate repository
-[`slasettle-vault`](https://github.com/SLASettleHQ/slasettle-vault); this
+[SLASettle Vault](https://github.com/SLASettleHQ/slasettle-vault); this
 repository never defines contract logic, only the off-chain services and
 UI that talk to it.
 
@@ -157,14 +163,14 @@ branch-protection API on 2026-09-29), so an administrator can push to
 
 The contracts this repository's services point at, as of 2026-10-01:
 
-```text
-watcher_registry: CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF
-sla_vault:        CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN
-```
+| Contract | ID | Explorer |
+|---|---|---|
+| `watcher_registry` | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF) |
+| `sla_vault` | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN) |
 
 Full live evidence (real SLA creation, real watcher votes, a real
 settlement, cancellation, withdrawal) is in `slasettle-vault`'s
-`evidence/testnet-2026-10-01.md`. That evidence confirms strict parity
+[`evidence/testnet-2026-10-01.md`](https://github.com/SLASettleHQ/slasettle-vault/blob/main/evidence/testnet-2026-10-01.md). That evidence confirms strict parity
 with the current Protocol 28 deployment built with `soroban-sdk` 28.0.0.
 See the vault README for exact details.
 
@@ -172,7 +178,7 @@ A live, end-to-end watcher daemon run against real Testnet RPC, and a
 real browser/Freighter verification of the frontend, were both performed
 on 2026-09-29 using a disposable Testnet watcher account and the live,
 verified deployment above. See
-`evidence/phase-23-verification-2026-09-29.md` for the full record,
+[`evidence/phase-23-verification-2026-09-29.md`](./evidence/phase-23-verification-2026-09-29.md) for the full record,
 including transaction hashes and one real defect it surfaced along the
 way: a 500 error in the indexer's settlement-history endpoint, caused by
 an invalid hardcoded dummy account in `indexer/src/rpc/liveReads.ts`.
