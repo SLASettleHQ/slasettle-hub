@@ -501,3 +501,23 @@ behavior is unchanged. Category and rationale for every finding:
 `findings-classification-2026-09-29.md`; re-verification of the changed areas:
 `final-technical-audit-2026-09-29-r2.md`.
 
+## 20. Gate 2 TypeScript Compatibility Decision
+
+**Verification performed:**
+- `apps/web`: `pnpm run typecheck` succeeded with TypeScript 5.9.3.
+- `packages/sdk`: `pnpm run typecheck` succeeded with TypeScript 5.9.3.
+- `indexer`: `npm ci`, `npm run build`, and `npm test` all passed with TypeScript 7.0.2, including 45/45 tests.
+
+**Compatibility reasoning:**
+- The current web and SDK configurations typecheck successfully on TypeScript 5.9.3 with the current Next.js 16.3.8 stack.
+- The current indexer configuration builds and passes its complete test suite on TypeScript 7.0.2.
+- No TypeScript compatibility errors were observed in the tested configurations.
+- The ESLint 9 to 10 compatibility question is intentionally deferred to Gate 3 and is not considered resolved by this gate.
+
+**Decision:**
+- Keep `apps/web` on TypeScript 5.9.3.
+- Keep `packages/sdk` on TypeScript 5.9.3.
+- Keep `indexer` on TypeScript 7.0.2.
+- No TypeScript dependency changes are required for Gate 2.
+
+**Evidence:** The build, typecheck, and test results above were executed during Gate 2 verification.
