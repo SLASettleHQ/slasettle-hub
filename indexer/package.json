@@ -14,7 +14,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@stellar/stellar-sdk": "17.2.0",
+    "@stellar/stellar-sdk": "17.2.1",
     "better-sqlite3": "13.0.3",
     "cors": "2.8.6",
     "express": "5.2.1",
@@ -25,7 +25,7 @@
     "@types/better-sqlite3": "^9.6.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.0",
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.4",
     "tsx": "4.23.15",
     "typescript": "7.0.2"
   }
