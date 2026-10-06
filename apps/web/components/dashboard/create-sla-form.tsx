@@ -4,22 +4,18 @@ import { buildCreateSlaTx, getTokenDecimals, getTokenSymbol } from "@slasettle/s
 import { useState, type FormEvent } from "react";
 import { FormField, inputClassName } from "@/components/form-field";
 import { TransactionStatus } from "@/components/transaction-status";
-import { InvalidTokenAmountError, parseTokenAmount } from "@/lib/format";
+import {
+  validateAmounts,
+  validateStaticFields,
+  type CreateSlaFieldErrors,
+  type CreateSlaFormValues,
+} from "@/lib/create-sla-validation";
 import { NetworkGuardNotice } from "@/components/network/network-guard-notice";
 import { useNetworkGuard } from "@/components/network/use-network-guard";
 import { isTransactionBusy, useTransaction } from "@/lib/use-transaction";
 import { useWallet } from "@/components/wallet/wallet-provider";
 
-interface FormValues {
-  token: string;
-  bondAmount: string;
-  uptimeTargetPercent: string;
-  quorumThreshold: string;
-  penaltyPerBreach: string;
-  beneficiary: string;
-}
-
-const EMPTY_VALUES: FormValues = {
+const EMPTY_VALUES: CreateSlaFormValues = {
   token: "",
   bondAmount: "",
   uptimeTargetPercent: "",
@@ -32,71 +28,64 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
   const { connection } = useWallet();
   const { state, run, reset } = useTransaction();
   const guard = useNetworkGuard();
-  const [values, setValues] = useState<FormValues>(EMPTY_VALUES);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
+  const [values, setValues] = useState<CreateSlaFormValues>(EMPTY_VALUES);
+  const [fieldErrors, setFieldErrors] = useState<CreateSlaFieldErrors>({});
+  const [checkingToken, setCheckingToken] = useState(false);
 
-  const busy = isTransactionBusy(state);
+  const busy = isTransactionBusy(state) || checkingToken;
 
-  function setField<K extends keyof FormValues>(key: K, value: FormValues[K]) {
+  function setField<K extends keyof CreateSlaFormValues>(key: K, value: CreateSlaFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!connection) return;
+    if (!connection || busy) return;
     reset();
     setFieldErrors({});
 
-    const errors: Partial<Record<keyof FormValues, string>> = {};
-    if (!values.token.trim()) errors.token = "Required.";
-    if (!values.beneficiary.trim()) errors.beneficiary = "Required.";
-    const quorum = Number(values.quorumThreshold);
-    if (!Number.isInteger(quorum) || quorum <= 0) {
-      errors.quorumThreshold = "Enter a whole number of watchers, e.g. 3.";
-    }
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+    const fields = validateStaticFields(values);
+    if (Object.keys(fields.errors).length > 0) {
+      setFieldErrors(fields.errors);
       return;
     }
 
-    const result = await run(async () => {
-      let decimals: number;
-      try {
-        decimals = await getTokenDecimals(values.token.trim());
-      } catch {
-        throw new Error(
-          `Could not read decimals() from token contract ${values.token.trim()}. Check the token contract ID.`,
-        );
-      }
-
-      let bondAmount: bigint;
-      let penaltyPerBreach: bigint;
-      try {
-        bondAmount = parseTokenAmount(values.bondAmount, decimals);
-        penaltyPerBreach = parseTokenAmount(values.penaltyPerBreach, decimals);
-      } catch (err) {
-        throw err instanceof InvalidTokenAmountError ? err : new Error("Invalid amount.");
-      }
-
-      const symbol = await getTokenSymbol(values.token.trim()).catch(() => "tokens");
-      if (penaltyPerBreach > bondAmount) {
-        throw new Error(
-          `Penalty per breach (${values.penaltyPerBreach} ${symbol}) cannot exceed the bond amount (${values.bondAmount} ${symbol}).`,
-        );
-      }
-
-      const uptimeTargetBps = Number(parseTokenAmount(values.uptimeTargetPercent || "0", 2));
-
-      return buildCreateSlaTx({
-        provider: connection.address,
-        token: values.token.trim(),
-        bondAmount,
-        uptimeTargetBps,
-        quorumThreshold: quorum,
-        penaltyPerBreach,
-        beneficiary: values.beneficiary.trim(),
+    // The token's decimals decide how the amounts convert to base units, so
+    // they are read live from the contract before the amounts can be checked.
+    const token = values.token.trim();
+    setCheckingToken(true);
+    let decimals: number;
+    let symbol: string;
+    try {
+      [decimals, symbol] = await Promise.all([getTokenDecimals(token), getTokenSymbol(token)]);
+    } catch {
+      setFieldErrors({
+        token: "Could not read decimals() and symbol() from this contract. Check that it is a SEP-41 token on this network.",
       });
-    }, connection);
+      return;
+    } finally {
+      setCheckingToken(false);
+    }
+
+    const amounts = validateAmounts(values, decimals, symbol);
+    if (Object.keys(amounts.errors).length > 0) {
+      setFieldErrors(amounts.errors);
+      return;
+    }
+
+    const result = await run(
+      () =>
+        buildCreateSlaTx({
+          provider: connection.address,
+          token,
+          bondAmount: amounts.bondAmount!,
+          uptimeTargetBps: fields.uptimeTargetBps!,
+          quorumThreshold: fields.quorumThreshold!,
+          penaltyPerBreach: amounts.penaltyPerBreach!,
+          beneficiary: values.beneficiary.trim(),
+        }),
+      connection,
+    );
 
     if (result?.status === "SUCCESS") {
       setValues(EMPTY_VALUES);
@@ -121,18 +110,18 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
 
       <div className="mt-3 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-raised)] p-3 text-xs text-[var(--color-fg-secondary)]">
         <p>
-          <strong className="text-[var(--color-fg-primary)]">Uptime target is display-only in v1.</strong>{" "}
-          It is not computed as a monthly aggregate or enforced against real uptime — settlement fires
-          per round when watchers reach quorum on Down, regardless of this number.
+          <strong className="text-[var(--color-fg-primary)]">Uptime target is display information in v1.</strong>{" "}
+          The contracts do not calculate monthly uptime against it. Settlement is decided per round, when
+          enough watchers vote Down, whatever this number is.
         </p>
         <p className="mt-1.5">
-          <strong className="text-[var(--color-fg-primary)]">The watcher set is shared</strong> across
-          every SLA on this deployment. You cannot curate your own trusted watchers in v1.
+          <strong className="text-[var(--color-fg-primary)]">The watcher set is shared.</strong> Every SLA on
+          this deployment uses the same registered watchers. You cannot choose your own in v1.
         </p>
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <FormField label="Token" help="The SEP-41 token contract (C...) the bond is denominated in." error={fieldErrors.token}>
+        <FormField label="Token" help="The SEP-41 token contract (C...) the bond is held in." error={fieldErrors.token}>
           {(props) => (
             <input
               {...props}
@@ -147,7 +136,7 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
 
         <FormField
           label="Beneficiary"
-          help="Address that receives the penalty payout when a breach is confirmed."
+          help="Address that receives each penalty payment."
           error={fieldErrors.beneficiary}
         >
           {(props) => (
@@ -162,7 +151,11 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
           )}
         </FormField>
 
-        <FormField label="Bond amount" help="Locked into the vault when this SLA is created.">
+        <FormField
+          label="Bond amount"
+          help="Locked into the vault when this SLA is created. Enter it in whole token units, such as 1000.50."
+          error={fieldErrors.bondAmount}
+        >
           {(props) => (
             <input
               {...props}
@@ -178,7 +171,8 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
 
         <FormField
           label="Penalty per breach"
-          help="Fixed amount paid out each time a round is independently confirmed down by quorum."
+          help="Fixed amount paid to the beneficiary each time a round settles. It cannot exceed the bond."
+          error={fieldErrors.penaltyPerBreach}
         >
           {(props) => (
             <input
@@ -195,7 +189,7 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
 
         <FormField
           label="Quorum threshold"
-          help="Minimum number of Down votes in a round required to confirm a breach."
+          help="Number of Down votes, out of the shared watcher set, that a round needs before it can be settled."
           error={fieldErrors.quorumThreshold}
         >
           {(props) => (
@@ -211,7 +205,11 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
           )}
         </FormField>
 
-        <FormField label="Uptime target (%)" help="Display-only in v1 — see the note above.">
+        <FormField
+          label="Uptime target (%)"
+          help="Shown on the status page only. It does not drive settlement in v1."
+          error={fieldErrors.uptimeTargetPercent}
+        >
           {(props) => (
             <input
               {...props}
@@ -232,7 +230,7 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
           disabled={busy || guard.blocked}
           className="rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-60"
         >
-          Create SLA
+          {checkingToken ? "Checking token…" : "Create SLA"}
         </button>
         <NetworkGuardNotice guard={guard} />
         <TransactionStatus state={state} />
