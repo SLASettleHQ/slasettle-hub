@@ -5,6 +5,8 @@ import { useState, type FormEvent } from "react";
 import { FormField, inputClassName } from "@/components/form-field";
 import { TransactionStatus } from "@/components/transaction-status";
 import { InvalidTokenAmountError, parseTokenAmount } from "@/lib/format";
+import { NetworkGuardNotice } from "@/components/network/network-guard-notice";
+import { useNetworkGuard } from "@/components/network/use-network-guard";
 import { useTransaction } from "@/lib/use-transaction";
 import { useWallet } from "@/components/wallet/wallet-provider";
 
@@ -29,6 +31,7 @@ const EMPTY_VALUES: FormValues = {
 export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
   const { connection } = useWallet();
   const { state, run, reset } = useTransaction();
+  const guard = useNetworkGuard();
   const [values, setValues] = useState<FormValues>(EMPTY_VALUES);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
 
@@ -226,11 +229,12 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
       <div className="mt-5 flex items-center gap-3">
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || guard.blocked}
           className="rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           Create SLA
         </button>
+        <NetworkGuardNotice guard={guard} />
         <TransactionStatus state={state} />
       </div>
     </form>

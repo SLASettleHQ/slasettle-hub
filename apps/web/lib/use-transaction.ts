@@ -2,6 +2,7 @@
 
 import { rpc, type Transaction } from "@stellar/stellar-sdk";
 import { useCallback, useState } from "react";
+import { checkWalletNetwork } from "./network";
 import {
   signTransaction,
   submitTransaction,
@@ -31,6 +32,14 @@ export function useTransaction() {
       buildUnsignedTx: () => Promise<Transaction>,
       wallet: WalletConnection,
     ): Promise<SubmittedTransaction | undefined> => {
+      // Every write path goes through this function, so this is the one place
+      // that stops a mismatched wallet before anything is built or signed.
+      const networkCheck = checkWalletNetwork(wallet.networkPassphrase);
+      if (!networkCheck.allowed) {
+        setState({ status: "failed", message: networkCheck.message });
+        return undefined;
+      }
+
       setState({ status: "building" });
       try {
         const unsignedTx = await buildUnsignedTx();

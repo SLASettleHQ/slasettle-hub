@@ -18,6 +18,31 @@ export function getConfiguredNetworkPassphrase(): string | null {
   return process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE ?? null;
 }
 
+export type WalletNetworkCheck = { allowed: true } | { allowed: false; message: string };
+
+/**
+ * Whether a wallet on `walletPassphrase` may be used to build, sign or submit
+ * a transaction for this deployment. Fails closed: when the deployment has no
+ * configured network passphrase, nothing is allowed rather than guessing a
+ * network.
+ */
+export function checkWalletNetwork(walletPassphrase: string): WalletNetworkCheck {
+  const configured = getConfiguredNetworkPassphrase();
+  if (!configured) {
+    return {
+      allowed: false,
+      message: "This app has no network configured, so transactions are disabled.",
+    };
+  }
+  if (walletPassphrase !== configured) {
+    return {
+      allowed: false,
+      message: `Switch your wallet to ${labelForNetworkPassphrase(configured)} before submitting transactions.`,
+    };
+  }
+  return { allowed: true };
+}
+
 const STELLAR_EXPERT_NETWORK_SLUGS: Record<string, string> = {
   [Networks.PUBLIC]: "public",
   [Networks.TESTNET]: "testnet",

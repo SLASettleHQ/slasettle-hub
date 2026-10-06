@@ -1,6 +1,8 @@
 "use client";
 
 import { buildTriggerSettlementTx } from "@slasettle/sdk";
+import { NetworkGuardNotice } from "@/components/network/network-guard-notice";
+import { useNetworkGuard } from "@/components/network/use-network-guard";
 import { TransactionStatus } from "@/components/transaction-status";
 import { useWallet } from "@/components/wallet/wallet-provider";
 import { useTransaction } from "@/lib/use-transaction";
@@ -21,6 +23,7 @@ export function TriggerSettlementAction({
 }) {
   const { status, connection, connect } = useWallet();
   const { state, run } = useTransaction();
+  const guard = useNetworkGuard();
 
   const busy = state.status === "building" || state.status === "signing" || state.status === "submitting";
 
@@ -41,7 +44,7 @@ export function TriggerSettlementAction({
         <button
           type="button"
           onClick={() => void handleTrigger()}
-          disabled={busy}
+          disabled={busy || guard.blocked}
           className="rounded-md bg-[var(--color-accent)] px-3 py-2 text-sm font-medium text-[var(--color-accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           Trigger Settlement
@@ -56,6 +59,7 @@ export function TriggerSettlementAction({
           Connect wallet to trigger settlement
         </button>
       )}
+      <NetworkGuardNotice guard={guard} />
       <TransactionStatus state={state} />
     </div>
   );

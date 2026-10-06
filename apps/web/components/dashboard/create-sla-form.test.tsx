@@ -27,6 +27,7 @@ const BENEFICIARY_ADDRESS = "GBENEFICIARY234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234
 const TOKEN_ADDRESS = "CTOKEN1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890ABCDE";
 
 beforeEach(() => {
+  vi.stubEnv("NEXT_PUBLIC_NETWORK_PASSPHRASE", "Test SDF Network ; September 2015");
   vi.mocked(isFreighterAvailable).mockResolvedValue(true);
   vi.mocked(getActiveWallet).mockResolvedValue({
     address: PROVIDER_ADDRESS,

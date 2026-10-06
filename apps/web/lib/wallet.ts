@@ -12,6 +12,7 @@ import {
   type Transaction,
 } from "@stellar/stellar-sdk";
 import { getRpcServer, getSdkConfig } from "@slasettle/sdk";
+import { checkWalletNetwork } from "./network";
 
 export interface WalletConnection {
   address: string;
@@ -92,6 +93,19 @@ export async function signTransaction(
   unsignedTx: Transaction,
   wallet: WalletConnection,
 ): Promise<Transaction | FeeBumpTransaction> {
+  // Defense in depth: the connection snapshot can be stale if the user changed
+  // networks in Freighter after connecting, so check it and the live network.
+  const snapshotCheck = checkWalletNetwork(wallet.networkPassphrase);
+  if (!snapshotCheck.allowed) {
+    throw new WalletError(snapshotCheck.message);
+  }
+  const liveNetwork = await getNetworkDetails();
+  throwIfFreighterError(liveNetwork.error);
+  const liveCheck = checkWalletNetwork(liveNetwork.networkPassphrase);
+  if (!liveCheck.allowed) {
+    throw new WalletError(liveCheck.message);
+  }
+
   const result = await freighterSignTransaction(unsignedTx.toXDR(), {
     networkPassphrase: wallet.networkPassphrase,
     address: wallet.address,

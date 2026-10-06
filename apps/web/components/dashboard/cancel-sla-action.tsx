@@ -2,6 +2,8 @@
 
 import { buildCancelSlaTx } from "@slasettle/sdk";
 import { ConfirmButton } from "@/components/confirm-button";
+import { NetworkGuardNotice } from "@/components/network/network-guard-notice";
+import { useNetworkGuard } from "@/components/network/use-network-guard";
 import { TransactionStatus } from "@/components/transaction-status";
 import { useWallet } from "@/components/wallet/wallet-provider";
 import { useTransaction } from "@/lib/use-transaction";
@@ -9,6 +11,7 @@ import { useTransaction } from "@/lib/use-transaction";
 export function CancelSlaAction({ slaId, onSuccess }: { slaId: bigint; onSuccess?: () => void }) {
   const { connection } = useWallet();
   const { state, run } = useTransaction();
+  const guard = useNetworkGuard();
 
   const busy = state.status === "building" || state.status === "signing" || state.status === "submitting";
 
@@ -29,9 +32,10 @@ export function CancelSlaAction({ slaId, onSuccess }: { slaId: bigint; onSuccess
         label="Cancel SLA"
         confirmLabel="Click again to confirm"
         tone="danger"
-        disabled={busy || !connection}
+        disabled={busy || !connection || guard.blocked}
         onConfirm={() => void handleCancel()}
       />
+      <NetworkGuardNotice guard={guard} />
       <TransactionStatus state={state} />
     </div>
   );
