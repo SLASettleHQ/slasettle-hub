@@ -43,7 +43,7 @@ export function DashboardView() {
 }
 
 function ConnectedDashboard({ address }: { address: string }) {
-  const { slas, loading, error, refresh } = useProviderSlas(address);
+  const { slas, failures, loading, error, refresh } = useProviderSlas(address);
 
   return (
     <div className="mt-6 space-y-8">
@@ -51,7 +51,7 @@ function ConnectedDashboard({ address }: { address: string }) {
       <section>
         <h2 className="text-sm font-semibold text-[var(--color-fg-primary)]">Your SLAs</h2>
         <div className="mt-3">
-          <SlaList slas={slas} loading={loading} error={error} onChanged={refresh} />
+          <SlaList slas={slas} failures={failures} loading={loading} error={error} onChanged={refresh} />
         </div>
       </section>
     </div>

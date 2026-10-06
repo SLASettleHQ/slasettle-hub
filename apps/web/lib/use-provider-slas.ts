@@ -13,50 +13,89 @@ export interface ProviderSlaView {
   tokenSymbol: string;
 }
 
-interface State {
+/** An SLA the indexer listed but whose live state could not be read. */
+export interface ProviderSlaFailure {
+  slaId: bigint;
+  message: string;
+}
+
+export interface ProviderSlaResult {
   slas: ProviderSlaView[];
+  failures: ProviderSlaFailure[];
+}
+
+interface State extends ProviderSlaResult {
   loading: boolean;
+  /** Set when discovery itself failed, so it is never confused with "no SLAs". */
   error: string | null;
 }
 
-async function fetchProviderSlas(address: string): Promise<ProviderSlaView[]> {
-  const { data: summaries } = await getProviderSlas(address);
+/** Soroban RPC is shared with the rest of the app; keep the fan-out modest. */
+const MAX_CONCURRENT_SLA_READS = 4;
 
-  const tokenMetadataCache = new Map<string, { decimals: number; symbol: string }>();
-  async function getTokenMetadata(token: string) {
-    const cached = tokenMetadataCache.get(token);
-    if (cached) return cached;
-    const [decimals, symbol] = await Promise.all([getTokenDecimals(token), getTokenSymbol(token)]);
-    const metadata = { decimals, symbol };
-    tokenMetadataCache.set(token, metadata);
-    return metadata;
+async function mapWithLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index]!);
+    }
   }
-
-  return Promise.all(
-    summaries.map(async (summary) => {
-      const [config, bondBalance] = await Promise.all([
-        getSla(summary.slaId),
-        getBondBalance(summary.slaId),
-      ]);
-      const { decimals, symbol } = await getTokenMetadata(config.token);
-      return {
-        slaId: summary.slaId,
-        config,
-        bondBalance,
-        tokenDecimals: decimals,
-        tokenSymbol: symbol,
-      };
-    }),
-  );
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
 }
 
 /**
- * Discovers a provider's SLA IDs via the indexer, then reads each one's
- * live config/balance (and its token's decimals/symbol) directly from
- * Soroban — the indexer only says which IDs exist, never live state.
+ * Discovers a provider's SLA IDs through the indexer, then reads each one's
+ * live configuration, bond balance and token metadata directly from Soroban.
+ * The indexer only says which IDs exist. A failure reading one SLA is
+ * reported against that SLA and does not hide the others.
  */
+export async function fetchProviderSlas(address: string): Promise<ProviderSlaResult> {
+  const { data: summaries } = await getProviderSlas(address);
+
+  const tokenMetadata = new Map<string, Promise<{ decimals: number; symbol: string }>>();
+  function getTokenMetadata(token: string) {
+    let pending = tokenMetadata.get(token);
+    if (!pending) {
+      pending = Promise.all([getTokenDecimals(token), getTokenSymbol(token)]).then(([decimals, symbol]) => ({
+        decimals,
+        symbol,
+      }));
+      tokenMetadata.set(token, pending);
+    }
+    return pending;
+  }
+
+  const outcomes = await mapWithLimit(
+    summaries,
+    MAX_CONCURRENT_SLA_READS,
+    async (summary): Promise<{ sla: ProviderSlaView } | { failure: ProviderSlaFailure }> => {
+      try {
+        const [config, bondBalance] = await Promise.all([getSla(summary.slaId), getBondBalance(summary.slaId)]);
+        const { decimals, symbol } = await getTokenMetadata(config.token);
+        return {
+          sla: { slaId: summary.slaId, config, bondBalance, tokenDecimals: decimals, tokenSymbol: symbol },
+        };
+      } catch (err) {
+        return { failure: { slaId: summary.slaId, message: describeReadError(err) } };
+      }
+    },
+  );
+
+  const slas: ProviderSlaView[] = [];
+  const failures: ProviderSlaFailure[] = [];
+  for (const outcome of outcomes) {
+    if ("sla" in outcome) slas.push(outcome.sla);
+    else failures.push(outcome.failure);
+  }
+  return { slas, failures };
+}
+
+/** Provider SLAs for the connected wallet. `refresh` re-reads without clearing what is on screen. */
 export function useProviderSlas(address: string | null) {
-  const [state, setState] = useState<State>({ slas: [], loading: false, error: null });
+  const [state, setState] = useState<State>({ slas: [], failures: [], loading: false, error: null });
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -64,21 +103,17 @@ export function useProviderSlas(address: string | null) {
 
     (async () => {
       if (!address) {
-        if (!cancelled) setState({ slas: [], loading: false, error: null });
+        if (!cancelled) setState({ slas: [], failures: [], loading: false, error: null });
         return;
       }
 
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
-        const slas = await fetchProviderSlas(address);
-        if (!cancelled) setState({ slas, loading: false, error: null });
+        const result = await fetchProviderSlas(address);
+        if (!cancelled) setState({ ...result, loading: false, error: null });
       } catch (err) {
         if (!cancelled) {
-          setState({
-            slas: [],
-            loading: false,
-            error: describeReadError(err),
-          });
+          setState((prev) => ({ ...prev, loading: false, error: describeReadError(err) }));
         }
       }
     })();
