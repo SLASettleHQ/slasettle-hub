@@ -19,7 +19,7 @@ export function SiteFooter() {
     <footer className="mt-16 border-t border-[var(--color-border-subtle)] py-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-[var(--color-fg-muted)]">
-          SLASettle &mdash; uptime bonds on Stellar Testnet.
+          SLASettle. Uptime bonds on Stellar Testnet.
         </p>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
           {LINKS.map((link) =>

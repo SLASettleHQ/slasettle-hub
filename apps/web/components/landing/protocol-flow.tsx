@@ -1,41 +1,35 @@
 const STEPS = [
   {
-    label: "Provider",
-    detail: "Calls create_sla with a bond, penalty, and beneficiary.",
-    chip: { text: "create_sla()", tone: "neutral" as const },
+    label: "Provider creates the SLA",
+    detail: "The provider sets the token, bond, penalty per breach, quorum threshold and beneficiary, and funds the bond.",
+    call: "sla_vault.create_sla",
   },
   {
-    label: "Funds locked",
-    detail: "The bond sits in sla_vault until cancelled and withdrawn.",
-    chip: { text: "1,000.00 USDC bonded", tone: "neutral" as const },
+    label: "Bond is held",
+    detail: "The bond stays in the vault. The provider can top it up while the SLA is active.",
+    call: "sla_vault.top_up_bond",
   },
   {
-    label: "Watchers check in",
-    detail: "The shared watcher set votes Up or Down each 60s round.",
-    chip: { text: "4 of 5 checked in", tone: "pending" as const },
+    label: "Watchers vote each round",
+    detail: "Every 60 seconds each registered watcher checks the service once and votes Up or Down.",
+    call: "watcher_registry.submit_check",
   },
   {
-    label: "Round tally",
-    detail: "watcher_registry counts votes for the current round.",
-    chip: { text: "3 up · 2 down", tone: "neutral" as const },
+    label: "Votes are tallied",
+    detail: "The registry counts the Up and Down votes for the round. It does not decide anything.",
+    call: "watcher_registry.get_round_tally",
   },
   {
-    label: "Quorum",
-    detail: "sla_vault compares the tally to quorum_threshold.",
-    chip: { text: "Quorum reached", tone: "down" as const },
+    label: "Quorum is checked",
+    detail: "A round qualifies when its Down votes reach the SLA's quorum threshold. Up votes do not count toward it.",
+    call: "votes_down \u2265 quorum_threshold",
   },
   {
-    label: "Settlement",
-    detail: "Anyone calls trigger_settlement to pay the beneficiary.",
-    chip: { text: "trigger_settlement()", tone: "neutral" as const },
+    label: "Anyone settles",
+    detail: "Once a round qualifies, any wallet can trigger settlement. The penalty is paid from the bond to the beneficiary.",
+    call: "sla_vault.trigger_settlement",
   },
 ];
-
-const CHIP_TONE_CLASSES: Record<string, string> = {
-  neutral: "bg-[var(--color-status-neutral-bg)] text-[var(--color-status-neutral)]",
-  pending: "bg-[var(--color-status-pending-bg)] text-[var(--color-status-pending)]",
-  down: "bg-[var(--color-status-down-bg)] text-[var(--color-status-down)]",
-};
 
 export function ProtocolFlow() {
   return (
@@ -47,13 +41,9 @@ export function ProtocolFlow() {
         How a round moves from bond to settlement
       </h2>
       <p className="mt-2 max-w-2xl text-[var(--color-fg-secondary)]">
-        Every step below is a real state transition the contracts expose &mdash; this is the
-        actual sequence, not a simplified pitch.
+        Each step is a call or rule in the contracts. Nothing here is live network data. Open a status page to
+        see a real SLA.
       </p>
-      <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-default)] px-2.5 py-1 font-mono text-[11px] text-[var(--color-fg-muted)]">
-        Example walkthrough &mdash; not live network data
-      </span>
-
       <ol className="mt-10 grid gap-3 lg:grid-cols-6 lg:gap-0">
         {STEPS.map((step, index) => (
           <li key={step.label} className="relative flex lg:flex-col">
@@ -71,19 +61,13 @@ export function ProtocolFlow() {
               >
                 {index + 1}
               </span>
-              <div className="lg:mt-3">
-                <h3 className="text-sm font-medium text-[var(--color-fg-primary)]">
-                  {step.label}
-                </h3>
-              </div>
+              <h3 className="text-sm font-medium text-[var(--color-fg-primary)] lg:mt-3">{step.label}</h3>
             </div>
             <div className="ml-11 mt-1 flex-1 pb-3 lg:ml-0 lg:mt-2 lg:px-2 lg:pb-0 lg:text-center">
               <p className="text-xs text-[var(--color-fg-secondary)]">{step.detail}</p>
-              <span
-                className={`mt-2 inline-block rounded-full px-2 py-0.5 font-mono text-[11px] ${CHIP_TONE_CLASSES[step.chip.tone]}`}
-              >
-                {step.chip.text}
-              </span>
+              <code className="mt-2 inline-block rounded bg-[var(--color-status-neutral-bg)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--color-status-neutral)]">
+                {step.call}
+              </code>
             </div>
           </li>
         ))}

@@ -19,14 +19,38 @@ describe("Landing page", () => {
     ).toBeInTheDocument();
   });
 
-  it("labels the product preview as example data, not live state", () => {
-    render(<Home />);
-    expect(screen.getByText(/Example data — not a live SLA/)).toBeInTheDocument();
+  it("ships no example watchers, hashes, balances or settlement rows", () => {
+    const { container } = render(<Home />);
+    const text = container.textContent ?? "";
+    expect(text).not.toMatch(/Example (data|walkthrough)/);
+    expect(text).not.toMatch(/USDC|GABC\d|explorer\/testnet\/tx\/example/);
+    expect(text).not.toMatch(/\d+ of \d+ checked in/);
+    expect(screen.queryByRole("link", { name: /explorer/i })).not.toBeInTheDocument();
   });
 
-  it("labels the protocol flow walkthrough as an example, not live network data", () => {
+  it("explains the flow from bond to permissionless settlement using real contract calls", () => {
     render(<Home />);
-    expect(screen.getByText(/Example walkthrough — not live network data/)).toBeInTheDocument();
+    for (const call of [
+      "sla_vault.create_sla",
+      "watcher_registry.submit_check",
+      "sla_vault.trigger_settlement",
+    ]) {
+      expect(screen.getByText(call)).toBeInTheDocument();
+    }
+    expect(screen.getByText(/any wallet can trigger settlement/i)).toBeInTheDocument();
+  });
+
+  it("states the v1 limitations", () => {
+    render(<Home />);
+    expect(screen.getByText(/does not calculate monthly uptime|do not calculate monthly uptime/i)).toBeInTheDocument();
+    expect(screen.getByText(/one watcher set/i)).toBeInTheDocument();
+    expect(screen.getByText(/cannot\s+choose watchers/i)).toBeInTheDocument();
+  });
+
+  it("links to the provider dashboard and the public status lookup", () => {
+    render(<Home />);
+    expect(screen.getByRole("link", { name: "Open provider dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("button", { name: "View status" })).toBeInTheDocument();
   });
 
   it("navigates to the status page for a valid numeric SLA ID", async () => {

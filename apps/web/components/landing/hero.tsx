@@ -54,23 +54,23 @@ export function Hero() {
               &rsaquo;
             </span>
             The configured uptime target is{" "}
-            <strong className="text-[var(--color-fg-primary)]">display-only</strong> in v1 &mdash; it
-            is not the number settlement is checked against.
+            <strong className="text-[var(--color-fg-primary)]">display-only</strong> in v1. The
+            contracts do not calculate monthly uptime against it.
           </li>
           <li className="flex gap-2">
             <span aria-hidden className="text-[var(--color-fg-muted)]">
               &rsaquo;
             </span>
             All SLAs currently share{" "}
-            <strong className="text-[var(--color-fg-primary)]">one watcher set</strong> &mdash; watchers
-            are not assigned per SLA.
+            <strong className="text-[var(--color-fg-primary)]">one watcher set</strong>. A provider cannot
+            choose watchers for an SLA.
           </li>
           <li className="flex gap-2">
             <span aria-hidden className="text-[var(--color-fg-muted)]">
               &rsaquo;
             </span>
             <strong className="text-[var(--color-fg-primary)]">Anyone</strong> can call settlement
-            once quorum is reached &mdash; it is not restricted to the provider.
+            once quorum is reached. It is not limited to the provider.
           </li>
         </ul>
       </div>
