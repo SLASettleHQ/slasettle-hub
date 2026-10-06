@@ -8,7 +8,7 @@ import { TransactionStatus } from "@/components/transaction-status";
 import { useWallet } from "@/components/wallet/wallet-provider";
 import { inputClassName } from "@/components/form-field";
 import { parseTokenAmount } from "@/lib/format";
-import { useTransaction } from "@/lib/use-transaction";
+import { isTransactionBusy, useTransaction } from "@/lib/use-transaction";
 
 export function TopUpBondForm({
   slaId,
@@ -27,7 +27,7 @@ export function TopUpBondForm({
   const [amount, setAmount] = useState("");
   const inputId = useId();
 
-  const busy = state.status === "building" || state.status === "signing" || state.status === "submitting";
+  const busy = isTransactionBusy(state);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

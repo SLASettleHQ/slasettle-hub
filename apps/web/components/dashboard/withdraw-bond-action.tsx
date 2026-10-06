@@ -6,14 +6,14 @@ import { NetworkGuardNotice } from "@/components/network/network-guard-notice";
 import { useNetworkGuard } from "@/components/network/use-network-guard";
 import { TransactionStatus } from "@/components/transaction-status";
 import { useWallet } from "@/components/wallet/wallet-provider";
-import { useTransaction } from "@/lib/use-transaction";
+import { isTransactionBusy, useTransaction } from "@/lib/use-transaction";
 
 export function WithdrawBondAction({ slaId, onSuccess }: { slaId: bigint; onSuccess?: () => void }) {
   const { connection } = useWallet();
   const { state, run } = useTransaction();
   const guard = useNetworkGuard();
 
-  const busy = state.status === "building" || state.status === "signing" || state.status === "submitting";
+  const busy = isTransactionBusy(state);
 
   async function handleWithdraw() {
     if (!connection) return;

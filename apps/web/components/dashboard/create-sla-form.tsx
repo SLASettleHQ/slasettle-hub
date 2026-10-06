@@ -7,7 +7,7 @@ import { TransactionStatus } from "@/components/transaction-status";
 import { InvalidTokenAmountError, parseTokenAmount } from "@/lib/format";
 import { NetworkGuardNotice } from "@/components/network/network-guard-notice";
 import { useNetworkGuard } from "@/components/network/use-network-guard";
-import { useTransaction } from "@/lib/use-transaction";
+import { isTransactionBusy, useTransaction } from "@/lib/use-transaction";
 import { useWallet } from "@/components/wallet/wallet-provider";
 
 interface FormValues {
@@ -35,7 +35,7 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
   const [values, setValues] = useState<FormValues>(EMPTY_VALUES);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
 
-  const busy = state.status === "building" || state.status === "signing" || state.status === "submitting";
+  const busy = isTransactionBusy(state);
 
   function setField<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));

@@ -5,7 +5,7 @@ import { NetworkGuardNotice } from "@/components/network/network-guard-notice";
 import { useNetworkGuard } from "@/components/network/use-network-guard";
 import { TransactionStatus } from "@/components/transaction-status";
 import { useWallet } from "@/components/wallet/wallet-provider";
-import { useTransaction } from "@/lib/use-transaction";
+import { isTransactionBusy, useTransaction } from "@/lib/use-transaction";
 
 /**
  * Anyone can call trigger_settlement once quorum is reached — the contract
@@ -25,7 +25,7 @@ export function TriggerSettlementAction({
   const { state, run } = useTransaction();
   const guard = useNetworkGuard();
 
-  const busy = state.status === "building" || state.status === "signing" || state.status === "submitting";
+  const busy = isTransactionBusy(state);
 
   async function handleTrigger() {
     if (!connection) return;

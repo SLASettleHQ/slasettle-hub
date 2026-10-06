@@ -4,6 +4,7 @@ import { rpc, type Transaction } from "@stellar/stellar-sdk";
 import { useCallback, useState } from "react";
 import { checkWalletNetwork } from "./network";
 import {
+  isUserRejection,
   signTransaction,
   submitTransaction,
   type SubmittedTransaction,
@@ -15,14 +16,30 @@ export type TransactionState =
   | { status: "building" }
   | { status: "signing" }
   | { status: "submitting" }
+  /** Accepted by the network, not yet in a ledger. Not a success. */
+  | { status: "pending"; hash: string }
   | { status: "confirmed"; hash: string }
+  /** Submitted, but polling ended without a final result. The outcome is unknown. */
+  | { status: "unconfirmed"; hash: string; message: string }
+  /** The user declined in their wallet. Nothing was submitted. */
+  | { status: "rejected"; message: string }
   | { status: "failed"; hash?: string; message: string };
+
+/** True while a transaction is between "user clicked" and a terminal state. */
+export function isTransactionBusy(state: TransactionState): boolean {
+  return (
+    state.status === "building" ||
+    state.status === "signing" ||
+    state.status === "submitting" ||
+    state.status === "pending"
+  );
+}
 
 /**
  * Drives a build -> sign -> submit -> poll flow for a single write
- * transaction, exposing every stage section 19/22 require the UI to show:
- * signing, submission, and confirmation (or a clear failure with whatever
- * transaction reference exists).
+ * transaction, exposing every stage the UI needs to show: signing,
+ * submission, pending confirmation, and a confirmed, failed, rejected or
+ * unconfirmed result, each with whatever transaction reference exists.
  */
 export function useTransaction() {
   const [state, setState] = useState<TransactionState>({ status: "idle" });
@@ -48,22 +65,35 @@ export function useTransaction() {
         const signedTx = await signTransaction(unsignedTx, wallet);
 
         setState({ status: "submitting" });
-        const result = await submitTransaction(signedTx);
+        const result = await submitTransaction(signedTx, {
+          onSubmitted: (hash) => setState({ status: "pending", hash }),
+        });
 
         if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
           setState({ status: "confirmed", hash: result.hash });
+        } else if (result.status === rpc.Api.GetTransactionStatus.NOT_FOUND) {
+          setState({
+            status: "unconfirmed",
+            hash: result.hash,
+            message:
+              "The transaction was submitted but its final status could not be confirmed yet. Check the transaction hash on an explorer before retrying.",
+          });
         } else {
           setState({
             status: "failed",
             hash: result.hash,
-            message:
-              result.status === rpc.Api.GetTransactionStatus.NOT_FOUND
-                ? "The transaction was submitted but its final status could not be confirmed yet. Check the transaction hash on an explorer."
-                : "The transaction was included but failed on-chain.",
+            message: "The transaction was included but failed on-chain.",
           });
         }
         return result;
       } catch (err) {
+        if (isUserRejection(err)) {
+          setState({
+            status: "rejected",
+            message: "You declined the request in your wallet. Nothing was submitted.",
+          });
+          return undefined;
+        }
         // Anything thrown here already carries a deliberate, specific
         // message — from WalletError, from a form's own validation inside
         // buildUnsignedTx, or from the SDK/RPC layer — so surface it

@@ -121,13 +121,22 @@ export interface SubmittedTransaction {
   response: rpc.Api.GetTransactionResponse;
 }
 
+/** Whether a wallet error means the user declined the request, rather than the wallet failing. */
+export function isUserRejection(error: unknown): boolean {
+  return error instanceof WalletError && /reject|declin|denied|cancel/i.test(error.message);
+}
+
 /**
  * Submits a signed transaction to the network configured via
  * NEXT_PUBLIC_SOROBAN_RPC_URL, then polls until a definitive success or
  * failure status is reached (or polling attempts are exhausted).
+ *
+ * `onSubmitted` fires once the network has accepted the transaction for
+ * processing, before confirmation, so the UI can show a hash while pending.
  */
 export async function submitTransaction(
   signedTx: Transaction | FeeBumpTransaction,
+  options: { onSubmitted?: (hash: string) => void } = {},
 ): Promise<SubmittedTransaction> {
   getSdkConfig();
   const server = getRpcServer();
@@ -135,9 +144,15 @@ export async function submitTransaction(
   const sendResult = await server.sendTransaction(signedTx);
   if (sendResult.status === "ERROR") {
     throw new WalletError(
-      `The network rejected the transaction before it could be included: ${sendResult.hash}`,
+      `The network rejected the transaction before it could be included (${sendResult.hash}).`,
     );
   }
+  if (sendResult.status === "TRY_AGAIN_LATER") {
+    throw new WalletError("The network is busy and did not accept the transaction. Try again shortly.");
+  }
+  // PENDING and DUPLICATE both mean the hash is known to the network, so
+  // confirmation polling is the right next step for either.
+  options.onSubmitted?.(sendResult.hash);
 
   const response = await server.pollTransaction(sendResult.hash, {
     attempts: 30,
