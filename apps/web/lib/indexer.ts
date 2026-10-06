@@ -31,8 +31,10 @@ export class IndexerApiError extends Error {
   }
 }
 
+const DEFAULT_INDEXER_API_URL = "https://slasettle-indexer.slasettle-indexer.workers.dev";
+
 function getIndexerBaseUrl(): string {
-  const baseUrl = process.env.NEXT_PUBLIC_INDEXER_API_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_INDEXER_API_URL || DEFAULT_INDEXER_API_URL;
   if (!baseUrl) {
     throw new MissingIndexerConfigError();
   }
