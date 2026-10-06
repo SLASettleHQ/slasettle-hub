@@ -28,6 +28,24 @@ describe("getTokenDecimals", () => {
   });
 });
 
+describe("getTokenDecimals bounds", () => {
+  it.each([-1, 39, 7.5])("rejects %s as a decimals value", async (value) => {
+    simulateReadCallMock.mockResolvedValue(value);
+    await expect(getTokenDecimals(TOKEN_CONTRACT_ID)).rejects.toThrow(/0 to 38/);
+  });
+
+  it("accepts zero-decimal tokens", async () => {
+    simulateReadCallMock.mockResolvedValue(0);
+    await expect(getTokenDecimals(TOKEN_CONTRACT_ID)).resolves.toBe(0);
+  });
+
+  it("rejects a malformed token contract ID before any RPC call", async () => {
+    await expect(getTokenDecimals("CBAD")).rejects.toMatchObject({ field: "tokenContractId" });
+    await expect(getTokenSymbol("CBAD")).rejects.toMatchObject({ field: "tokenContractId" });
+    expect(simulateReadCallMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("getTokenSymbol", () => {
   it("returns the raw string and calls symbol() on the given token", async () => {
     simulateReadCallMock.mockResolvedValue("USDC");

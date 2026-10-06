@@ -1,6 +1,7 @@
 import { nativeToScVal } from "@stellar/stellar-sdk";
 import { getSdkConfig, simulateReadCall } from "./client.js";
 import type { RoundTally } from "./types.js";
+import { assertAddress, assertU64 } from "./validate.js";
 
 function decodeRoundTally(raw: unknown): RoundTally {
   if (typeof raw !== "object" || raw === null) {
@@ -13,10 +14,14 @@ function decodeRoundTally(raw: unknown): RoundTally {
         "watcher_registry contract may not match the SDK's expected shape.",
     );
   }
-  return {
-    votesUp: record.votes_up as number,
-    votesDown: record.votes_down as number,
-  };
+  const { votes_up: votesUp, votes_down: votesDown } = record;
+  if (typeof votesUp !== "number" || typeof votesDown !== "number") {
+    throw new TypeError(
+      `get_round_tally votes_up/votes_down are ${typeof votesUp}/${typeof votesDown}, ` +
+        "expected numbers (u32).",
+    );
+  }
+  return { votesUp, votesDown };
 }
 
 /** Reads a round's vote tally from `watcher_registry.get_round_tally`. */
@@ -24,6 +29,8 @@ export async function getRoundTally(
   slaId: bigint,
   roundId: bigint,
 ): Promise<RoundTally> {
+  assertU64(slaId, "slaId");
+  assertU64(roundId, "roundId");
   const config = getSdkConfig();
   const result = await simulateReadCall(
     config.watcherRegistryContractId,
@@ -39,6 +46,9 @@ export async function hasWatcherVoted(
   roundId: bigint,
   watcher: string,
 ): Promise<boolean> {
+  assertU64(slaId, "slaId");
+  assertU64(roundId, "roundId");
+  assertAddress(watcher, "watcher");
   const config = getSdkConfig();
   const result = await simulateReadCall(
     config.watcherRegistryContractId,
@@ -59,6 +69,7 @@ export async function hasWatcherVoted(
 
 /** Reads whether an address is an eligible watcher from `watcher_registry.is_watcher`. */
 export async function isWatcher(watcher: string): Promise<boolean> {
+  assertAddress(watcher, "watcher");
   const config = getSdkConfig();
   const result = await simulateReadCall(
     config.watcherRegistryContractId,

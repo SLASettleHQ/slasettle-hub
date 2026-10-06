@@ -44,6 +44,24 @@ describe("getRoundTally", () => {
   });
 });
 
+describe("getRoundTally strictness", () => {
+  it("rejects a tally whose counts are not numbers", async () => {
+    simulateReadCallMock.mockResolvedValue({ votes_up: "3", votes_down: 5 });
+    await expect(getRoundTally(1n, 2n)).rejects.toThrow(/expected numbers/);
+  });
+
+  it("rejects an out-of-range round id before any RPC call", async () => {
+    await expect(getRoundTally(1n, -1n)).rejects.toMatchObject({ field: "roundId" });
+    expect(simulateReadCallMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a malformed watcher address before any RPC call", async () => {
+    await expect(isWatcher("not-an-address")).rejects.toMatchObject({ field: "watcher" });
+    await expect(hasWatcherVoted(1n, 2n, "bad")).rejects.toMatchObject({ field: "watcher" });
+    expect(simulateReadCallMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("hasWatcherVoted", () => {
   it("returns the raw boolean and encodes (sla_id, round_id, watcher)", async () => {
     simulateReadCallMock.mockResolvedValue(true);
