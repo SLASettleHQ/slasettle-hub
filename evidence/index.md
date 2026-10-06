@@ -9,6 +9,18 @@ current source, re-read on 2026-09-29, not from memory.
 `hub/evidence/parity-matrix-2026-09-29.md`, and `§0.n` is one of its numbered
 live checks.
 
+**Supersession note (2026-10-06).** The authoritative record of the current
+deployment is `vault/evidence/testnet-2026-10-01.md`: a fresh Protocol 28
+deployment of `CDRNXUPC…` (`watcher_registry`) and `CDBFPYHJ…` (`sla_vault`),
+built with soroban-sdk 28.0.0 and stellar-cli 28.1.0. Rows that cite
+`vault/evidence/testnet-2026-09-27.md`, or that describe the "live" contracts
+as read on 2026-09-29, describe the **superseded 2026-09-27 pair**
+(`CBKAQETJ…`, `CD4FSW2E…`), even where the claim text says "live" or
+"current". They are kept as dated historical evidence and are not evidence for
+the current pair. Rows are marked `SUPERSEDED` where a later record replaces
+their conclusion, and the section "Current Protocol 28 deployment" at the end
+adds rows for the current pair. Dates in the Source column were not changed.
+
 **How to read a row.**
 
 - *Date checked* is the date this row's source was read for the ledger. It is
@@ -84,7 +96,7 @@ live checks.
 |---|---|---|---|---|
 | E1 `trigger_settlement` paid `10000000` to the beneficiary, cut the bond by the same amount and marked the round settled | Testnet | `vault/evidence/testnet-2026-09-27.md` "Settlement" (tx `6522d8b7…`, gathered 2026-09-27); state re-read in `matrix` §0.3, §0.4 | 2026-09-29 | VERIFIED |
 | E2 Settlement is permissionless: an account that is not admin, provider or beneficiary triggered it | Testnet | same, caller `GAD7M6PM…` | 2026-09-29 | VERIFIED |
-| E3 `create_sla` rejects `quorum_threshold == 0` on the live contract | Testnet | `vault/evidence/testnet-2026-09-27.md` "Quorum-zero fix, live" (`#7`, gathered 2026-09-27) | 2026-09-29 | VERIFIED |
+| E3 `create_sla` rejected `quorum_threshold == 0` on the 2026-09-27 pair (the current pair repeats this, row AS) | Testnet | `vault/evidence/testnet-2026-09-27.md` "Quorum-zero fix, live" (`#7`, gathered 2026-09-27) | 2026-09-29 | VERIFIED |
 | E4 Settlement below quorum is rejected | local test | `vault/contracts/sla_vault/src/test.rs` (`test_trigger_settlement_below_quorum_fails`) | 2026-09-29 | TESTED LOCALLY |
 | E5 Payout capping (`min(penalty, balance)`) is in source and its partial-payout branch is exercised by a local test (bond 800, penalty 500, second payout exactly 300). The 2026-09-28 security review's "verified live" sentence is superseded (see E7). Before 2026-09-29 no test reached this branch | local test | `vault/contracts/sla_vault/src/test.rs` (`test_trigger_settlement_pays_only_the_remaining_bond_when_it_is_below_the_penalty`, vault `304b948`); `hub/evidence/final-technical-audit-2026-09-29.md` remediation | 2026-09-29 | TESTED LOCALLY |
 | E7 Payout capping has been executed live. It has not: the one live settlement paid the full penalty from a larger balance, and no live settlement has had a balance below the penalty | Testnet | `vault/evidence/testnet-2026-09-27.md` "Settlement" (bond `55000000` before, penalty `10000000`); `matrix` §14 | 2026-09-29 | UNVERIFIED |
@@ -105,7 +117,7 @@ live checks.
 | G1 `withdraw_remaining_bond` after cancellation returned the full 20 XLM bond | Testnet | `vault/evidence/testnet-2026-09-27.md` "SLA 1" (tx `f2d1be37…`, gathered 2026-09-27) | 2026-09-29 | VERIFIED |
 | G2 On the live contract a repeat withdrawal on an empty bond succeeds as a no-op and emits `amount: 0` | Testnet | same (tx `0dbbb2e8…`); event re-read in `matrix` §0.5 (2026-09-29) | 2026-09-29 | VERIFIED |
 | G3 Current source rejects a zero-balance withdrawal with `InvalidAmount` (commit `99be8a1`, 2026-09-28) | local test | `vault/evidence/recovery-2026-09-28.md` Finding A; `test_withdraw_remaining_bond_twice_fails_second_time` | 2026-09-29 | TESTED LOCALLY |
-| G4 That rejection on the live contract. It needs a redeploy, which this batch does not do | none | `vault/evidence/recovery-2026-09-28.md`: "not re-verified live"; `matrix` §1.2 | 2026-09-29 | SUPERSEDED |
+| G4 Historical: that rejection on the then-live contract needed a redeploy. Done by the 2026-10-01 deployment (row AR) | none | `vault/evidence/recovery-2026-09-28.md`: "not re-verified live"; `matrix` §1.2 | 2026-09-29 | SUPERSEDED |
 | G4.b The zero-balance withdrawal rejection is verified live on the current SDK 28.0.0 deployment | Testnet | `vault/evidence/testnet-2026-10-01.md` | 2026-10-01 | VERIFIED |
 
 ## H. Duplicate prevention
@@ -193,8 +205,8 @@ live checks.
 |---|---|---|---|---|
 | P1 An internal engineering security review covered both repositories | record | `vault/evidence/security-review-2026-09-28.md` (gathered 2026-09-28); `vault/SECURITY.md`, `hub/SECURITY.md` | 2026-09-29 | LOGICALLY COVERED |
 | P2 No independent third-party audit has been performed | record | same; both `SECURITY.md` files | 2026-09-29 | KNOWN LIMITATION |
-| P3 Dependency scans: `cargo audit` one unmaintained-crate warning, `pnpm audit` and `npm audit` zero findings, `govulncheck` 25 findings all in the Go standard library | local test | `vault/evidence/security-review-2026-09-28.md` "Dependency scanning" (run 2026-09-28, not re-run) | 2026-09-29 | TESTED LOCALLY |
-| P4 The Go toolchain used locally is behind on standard-library security patches | local test | same | 2026-09-29 | KNOWN LIMITATION |
+| P3 Dependency scans: `cargo audit` one unmaintained-crate warning, `pnpm audit` and `npm audit` zero findings, `govulncheck` 25 findings all in the Go standard library (the `govulncheck` count is superseded: see P4 and row AO) | local test | `vault/evidence/security-review-2026-09-28.md` "Dependency scanning" (run 2026-09-28, not re-run) | 2026-09-29 | TESTED LOCALLY |
+| P4 The Go toolchain used locally is behind on standard-library security patches. Superseded: `watcher/go.mod` requests `go1.25.14` and `govulncheck ./...` reported 0 vulnerabilities on 2026-10-01 (row AO); hub #14 is closed | local test | same | 2026-09-29 | SUPERSEDED |
 | P5 No secret appears in either repository's history | local test | same "Secret scanning": a manual pattern scan only; the dedicated scanner build did not complete | 2026-09-29 | UNVERIFIED |
 | P6 Neither repository has private vulnerability reporting enabled | CI | GitHub API `private-vulnerability-reporting` returned `enabled: false` for both, 2026-09-29; both `SECURITY.md` files say so | 2026-09-29 | KNOWN LIMITATION |
 
@@ -204,7 +216,7 @@ live checks.
 |---|---|---|---|---|
 | Q1 Vault CI passes on `main`: job `check, test, build`, `cargo test` 29 + 17 | CI | run `36486254192` on `8449bd7` (2026-09-28); run `36542711467` on `c7eef75` (2026-09-29) | 2026-09-29 | VERIFIED |
 | Q2 Hub CI passes on `main`: `web and sdk`, `indexer`, `watcher` | CI | runs `36525671512` on `85e4f10` (2026-09-29), `36543623125` on `78d8d77`, `36545335647` on `f2565bf`, `36545722901` on `6a5911d` | 2026-09-29 | VERIFIED |
-| Q3 Hub PR #8 (ESLint 9 to 10) is open and its CI run fails; it was not touched | CI | run `36507180532` on `449e285`; `gh pr list` | 2026-09-29 | VERIFIED |
+| Q3 Hub PR #8 (ESLint 9 to 10) was open on 2026-09-29 and its CI run failed; it was not touched then. It has since been closed without merge (row AP) | CI | run `36507180532` on `449e285`; `gh pr list` | 2026-09-29 | VERIFIED |
 | Q4 `cargo fmt --check` fails and is informational in vault CI | CI | `vault/.github/workflows/ci.yml`; `matrix` §0.11 | 2026-09-29 | KNOWN LIMITATION |
 | Q5 The documentation site is not built in CI | source | `hub/.github/workflows/ci.yml` | 2026-09-29 | KNOWN LIMITATION |
 | Q6 Local tests: vault 52, SDK 29, web 50, indexer 45 (44 before the 2026-09-29 final remediation), watcher 48 pass; lint, typecheck, builds and docs build pass | local test | `matrix` §0.11 (2026-09-29) | 2026-09-29 | TESTED LOCALLY |
@@ -215,7 +227,7 @@ live checks.
 |---|---|---|---|---|
 | R1 Dependabot is configured for both repositories | source | `vault/.github/dependabot.yml`, `hub/.github/dependabot.yml` | 2026-09-29 | VERIFIED |
 | R2 Dependabot PRs have been merged, including soroban-sdk 27.0.6 to 28.0.0 (vault #1) and the hub's #1 to #7 and #9 | CI | `gh pr list` on both repositories, 2026-09-29 | 2026-09-29 | VERIFIED |
-| R3 Hub PR #8 remains open pending a compatibility decision | CI | same; `hub/README.md` | 2026-09-29 | KNOWN LIMITATION |
+| R3 Hub PR #8 remained open pending a compatibility decision on 2026-09-29. Superseded: it was closed without merge because ESLint 10 is incompatible with the current lint stack (row AP) | CI | same; `hub/README.md` | 2026-09-29 | SUPERSEDED |
 
 ## S. Branch protection
 
@@ -267,8 +279,8 @@ live checks.
 |---|---|---|---|---|
 | Y1 The historical contracts were built with soroban-sdk 27.0.6 and current `main` builds with 28.0.0 | Testnet, source | `matrix` §0.2 (WASM metadata); `vault/Cargo.toml` | 2026-09-29 | VERIFIED |
 | Y1.b The current live contracts and current `main` source are in strict parity, both building with soroban-sdk 28.0.0 | Testnet, source | `vault/evidence/testnet-2026-10-01.md` | 2026-10-01 | VERIFIED |
-| Y2 CI's `sla_vault.wasm` for `main` (`2f958b86…`) differs from the live one (`69097132…`) | CI | run `36486254192` log (2026-09-28); `matrix` §0.10 | 2026-09-29 | VERIFIED |
-| Y3 The public interface is unchanged by the bump, but the live build also lacks the zero-balance withdrawal rejection | Testnet, source | `matrix` §0.2, §1.3 | 2026-09-29 | VERIFIED |
+| Y2 Historical: CI's `sla_vault.wasm` for `main` (`2f958b86…`) differed from the then-live 2026-09-27 one (`69097132…`). Superseded by the 2026-10-01 deployment (Y1.b) | CI | run `36486254192` log (2026-09-28); `matrix` §0.10 | 2026-09-29 | SUPERSEDED |
+| Y3 Historical: the public interface was unchanged by the bump, but the then-live 2026-09-27 build lacked the zero-balance withdrawal rejection. The 2026-10-01 deployment has it (row AR) | Testnet, source | `matrix` §0.2, §1.3 | 2026-09-29 | SUPERSEDED |
 | Y4 The same source builds to different WASM hashes under different Rust versions (local 1.97.1 versus CI 1.98.1), so byte-for-byte artifact reproducibility across toolchains is not established. This is separate from interface parity, which is VERIFIED (A4) | local test, CI | `matrix` §0.10, §0.11 | 2026-09-29 | KNOWN LIMITATION |
 | Y5 Redeploying and re-verifying against 28.0.0. Out of scope for this batch | none | `vault/README.md`; `hub/apps/docs/testnet-deployment.md` | 2026-09-29 | SUPERSEDED |
 
@@ -283,7 +295,7 @@ live checks.
 | Z5 The watcher and indexer round lengths must be configured equal by hand | source | `matrix` §9 | 2026-09-29 | KNOWN LIMITATION |
 | Z6 The indexer's `explorer_url` is hardcoded to Testnet | source | `hub/indexer/src/api/routes.ts`; `matrix` §5 | 2026-09-29 | KNOWN LIMITATION |
 | Z7 No public indexer, managed database, permanent watcher or automatic deployment pipeline exists; the frontend and documentation are hosted by hand on a personal Vercel account and are not Git-connected | absence check | `hub/apps/docs/deployment-topology.md`; `hub/evidence/final-technical-audit-2026-09-29-r3.md` | 2026-09-29 | KNOWN LIMITATION |
-| Z8 Neither repository has a license file | absence check | `git ls-files` in both repositories, 2026-09-29 | 2026-09-29 | KNOWN LIMITATION |
+| Z8 Neither repository had a license file on 2026-09-29. Superseded: both repositories now have an MIT `LICENSE` and GitHub recognizes it (row AQ); hub #10 and vault #2 are closed | absence check | `git ls-files` in both repositories, 2026-09-29 | 2026-09-29 | SUPERSEDED |
 | Z9 Testnet only; nothing is audited or production-ready | record | both `README.md` and `SECURITY.md` files | 2026-09-29 | KNOWN LIMITATION |
 
 ## Cross-repository parity
@@ -300,13 +312,27 @@ live checks.
 
 | Claim | Evidence type | Source | Date checked | Status |
 |---|---|---|---|---|
-| AF The live contract instances and WASM code entries, due to expire about 2026-10-05, were extended by 3,000,000 ledgers; WASM hashes and live state are unchanged. This is an operational mitigation, not a redeployment or a source fix | Testnet | `hub/apps/docs/testnet-deployment.md` "Lifetime extension" (txs `b8601edc…`, `1e2b750d…`, `9efdb520…`, `a130b4f3…`, gathered 2026-09-29); `hub/evidence/final-technical-audit-2026-09-29.md` remediation | 2026-09-29 | VERIFIED |
-| AG The current contract source extends instance storage itself. It does not; a permanent fix needs a contract build and redeployment | source | `vault/contracts/*/src/lib.rs` (no `instance().extend_ttl`); vault issue #3 | 2026-09-29 | KNOWN LIMITATION |
-| AH The live persistent entries the workflow needs (5 watcher registrations, SLAs 0 to 2 and their bond balances, settled round 0/1) were extended by 3,000,000 ledgers on 2026-09-29 (12 transactions, no state changed). Vote-history entries were not, and the contract still extends a persistent entry only when it writes it | Testnet | `hub/apps/docs/testnet-deployment.md` "Persistent entries, same day" (txs `78f0ec30…` to `e6e0661a…`, ledgers 4932956 to 4932981); `hub/evidence/findings-classification-2026-09-29.md` §4 | 2026-09-29 | VERIFIED |
+| AF The instances and WASM code entries of the superseded 2026-09-27 pair, due to expire about 2026-10-05, were extended by 3,000,000 ledgers; WASM hashes and live state are unchanged. This is an operational mitigation, not a redeployment or a source fix | Testnet | `hub/apps/docs/testnet-deployment.md` "Lifetime extension" (txs `b8601edc…`, `1e2b750d…`, `9efdb520…`, `a130b4f3…`, gathered 2026-09-29); `hub/evidence/final-technical-audit-2026-09-29.md` remediation | 2026-09-29 | VERIFIED |
+| AG The current contract source extends instance storage itself. It does not; a permanent fix needs a contract build and redeployment. Source and deployment parity is resolved separately (rows Y1.b, AO); vault issue #3 is closed | source | `vault/contracts/*/src/lib.rs` (no `instance().extend_ttl`) | 2026-09-29 | KNOWN LIMITATION |
+| AH The persistent entries of the superseded 2026-09-27 pair that the workflow needed (5 watcher registrations, SLAs 0 to 2 and their bond balances, settled round 0/1) were extended by 3,000,000 ledgers on 2026-09-29 (12 transactions, no state changed). Vote-history entries were not, and the contract still extends a persistent entry only when it writes it | Testnet | `hub/apps/docs/testnet-deployment.md` "Persistent entries, same day" (txs `78f0ec30…` to `e6e0661a…`, ledgers 4932956 to 4932981); `hub/evidence/findings-classification-2026-09-29.md` §4 | 2026-09-29 | VERIFIED |
 | AI A repeat `cancel_sla` emits another `SlaCancelled` event and moves no funds | source | `hub/apps/docs/limitations.md`; `vault/SLASettle-contract-spec.md` | 2026-09-29 | KNOWN LIMITATION |
 | AJ A missing or wrong signature is rejected by the contracts and `trigger_settlement` needs no signature or role from its caller. Before 2026-09-29 no test showed either: every contract test used `mock_all_auths()` | local test | `vault/contracts/sla_vault/src/test.rs` (`test_provider_methods_reject_a_missing_signature_and_change_nothing`, `test_a_signature_from_someone_else_does_not_authorize_the_provider`, `test_admin_methods_reject_a_missing_signature`, `test_trigger_settlement_needs_no_signature_and_no_role_from_its_caller`); `vault/contracts/watcher_registry/src/test.rs` (`test_admin_and_watcher_methods_reject_a_missing_signature`); vault `d79c52d` | 2026-09-29 | TESTED LOCALLY |
 | AK A live wrongly-signed or unsigned call was rejected on Testnet. None was recorded | none | `hub/evidence/findings-classification-2026-09-29.md` row 20 | 2026-09-29 | UNVERIFIED |
 | AL Every material finding of the final audit, the external review, the parity matrix, the ledger and the traceability record has exactly one A to E category: A 0, B 1, C 19, D 3, E 20 (two rows closed as historical) | record | `hub/evidence/findings-classification-2026-09-29.md` | 2026-09-29 | VERIFIED |
 | AM The hosted frontend connects to Freighter and can sign a dashboard write from its hosted origin. Not tested; the Freighter verification was on a local origin | none | `hub/evidence/final-technical-audit-2026-09-29-r3.md` §2 | 2026-09-29 | UNVERIFIED |
-| AN The current contracts resolve on the Testnet explorer with the recorded creator and WASM hashes (the repositories link to those contract pages) | live Testnet test | explorer API read, 2026-09-29; `hub/evidence/final-technical-audit-2026-09-29-r3.md` §2 | 2026-09-29 | VERIFIED |
+| AN The 2026-09-27 pair resolved on the Testnet explorer with the recorded creator and WASM hashes (historical; not re-run for the current pair) (the repositories link to those contract pages) | live Testnet test | explorer API read, 2026-09-29; `hub/evidence/final-technical-audit-2026-09-29-r3.md` §2 | 2026-09-29 | VERIFIED |
 
+## Current Protocol 28 deployment (added 2026-10-06)
+
+| Claim | Evidence type | Source | Date checked | Status |
+|---|---|---|---|---|
+| AO `watcher/go.mod` requests toolchain `go1.25.14` and `govulncheck ./...` reported 0 vulnerabilities | local test | `hub/evidence/final-technical-audit-2026-09-29.md` (run 2026-10-01); `hub/watcher/go.mod` | 2026-10-06 | VERIFIED |
+| AP Hub PR #8 (ESLint 9 to 10) is closed and not merged; the project stays on ESLint 9.x and does not claim ESLint 10 support | CI | `gh pr view 8` | 2026-10-06 | VERIFIED |
+| AQ Both repositories have an MIT `LICENSE` file recognized by GitHub | source | `LICENSE` in each repository; GitHub repository metadata | 2026-10-06 | VERIFIED |
+| AR The current pair rejects a repeat `withdraw_remaining_bond` on a zero balance with `#7` | Testnet | `vault/evidence/testnet-2026-10-01.md` "SLA 1" | 2026-10-01 | VERIFIED |
+| AS The current pair rejects `create_sla` with `quorum_threshold == 0` with `#7` | Testnet | `vault/evidence/testnet-2026-10-01.md` "Quorum-zero fix, live" | 2026-10-01 | VERIFIED |
+| AT The current pair settled SLA 0 after three `Down` votes (round 123) and rejected a second settlement with `#4` | Testnet | `vault/evidence/testnet-2026-10-01.md` "SLA 0" | 2026-10-01 | VERIFIED |
+| AU The current pair supports SLA creation, top-up, cancellation, withdrawal and vault pause and unpause | Testnet | `vault/evidence/testnet-2026-10-01.md` | 2026-10-01 | VERIFIED |
+| AV The on-chain WASM of the current pair hashes to `5478788e…` (`watcher_registry`) and `e177a76f…` (`sla_vault`), equal to a local rebuild of vault `main` | Testnet, local test | `stellar contract fetch` and `sha256sum`, 2026-10-06; `vault/evidence/testnet-2026-10-01.md` | 2026-10-06 | VERIFIED |
+| AW A lifetime extension of the current pair has been made. None is recorded and no expiration ledger has been read | none | `hub/apps/docs/testnet-deployment.md` "Lifetime status of the current pair" | 2026-10-06 | UNVERIFIED |
+| AX Event decoding, a registry pause test, a watcher daemon run, an indexer run and a frontend browser check on the current pair. None is recorded | none | `vault/evidence/testnet-2026-10-01.md` does not contain them | 2026-10-06 | UNVERIFIED |

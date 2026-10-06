@@ -36,7 +36,7 @@ pnpm install        # sets up apps/web and packages/sdk only
 
 Toolchain, pinned and verified: Node 24.21.0 (`.nvmrc`), pnpm 12.8.2
 (`packageManager` field), Go 1.25 (`watcher/go.mod`'s declared minimum, with a
-`toolchain go1.25.14` line; verified with 1.25.1 and 1.25.14).
+`toolchain go1.25.14` line; verified with 1.25.14).
 
 `indexer` and `watcher` are separate projects, set up independently:
 

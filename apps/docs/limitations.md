@@ -32,7 +32,8 @@ a verification step that genuinely has not happened yet.
 - **A real browser/Freighter connection test, and a real watcher-daemon
   run against live Testnet RPC and the live contract, were both
   performed on 2026-09-29**, using a disposable watcher account and the
-  live, verified deployment. The frontend check covered wallet
+  then-live 2026-09-27 deployment (since superseded by the 2026-10-01 pair;
+  neither check has been repeated on it). The frontend check covered wallet
   connect/disconnect/reconnect, correct address and network display, the
   network-mismatch indicator, and the public status page working without
   a wallet — it did **not** cover the dashboard's write forms
@@ -87,21 +88,25 @@ protocol level regardless — but it is a real UX gap, tracked as
 The current contract source never extends the lifetime of its instance
 storage (`Admin`, `Paused`, `NextSlaId`, `WatcherCount`, `WatcherRegistry`)
 and does not refresh a watcher's registration, an SLA's config or a bond
-balance when they are only read. On the live deployment this was found on
-2026-09-29 with the instances due to expire about 2026-10-05.
+balance when they are only read. This was found on 2026-09-29 on the
+superseded 2026-09-27 pair, whose instances were due to expire about
+2026-10-05.
 
-- **Operational mitigation, done 2026-09-29:** the lifetime of both live
-  contract instances and both WASM code entries was extended by 3,000,000
-  ledgers (about 174 days) with `stellar contract extend`. Only lifetimes
-  changed; nothing was redeployed and the WASM hashes are the same. See
+- **Current pair:** no lifetime extension of the 2026-10-01 pair is recorded
+  and no expiration ledger for it has been read or recorded. Check it with the
+  Stellar CLI and extend it by hand when needed.
+- **Operational mitigation on the superseded pair, done 2026-09-29:** the
+  lifetime of that pair's contract instances and WASM code entries was extended
+  by 3,000,000 ledgers (about 174 days) with `stellar contract extend`. Only
+  lifetimes changed. These transactions do not apply to the current pair. See
   [Current Testnet deployment](/testnet-deployment).
 - **Not fixed at source level:** the source still does not extend instance
   storage itself. A permanent fix needs a contract change and a redeployment,
-  which is subject to the open SDK and deployment decision (vault issue #3).
-  Until then the live lifetimes have to be extended by hand before about
-  ledger 7932489.
-- **Persistent entries:** on 2026-09-29 the entries the live workflow
-  needs (the five watcher registrations, SLAs 0 to 2 with their bond
+  which is outside the current submission freeze. Source and deployment
+  parity itself is resolved by the 2026-10-01 deployment (vault issue #3 is
+  closed).
+- **Persistent entries (superseded pair):** on 2026-09-29 the entries the
+  workflow on that pair needed (the five watcher registrations, SLAs 0 to 2 with their bond
   balances, and the settled round 0/1) were also extended by 3,000,000
   ledgers (12 transactions, no state changed; see
   [Current Testnet deployment](/testnet-deployment)). History entries such as

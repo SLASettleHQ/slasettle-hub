@@ -1,6 +1,7 @@
 # Deployment topology
 
-What exists, as of 2026-09-29, and where it runs. This page describes only
+What exists, and where it runs. Dated statements below are from 2026-09-29
+unless noted; the contract entries describe the current 2026-10-01 deployment. This page describes only
 what the repositories and the evidence show; it does not describe hosting,
 infrastructure or operators that do not exist. Every arrow in the diagram
 below was read from code, and the last section lists where.
@@ -34,12 +35,13 @@ Each component is in exactly one of four categories:
 
 - **Two Soroban contracts, on Stellar Testnet only.** See
   [Current Testnet deployment](/testnet-deployment) for IDs, hashes and
-  what the live build lacks compared with the current source. Nothing is on
-  Stellar mainnet.
+  evidence. Source and deployment parity holds for the current 2026-10-01
+  pair. Nothing is on Stellar mainnet.
 - **The watcher daemon has been run live, for verification, and is not
   continuously deployed.** On 2026-09-29 the real `watcher` process ran on
-  one developer machine against live Testnet RPC and the live
-  `watcher_registry` for four consecutive rounds, using a disposable
+  one developer machine against live Testnet RPC and the then-live
+  `watcher_registry` of the superseded 2026-09-27 pair for four consecutive
+  rounds, using a disposable
   account registered for the purpose and removed afterward. Each
   submission was confirmed on-chain. That is **VERIFIED**. See
   `evidence/phase-23-verification-2026-09-29.md`, Part C. Earlier votes, on
@@ -132,11 +134,12 @@ SECRET; the per-variable tables are in
 ### `watcher_registry` contract
 
 - **Repository / root:** `slasettle-vault`, `contracts/watcher_registry`.
-- **Runtime:** Soroban WASM on Stellar Testnet. Deployed 2026-09-27,
+- **Runtime:** Soroban WASM on Stellar Testnet. Deployed 2026-10-01,
   `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF`, built with
-  soroban-sdk 28.0.0. Its instance and code lifetimes were extended by hand
-  on 2026-09-29 (not redeployed); the source does not extend them itself, so
-  this needs maintenance (see [Limitations](/limitations)).
+  soroban-sdk 28.0.0 and stellar-cli 28.1.0. No lifetime extension of this
+  contract is recorded; the source does not extend instance storage itself, so
+  it needs maintenance (see [Limitations](/limitations)). The hand extensions
+  of 2026-09-29 were made on the superseded 2026-09-27 pair.
 - **Build:** `stellar contract build` (it must be built before `sla_vault`).
   **Start:** none; it is on-chain.
 - **Environment variables:** none. Deployment is done with the Stellar CLI
@@ -153,9 +156,10 @@ SECRET; the per-variable tables are in
 ### `sla_vault` contract
 
 - **Repository / root:** `slasettle-vault`, `contracts/sla_vault`.
-- **Runtime:** Soroban WASM on Stellar Testnet. Deployed 2026-09-27,
-  `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN`. Same lifetime
-  maintenance note as `watcher_registry`.
+- **Runtime:** Soroban WASM on Stellar Testnet. Deployed 2026-10-01,
+  `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN`, built with
+  soroban-sdk 28.0.0 and stellar-cli 28.1.0. Same lifetime maintenance note as
+  `watcher_registry`.
 - **Build:** `stellar contract build` (it needs `watcher_registry.wasm`
   built first, because of `contractimport!`). **Start:** none.
 - **Environment variables:** none.

@@ -35,8 +35,8 @@ create_sla(provider, token, bond_amount, uptime_target_bps,
 
 ## A worked example, using the real numbers from this project's own Testnet evidence
 
-The live evidence in `slasettle-vault/evidence/testnet-2026-09-27.md`
-recorded a real `create_sla` call with:
+The historical evidence in `slasettle-vault/evidence/testnet-2026-09-27.md`
+(the superseded 2026-09-27 deployment) recorded a real `create_sla` call with:
 
 ```text
 bond_amount:         50000000   (5 XLM, at 10,000,000 stroops per XLM)

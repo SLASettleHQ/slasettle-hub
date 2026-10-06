@@ -39,15 +39,16 @@ up by the project admin for evidence runs, not by independent operators.
 - **No independent security audit has been performed.** See
   [Security](/security) for the actual internal review that has been
   done.
-- **The currently deployed, live-verified contracts were built with
-  `soroban-sdk` 27.0.6.** The vault repository's current source has since
-  moved to `soroban-sdk` 28.0.0. These are not the same build. See
-  [Current Testnet deployment](/testnet-deployment) for the exact detail.
-  This mismatch is real and has not been resolved as of this writing.
+- **The current contracts were built and deployed on 2026-10-01 with
+  `soroban-sdk` 28.0.0 and `stellar-cli` 28.1.0 (Protocol 28).** The vault
+  repository's current source uses the same SDK and the WASM hashes match. See
+  [Current Testnet deployment](/testnet-deployment) for the IDs, hashes and
+  evidence. Earlier deployments are kept there as historical evidence only.
 - **Browser and Freighter wallet verification of the frontend, and a
   live watcher-daemon run against real Testnet RPC, were both performed
-  on 2026-09-29** using a disposable watcher account and the live,
-  verified deployment. See [Limitations](/limitations) for what this
+  on 2026-09-29** using a disposable watcher account against the earlier,
+  superseded 2026-09-27 deployment. They have not been repeated on the
+  current deployment. See [Limitations](/limitations) for what this
   covered and what a real, previously-undocumented indexer defect it
   surfaced along the way.
 

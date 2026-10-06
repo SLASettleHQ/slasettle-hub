@@ -75,11 +75,13 @@ entirely.
 The contracts' live behavior — real transactions, real events, a real
 permissionless settlement triggered by a non-privileged account — was
 verified directly against Testnet, not through the unit test suites
-above. See `slasettle-vault/evidence/testnet-2026-09-27.md` and
-[Current Testnet deployment](/testnet-deployment) for that evidence,
-and note the [soroban-sdk mismatch](/testnet-deployment) it inherits:
-that Testnet evidence is for the fresh `28.0.0` build, fully matching the current
-`28.0.0` source these unit tests run against.
+above. The current evidence is `slasettle-vault/evidence/testnet-2026-10-01.md`,
+for the 2026-10-01 deployment built with `soroban-sdk` 28.0.0, which matches
+the current source these unit tests run against. See
+[Current Testnet deployment](/testnet-deployment). The earlier
+`slasettle-vault/evidence/testnet-2026-09-27.md` is historical evidence of a
+superseded deployment (soroban-sdk 27.0.6) and is not evidence for the current
+contracts.
 
 ## CI
 

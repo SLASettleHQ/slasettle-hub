@@ -40,7 +40,6 @@ not silently drift.
 ## PR #8
 
 [`slasettle-hub#8`](https://github.com/SLASettleHQ/slasettle-hub/pull/8)
-(`chore(deps-dev): bump eslint from 9.39.5 to 10.11.0`) is open, pending
-a separate compatibility decision, as of this writing. It is a real,
-tracked piece of work in progress, not something this documentation
-resolves, merges, or works around.
+(`chore(deps-dev): bump eslint from 9.39.5 to 10.11.0`) was closed without
+merging because ESLint 10 is not compatible with the current lint stack. The
+project intentionally stays on ESLint 9.x and does not claim ESLint 10 support.

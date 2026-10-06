@@ -3,13 +3,27 @@
 Everything on this page is Stellar Testnet. Nothing described anywhere
 in this documentation is deployed to Stellar mainnet.
 
-## Source and Deployment Parity
+The current deployment is the Protocol 28 deployment of 2026-10-01. Earlier
+deployments are described under "Historical deployments" at the end of this
+page. They are kept as dated evidence and are not evidence for the current
+contracts.
 
-- The contracts live and verified on Testnet were built and deployed fresh on 2026-10-01 using `soroban-sdk` 28.0.0 and `stellar-cli` 28.1.0 on Protocol 28.
+## Source and deployment parity
+
+- The current contracts were built and deployed fresh on 2026-10-01 using
+  `soroban-sdk` 28.0.0 and `stellar-cli` 28.1.0 on Protocol 28.
 - `slasettle-vault`'s current source also depends on `soroban-sdk = "28.0.0"`.
-- Strict parity exists between the current source and the live deployment.
+- Source and deployment parity holds for the current pair. The WASM hashes
+  below are the hashes of the build deployed on 2026-10-01. A local rebuild of
+  vault `main` on 2026-10-06 produced the same two hashes, and the WASM fetched
+  from Testnet on 2026-10-06 (`stellar contract fetch`) hashes to the same
+  values.
+- Parity is between a pinned build and the deployment. The same source built
+  with a different Rust toolchain, or with a changed doc comment (doc strings
+  are embedded in the contract spec), can produce a different hash. That is a
+  property of the build, not an interface mismatch.
 
-## Live, verified deployment (built with soroban-sdk 28.0.0)
+## Current deployment (soroban-sdk 28.0.0, stellar-cli 28.1.0)
 
 Source: `slasettle-vault/evidence/testnet-2026-10-01.md`.
 
@@ -20,32 +34,74 @@ Source: `slasettle-vault/evidence/testnet-2026-10-01.md`.
 
 - Network: Testnet, passphrase `Test SDF Network ; September 2015`
 - RPC: `https://soroban-testnet.stellar.org`
-- Token used: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
-  (the native XLM Stellar Asset Contract on Testnet)
-- Admin: `GBWM5N2S3A3ZWEHNVTLLKSYRYCQB7ALJL4EOVO5ZFX6TSIZ3ZDED2UPB`
+- Admin and deployer: `GBWM5N2S3A3ZWEHNVTLLKSYRYCQB7ALJL4EOVO5ZFX6TSIZ3ZDED2UPB`
+- Five watchers were registered by the admin. They are evidence-run
+  addresses, not independent operators.
 
-This deployment includes the `quorum_threshold == 0` fix (see
-[Contracts](/contracts)) and the interface was independently confirmed
-via `stellar contract info interface` against the live network,
-matching the source as of 2026-09-27.
+### What the 2026-10-01 evidence shows
 
-### Re-checked on 2026-09-29 (read-only)
+The October 1 record shows, with transaction hashes or error codes in the
+record itself:
+
+- a fresh deployment and initialization of both contracts, and the five
+  watcher registrations;
+- `create_sla` with `quorum_threshold` 0 rejected with error `#7`;
+- SLA 0: creation, a top-up, three `Down` votes for round 123 and a
+  settlement (`trigger_settlement`, tx
+  `70395baea57c3c1a3382464026c0c72a67f71f977220ba4ba46094849fc57c7b`), then a
+  second settlement attempt rejected with `#4` (AlreadySettled);
+- SLA 1: creation, cancellation, a withdrawal, then a repeat withdrawal on the
+  empty bond rejected with `#7` (InvalidAmount);
+- a vault pause and unpause.
+
+It does not record a registry pause test, event decoding, a watcher daemon run,
+an indexer run, a payout-cap run or a frontend browser check on the current
+pair. It does not record which token the SLAs used.
+
+### Lifetime status of the current pair
+
+The current source never extends the lifetime of instance storage, and extends
+a persistent entry only when it writes it. **No lifetime extension of the
+current pair is recorded.** The extension transactions further down this page
+belong to the superseded 2026-09-27 pair and do not apply to the current one.
+No expiration ledger for the current pair has been read or recorded, so none is
+stated here. Check the live lifetimes with the Stellar CLI and extend them by
+hand when needed. A permanent fix needs a contract change and redeployment,
+which is outside the current submission freeze. See [Limitations](/limitations).
+
+## Historical deployments
+
+### 2026-09-27 pair (superseded; soroban-sdk 27.0.6, stellar-cli 27.0.0)
+
+Source: `slasettle-vault/evidence/testnet-2026-09-27.md`, which carries a
+notice that it is historical.
+
+| Contract | Contract ID | WASM hash |
+|---|---|---|
+| `watcher_registry` | `CBKAQETJU3PLB54LJRSA7ZH2ZG4TBQHHDSWZ23R4VVTV7WBIX3QZBUZ6` | `4c626d2c62e6f9b56b271e1a19798d2530c355b16724ff4e53c1e6ac6a3e4c6e` |
+| `sla_vault` | `CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL` | `6909713244bf5837954b8d584343e2136bd7570a10da8db7b30533e613b67830` |
+
+- Token used: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` (the
+  native XLM Stellar Asset Contract on Testnet).
+- This pair included the `quorum_threshold == 0` fix. Its interface matched the
+  source of 2026-09-27. Whether these contracts are still live was not
+  re-checked.
+
+#### Re-checked on 2026-09-29 (read-only), against this pair
 
 - The on-chain WASM of both contracts was re-downloaded
-  (`stellar contract fetch`) and its SHA-256 equals the WASM hash in the
-  table above, for both contracts.
-- A build of `slasettle-vault`'s current `main` (soroban-sdk 28.0.0)
-  exposes the same functions, structs, enums, errors and events as the
-  live contracts. The only difference in the contract spec is that the
-  live contracts' spec also lists their private `DataKey` storage-key
-  type, which the 28.0.0 build omits.
-- Live reads still match the evidence: `watcher_registry.get_watcher_count`
-  is `5`, `sla_vault.get_sla(0)` returns the fields listed below,
-  `is_round_settled(0, 1)` is `true`, and `get_bond_balance(0)` is
+  (`stellar contract fetch`) and its SHA-256 equaled the WASM hashes above.
+- A build of `slasettle-vault`'s `main` at that time (soroban-sdk 28.0.0)
+  exposed the same functions, structs, enums, errors and events as these
+  contracts. The only difference in the contract spec was that these
+  contracts' spec also listed their private `DataKey` storage-key type, which
+  the 28.0.0 build omits.
+- Live reads matched the evidence: `watcher_registry.get_watcher_count` was
+  `5`, `is_round_settled(0, 1)` was `true`, and `get_bond_balance(0)` was
   `46000000` (`50000000` − `10000000` settled + `5000000` and `1000000`
-  topped up).
+  topped up). These values describe this pair, not the current one.
 
-Interface parity (the point above) is not byte-for-byte artifact parity:
+Interface parity (the re-check above) is not byte-for-byte artifact parity:
 the same source compiled under different Rust versions produces
 different WASM hashes (`5a5ee41b…` locally with rustc 1.97.1 versus
 `2f958b86…` in CI with rustc 1.98.1, both at vault `8449bd7`), so a rebuild from source cannot be
@@ -55,10 +111,10 @@ comments, because doc strings are embedded in the contract spec (CI's hash
 at vault `8d9c517`, a comment-only change, is `951f28b5…`). That is a
 documented limitation, not an interface mismatch.
 
-The full record is `evidence/parity-matrix-2026-09-29.md` in the hub
-repository, section 6.
+The full record of that check is `evidence/parity-matrix-2026-09-29.md` in the
+hub repository, section 6.
 
-### Lifetime extension, 2026-09-29 (operational, not a redeployment)
+### Lifetime extension of the 2026-09-27 pair, 2026-09-29 (operational)
 
 The current source never extends the lifetime of instance storage, and the
 live instances and code entries were due to expire about 2026-10-05
@@ -78,12 +134,12 @@ Afterwards the WASM SHA-256 of both contracts was unchanged (`4c626d2c…`,
 `69097132…`), `get_watcher_count` still read `5`, `get_sla(0)` and
 `get_bond_balance(0)` (`46000000`) still returned the same values. This
 does not change the source: the current source still has no instance
-lifetime extension, so the live lifetimes need maintenance (about
-174 days from 2026-09-29), and a permanent fix requires a contract build and
-redeployment. Persistent entries were not part of that first extension; see the
-next subsection. See [Limitations](/limitations).
+lifetime extension, so those lifetimes needed maintenance. These transactions apply to the
+superseded 2026-09-27 pair only and say nothing about the current pair.
+Persistent entries were not part of that first extension; see the next
+subsection. See [Limitations](/limitations).
 
-#### Persistent entries, same day
+#### Persistent entries of the 2026-09-27 pair, same day
 
 The live workflow's persistent entries were then extended the same way
 (`stellar contract extend --id <contract> --key-xdr <ScVal key>
@@ -108,15 +164,15 @@ transactions succeeded:
 Vote-history entries (tallies and per-watcher check records for the evidence
 rounds) were not extended.
 
-### What the live build is missing compared to current source
+### What this pair lacked compared to source of that date
 
-The current `slasettle-vault` source differs from what is deployed in
-two ways that are not visible in the interface: it is built with
-soroban-sdk 28.0.0, and it rejects a
-repeat `withdraw_remaining_bond` on an empty bond (see below). Neither
-has been deployed or re-verified live.
+When the 2026-09-27 pair was checked on 2026-09-29, current source differed
+from it in two ways that were not visible in the interface: it was built with
+soroban-sdk 28.0.0, and it rejected a repeat `withdraw_remaining_bond` on an
+empty bond. The 2026-10-01 deployment resolved both for the current pair. They
+remain true statements about the 2026-09-27 pair only.
 
-### A real, permissionless settlement, live on this deployment
+### A real, permissionless settlement on the 2026-09-27 pair
 
 - SLA 0: `bond_amount 50000000`, `penalty_per_breach 10000000`,
   `quorum_threshold 3`, beneficiary
@@ -131,33 +187,33 @@ has been deployed or re-verified live.
   (an account that was not the admin, provider, or beneficiary), paid
   out `10000000` stroops, `SettlementPaid` event confirmed.
 
-The zero-balance `withdraw_remaining_bond` rejection (see
-[Contracts](/contracts)) is **not** part of this deployment. It was
-written the day after this deployment (`slasettle-vault` commit
-`99be8a1`, 2026-09-28) and is TESTED LOCALLY only. What the evidence run
-recorded on a separate SLA (SLA 1) is the *pre-fix* behavior: a repeat
-withdrawal on an already-empty bond succeeded as a no-op and emitted a
-`bond_withdrawn` event with `amount: 0` (tx
-`0dbbb2e82da901912ec1cc55e2d05e33cee3ff73e9b74301ec9a7632ba328deb`).
+At that time the zero-balance `withdraw_remaining_bond` rejection (see
+[Contracts](/contracts)) was **not** part of the 2026-09-27 pair. It was
+written the day after that deployment (`slasettle-vault` commit `99be8a1`,
+2026-09-28). What the 2026-09-27 evidence run recorded on a separate SLA
+(SLA 1) is the pre-fix behavior: a repeat withdrawal on an already-empty bond
+succeeded as a no-op and emitted a `bond_withdrawn` event with `amount: 0` (tx
+`0dbbb2e82da901912ec1cc55e2d05e33cee3ff73e9b74301ec9a7632ba328deb`). The
+2026-10-01 deployment rejects it, see above.
 
-## Historical deployment (predates the quorum-zero fix)
+### Earlier pair (predates the quorum-zero fix)
 
 These contract IDs were deployed in an earlier session, before the
-`quorum_threshold == 0` fix existed in source. They remain live on
-Testnet, were not modified or redeployed, and their own prior evidence
-(a settlement against the un-fixed source) is still valid as evidence
-of that earlier state — but they must not be treated as verification of
-the current, fixed contract logic.
+`quorum_threshold == 0` fix existed in source. They were not modified or
+redeployed by this project afterwards, and whether they are still live was not
+re-checked. Their own prior evidence (a settlement against the un-fixed source)
+is still valid as evidence of that earlier state, but they must not be treated
+as verification of the current contract logic.
 
 | Contract | Contract ID |
 |---|---|
 | `watcher_registry` | `CBEZ3XBIWK2AWYGZRNDGNZG3AZTJHFMQL5HVWTEUZZ5HLSCO4QDFJB77` |
 | `sla_vault` | `CBA4DFNUBVCPLEAUD5O2CHSUB6DRWUNM7A537EBVPAGDETFBB2CABXI2` |
 
-`slasettle-vault`'s untracked, local `.deployed-testnet.env` still holds
-this historical pair. If any hub `.env` or `.env.local` you use was
-copied from it, see [Environment variables](/environment-variables)
-before running the watcher, indexer, or frontend against it.
+`slasettle-vault`'s untracked, local `.deployed-testnet.env` may still hold an
+old pair on a developer machine. If any hub `.env` or `.env.local` you use was
+copied from it, see [Environment variables](/environment-variables) before
+running the watcher, indexer, or frontend against it.
 
 ## What is not deployed anywhere
 

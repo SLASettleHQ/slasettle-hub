@@ -33,8 +33,10 @@ public issue — and ask for a private channel to share the rest.
   library, already fixed in later Go 1.25.x patch releases; none in
   `go-stellar-sdk` or any other third-party dependency actually called
   by this code. Re-run 2026-09-30: with Go 1.25.14 none affect this code
-  (one advisory in an indirect module that is not called); with the local
-  Go 1.25.1 the same 25 standard library findings remain.
+  (one advisory in an indirect module that is not called). The earlier 25
+  standard library findings were reported with Go 1.25.1 and are superseded.
+  `watcher/go.mod` requests toolchain `go1.25.14`, and `govulncheck ./...`
+  reported 0 vulnerabilities on 2026-10-01.
 - **Manual secret scanning**: a `git grep` across the complete reachable
   git history of both repositories, for Stellar secret-key patterns, PEM
   private-key blocks, and generic API-key assignment patterns, found
@@ -71,7 +73,6 @@ documentation applies to itself throughout.
 See [Limitations](/limitations) for the complete list with more detail.
 The short version: no commit-reveal for watcher votes, one shared
 watcher set, `uptime_target_bps` not enforced, frontend network-mismatch
-detection is visual-only with no hard submit block, and — the one that
-spans both repositories — the currently deployed contracts were built
-with `soroban-sdk 28.0.0`, in strict parity with the vault's current source which also uses
+detection is visual-only with no hard submit block, and the current contracts, deployed 2026-10-01, were built
+with `soroban-sdk 28.0.0` and match the vault's current source, which also uses
 `28.0.0` (see [Current Testnet deployment](/testnet-deployment)).

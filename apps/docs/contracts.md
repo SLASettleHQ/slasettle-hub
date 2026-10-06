@@ -116,13 +116,14 @@ calls it:
 
 ### `withdraw_remaining_bond`'s zero-balance fix
 
-This is in the current source, not in the live Testnet deployment (see
-[Current Testnet deployment](/testnet-deployment)).
+This is in the current source and in the current 2026-10-01 Testnet
+deployment (see [Current Testnet deployment](/testnet-deployment)), where a
+repeat withdrawal on an emptied bond was rejected with `InvalidAmount`.
 
 Rejects with `InvalidAmount` if the balance is already `0`, rather than
-succeeding as a no-op. Real Testnet evidence
-(`slasettle-vault/evidence/testnet-2026-09-27.md`) showed the
-pre-fix contract would still submit a real transaction and emit a
+succeeding as a no-op. Historical Testnet evidence
+(`slasettle-vault/evidence/testnet-2026-09-27.md`, superseded deployment)
+showed the pre-fix contract would still submit a real transaction and emit a
 `bond_withdrawn` event with `amount: 0` on a repeat call — moving no
 funds, but wasting a fee and emitting a misleading event. This matches
 the zero-value rejection pattern already used by `create_sla` and
@@ -179,5 +180,6 @@ usage data — see [Limitations](/limitations).
 Instance storage (`Admin`, `Paused`, `NextSlaId`, `WatcherCount`,
 `WatcherRegistry`) is **not** extended by the contract code at all, and
 entries that are only read (a watcher's registration, an SLA's config) are
-not refreshed by the read. The live instances were extended by hand on
-2026-09-29 (see [Current Testnet deployment](/testnet-deployment)).
+not refreshed by the read. The instances of the superseded 2026-09-27 pair were extended by hand on
+2026-09-29. No extension of the current pair is recorded (see
+[Current Testnet deployment](/testnet-deployment)).
