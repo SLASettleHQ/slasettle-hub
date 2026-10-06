@@ -24,3 +24,4 @@ export {
   getWatcherCount,
 } from "./watcher-registry.js";
 export { getTokenDecimals, getTokenSymbol } from "./token.js";
+export { deriveQuorum, type QuorumStatus } from "./quorum.js";
