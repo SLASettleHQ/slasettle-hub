@@ -37,4 +37,28 @@ describe("TransactionStatus", () => {
     );
     expect(screen.getByRole("alert").textContent).toMatch(/bbbbbb…bbbbbb/);
   });
+
+  it("labels a submitted transaction as pending, not confirmed", () => {
+    render(<TransactionStatus state={{ status: "pending", hash: "d".repeat(64) }} />);
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("Pending confirmation");
+    expect(status).not.toHaveTextContent("Confirmed");
+    expect(status.textContent).toMatch(/dddddd…dddddd/);
+  });
+
+  it("shows a wallet rejection as rejected, not as a failure", () => {
+    render(<TransactionStatus state={{ status: "rejected", message: "You declined the request." }} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Rejected. You declined the request.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows an unconfirmed result as an alert with its hash", () => {
+    render(
+      <TransactionStatus
+        state={{ status: "unconfirmed", hash: "e".repeat(64), message: "Check an explorer." }}
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Not yet confirmed. Check an explorer.");
+    expect(screen.getByRole("alert").textContent).toMatch(/eeeeee…eeeeee/);
+  });
 });
