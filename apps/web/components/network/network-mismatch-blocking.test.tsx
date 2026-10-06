@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/wallet", () => ({
+  isUserRejection: vi.fn(() => false),
   isFreighterAvailable: vi.fn(),
   getActiveWallet: vi.fn(),
   connectWallet: vi.fn(),
@@ -42,12 +43,22 @@ function connectWalletOn(networkPassphrase: string | null) {
   );
 }
 
+const TRIGGER_PROPS = {
+  slaId: 0n,
+  roundId: 1n,
+  votesDown: 3,
+  quorumThreshold: 3,
+  penaltyPerBreach: 10_000_000n,
+  tokenDecimals: 7,
+  tokenSymbol: "XLM",
+} as const;
+
 const writeActions = [
   ["Create SLA", () => <CreateSlaForm />, "Create SLA"],
   ["Top Up Bond", () => <TopUpBondForm slaId={0n} tokenDecimals={7} tokenSymbol="XLM" />, "Top Up Bond"],
   ["Cancel SLA", () => <CancelSlaAction slaId={0n} />, "Cancel SLA"],
   ["Withdraw Bond", () => <WithdrawBondAction slaId={0n} />, "Withdraw Bond"],
-  ["Trigger Settlement", () => <TriggerSettlementAction slaId={0n} roundId={1n} />, "Trigger Settlement"],
+  ["Trigger Settlement", () => <TriggerSettlementAction {...TRIGGER_PROPS} />, "Trigger settlement for round 1"],
 ] as const;
 
 beforeEach(() => {
@@ -84,7 +95,7 @@ describe("with no wallet connected", () => {
     connectWalletOn(null);
     render(
       <WalletProvider>
-        <TriggerSettlementAction slaId={0n} roundId={1n} />
+        <TriggerSettlementAction {...TRIGGER_PROPS} />
       </WalletProvider>,
     );
 

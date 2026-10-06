@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getSettlements, type IndexedSettlement } from "./indexer";
+import { describeReadError } from "./read-error";
 
 const PAGE_SIZE = 20;
 
@@ -46,7 +47,7 @@ export function useSettlementHistory(slaId: bigint) {
             nextCursor: null,
             loading: false,
             loadingMore: false,
-            error: err instanceof Error ? err.message : "Failed to load settlement history.",
+            error: describeReadError(err),
           });
         }
       }
@@ -58,6 +59,25 @@ export function useSettlementHistory(slaId: bigint) {
   }, [slaId]);
 
   const { nextCursor, loadingMore } = state;
+
+  /**
+   * Re-reads the newest page without clearing the list, so rows that were
+   * already on screen stay mounted and only genuinely new rows appear.
+   */
+  const reload = useCallback(async () => {
+    try {
+      const page = await getSettlements(slaId, { limit: PAGE_SIZE });
+      setState({
+        settlements: page.data,
+        nextCursor: page.nextCursor,
+        loading: false,
+        loadingMore: false,
+        error: null,
+      });
+    } catch (err) {
+      setState((prev) => ({ ...prev, error: describeReadError(err) }));
+    }
+  }, [slaId]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || loadingMore) return;
@@ -76,10 +96,10 @@ export function useSettlementHistory(slaId: bigint) {
       setState((prev) => ({
         ...prev,
         loadingMore: false,
-        error: err instanceof Error ? err.message : "Failed to load more settlements.",
+        error: describeReadError(err),
       }));
     }
   }, [slaId, nextCursor, loadingMore]);
 
-  return { ...state, loadMore };
+  return { ...state, loadMore, reload };
 }
