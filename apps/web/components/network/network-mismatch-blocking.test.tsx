@@ -57,7 +57,7 @@ const writeActions = [
   ["Create SLA", () => <CreateSlaForm />, "Create SLA"],
   ["Top Up Bond", () => <TopUpBondForm slaId={0n} tokenDecimals={7} tokenSymbol="XLM" />, "Top Up Bond"],
   ["Cancel SLA", () => <CancelSlaAction slaId={0n} />, "Cancel SLA"],
-  ["Withdraw Bond", () => <WithdrawBondAction slaId={0n} />, "Withdraw Bond"],
+  ["Withdraw Bond", () => <WithdrawBondAction slaId={0n} bondBalance={10n} tokenDecimals={7} tokenSymbol="XLM" />, "Withdraw remaining bond"],
   ["Trigger Settlement", () => <TriggerSettlementAction {...TRIGGER_PROPS} />, "Trigger settlement for round 1"],
 ] as const;
 

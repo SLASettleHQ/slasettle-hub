@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TokenAmount } from "@/components/token-amount";
-import { truncateAddress } from "@/lib/format";
+import { formatBps, truncateAddress } from "@/lib/format";
 import type { ProviderSlaView } from "@/lib/use-provider-slas";
 import { CancelSlaAction } from "./cancel-sla-action";
 import { TopUpBondForm } from "./top-up-bond-form";
@@ -48,7 +48,7 @@ export function SlaCard({ sla, onChanged }: { sla: ProviderSlaView; onChanged: (
         </div>
         <div>
           <dt className="text-[var(--color-fg-muted)]">Uptime target (display only)</dt>
-          <dd className="mt-0.5 font-mono">{(config.uptimeTargetBps / 100).toFixed(2)}%</dd>
+          <dd className="mt-0.5 font-mono">{formatBps(config.uptimeTargetBps)}</dd>
         </div>
         <div>
           <dt className="text-[var(--color-fg-muted)]">Beneficiary</dt>
@@ -76,7 +76,13 @@ export function SlaCard({ sla, onChanged }: { sla: ProviderSlaView; onChanged: (
             <CancelSlaAction slaId={slaId} onSuccess={onChanged} />
           </div>
         ) : (
-          <WithdrawBondAction slaId={slaId} onSuccess={onChanged} />
+          <WithdrawBondAction
+            slaId={slaId}
+            bondBalance={bondBalance}
+            tokenDecimals={tokenDecimals}
+            tokenSymbol={tokenSymbol}
+            onSuccess={onChanged}
+          />
         )}
       </div>
     </div>
