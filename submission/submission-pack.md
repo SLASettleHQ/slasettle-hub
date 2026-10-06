@@ -1,10 +1,14 @@
 # SLASettle Submission Pack
 
-Prepared 2026-09-29 from the repositories' evidence, source and GitHub state
-as they stood at hub `8773628` and vault `caae637` (both `main`), updated after the 2026-09-29 publishing pass. Every number,
-hash and status below is taken from a record in the repositories or from a
-check made on 2026-09-29; the records are named in each section. The
-repositories are in **submission freeze**: this pack changes no source.
+Prepared 2026-09-29 and realigned on 2026-10-06 with the Protocol 28
+deployment of 2026-10-01. State described here is hub `60e7929` and vault
+`6fa5ad6` (both `main`), before the consistency commits of 2026-10-06 that
+include this pack. Every number, hash and status below is taken from a record
+in the repositories or from a check whose date is given; the records are named
+in each section. Evidence is split into **current** (the 2026-10-01 Protocol 28
+deployment) and **historical** (the 2026-09-27 and 2026-09-29 verification of
+older deployments). The repositories are in **submission freeze**: this pack
+changes no source.
 
 Repository-relative paths below (for example `evidence/index.md`) are paths
 inside `slasettle-hub` unless a `vault:` prefix says otherwise. They are file
@@ -22,7 +26,7 @@ locations in the repositories, not hosted documentation URLs.
 - **Network:** Stellar Testnet only (`Test SDF Network ; September 2015`).
   Nothing is deployed to mainnet.
 - **Status:** a Testnet prototype. It is not production-deployed and not
-  audited by a third party. The two contracts are deployed on Testnet; the
+  audited by a third party. The two contracts are deployed on Testnet (section 3); the
   frontend and the documentation are hosted on Vercel (frontend without an
   indexer); nothing else is hosted.
 - **Public URLs:** application https://slasettle-web.vercel.app (Testnet; SLA
@@ -49,66 +53,60 @@ The two repositories are complementary, not duplicates:
 
 ## 3. Current Testnet contracts
 
-Deployed 2026-09-27 (evidence: `vault:evidence/testnet-2026-09-27.md`).
-Transaction links use the explorer's transaction pages. Contract pages:
+**Current evidence.** The current deployment is the Protocol 28 deployment of
+2026-10-01, built with soroban-sdk 28.0.0 and stellar-cli 28.1.0 (record:
+`vault:evidence/testnet-2026-10-01.md`). Contract pages:
 [`watcher_registry`](https://stellar.expert/explorer/testnet/contract/CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF)
-and [`sla_vault`](https://stellar.expert/explorer/testnet/contract/CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN)
-(the explorer's API returned both, with creator `GBWM5N2S…` and the WASM hashes
-below, on 2026-09-29). Stellar Lab's contract explorer loads but takes a contract
-by input, so no Lab deep link is given.
+and [`sla_vault`](https://stellar.expert/explorer/testnet/contract/CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN).
 
-| Contract | Contract ID | Live WASM SHA-256 | Deployment tx (create) | Ledger, time (UTC) |
-|---|---|---|---|---|
-| `watcher_registry` | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | `4c626d2c62e6f9b56b271e1a19798d2530c355b16724ff4e53c1e6ac6a3e4c6e` | [`da13eca3…`](https://stellar.expert/explorer/testnet/tx/da13eca35efa337ae17b570e207f7f2bad8f4dbe32299472907a151d7f0ac395) | 4905584, 2026-09-27T23:25:07Z |
-| `sla_vault` | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | `6909713244bf5837954b8d584343e2136bd7570a10da8db7b30533e613b67830` | [`cc3494a1…`](https://stellar.expert/explorer/testnet/tx/cc3494a158bee2fd6f08bd9676b4070dd900075b5fd58814d2d171c395fd1167) | 4905659, 2026-09-27T23:31:22Z |
+| Contract | Contract ID | WASM SHA-256 | WASM upload tx | Create tx | Init tx |
+|---|---|---|---|---|---|
+| `watcher_registry` | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | `5478788ea6c6ae46ddb85c399015139d3b883b7c253dd9abe50e096bf0bcdfb5` | [`40d728b6…`](https://stellar.expert/explorer/testnet/tx/40d728b69f8854275ed68394465f1c1e8de7f1dcaad7b1d3fbc60551e4ce4616) | [`ca6c382c…`](https://stellar.expert/explorer/testnet/tx/ca6c382cc1d551419ecbfcfe1ee8c90b3e34fbb1e51b7e356ddce4521d28959a) | [`f16ff6ef…`](https://stellar.expert/explorer/testnet/tx/f16ff6ef3effe24bbe73f948a6f5d874c693a1772e5170690ebf029a5860c677) |
+| `sla_vault` | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | `e177a76f3888575c3c9666689ab905e25a1b3001fb4d85045d05ee43fa298bcd` | [`1687043e…`](https://stellar.expert/explorer/testnet/tx/1687043e0d89c9180f0446b13e26b3bcbec0634e07ac41b367869458e0d4bf0b) | [`cc134bb4…`](https://stellar.expert/explorer/testnet/tx/cc134bb4aa560ff13bf60c429d6e7e62f8bc53aa2882f1131ecddcbe3c3be8e2) | [`38cf9f59…`](https://stellar.expert/explorer/testnet/tx/38cf9f59e772f55d3c91984a43e0aa0a4b2c2866e0958ad1fdc8732779296c7a) |
 
-- WASM upload transactions: registry
-  [`07e0a6a3…`](https://stellar.expert/explorer/testnet/tx/07e0a6a32f0fd2d412f26254192cac7cad52ea7d67763a3f6bfacf2a3e8f44b7),
-  vault
-  [`1e19aa0d…`](https://stellar.expert/explorer/testnet/tx/1e19aa0d00cf334ebe0f8bebb5c2182490bc0c6d6b33c9289136894278d41902).
-  Initialization: registry
-  [`7a51b818…`](https://stellar.expert/explorer/testnet/tx/7a51b8187cd35161a7485dc84072f28dbcd45e7782a476fb8322e27cb9fa749e),
-  vault
-  [`338c9ef1…`](https://stellar.expert/explorer/testnet/tx/338c9ef18fdaf386000cc58235767ddbfa6899518a00fa9e5affb1398507f5ab).
-- RPC: `https://soroban-testnet.stellar.org`. Admin:
-  `GBWM5N2S3A3ZWEHNVTLLKSYRYCQB7ALJL4EOVO5ZFX6TSIZ3ZDED2UPB`. Token used:
-  the native XLM contract on Testnet, `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`.
-- **Re-checked 2026-09-29:** the on-chain WASM of both contracts was fetched
-  and its SHA-256 equals the hashes above (`evidence/parity-matrix-2026-09-29.md`
-  section 0.1; re-read again in `evidence/final-technical-audit-2026-09-29-r2.md`).
-- **Historical deployment, not current:** an earlier pair,
-  `watcher_registry` `CBEZ3XBIWK2AWYGZRNDGNZG3AZTJHFMQL5HVWTEUZZ5HLSCO4QDFJB77`
-  and `sla_vault` `CBA4DFNUBVCPLEAUD5O2CHSUB6DRWUNM7A537EBVPAGDETFBB2CABXI2`,
-  predates the `quorum_threshold == 0` fix. It is kept as historical
-  evidence only; whether it is still live was not re-checked.
+- RPC: `https://soroban-testnet.stellar.org`. Admin and deployer:
+  `GBWM5N2S3A3ZWEHNVTLLKSYRYCQB7ALJL4EOVO5ZFX6TSIZ3ZDED2UPB`. Five watchers
+  were registered by the admin (registration transactions are listed in the
+  October 1 evidence).
+- **Checked 2026-10-06:** the WASM of both contracts was fetched from Testnet
+  with `stellar contract fetch` and its SHA-256 equals the hashes above.
+
+**Historical evidence, superseded.** Earlier Testnet deployments are kept as
+history only. They are not evidence for the current deployment:
+
+- 2026-09-27 pair (soroban-sdk 27.0.6, stellar-cli 27.0.0):
+  `watcher_registry` `CBKAQETJU3PLB54LJRSA7ZH2ZG4TBQHHDSWZ23R4VVTV7WBIX3QZBUZ6`
+  (WASM `4c626d2c62e6f9b56b271e1a19798d2530c355b16724ff4e53c1e6ac6a3e4c6e`) and
+  `sla_vault` `CD4FSW2E2YLGNVPQ6T6DA6FKRK735HLMN676IEF2O5LKZYVDYHHDIIFL`
+  (WASM `6909713244bf5837954b8d584343e2136bd7570a10da8db7b30533e613b67830`).
+  Record: `vault:evidence/testnet-2026-09-27.md`, which carries a notice saying
+  so. Whether these contracts are still live was not re-checked.
+- An earlier pair, `watcher_registry`
+  `CBEZ3XBIWK2AWYGZRNDGNZG3AZTJHFMQL5HVWTEUZZ5HLSCO4QDFJB77` and `sla_vault`
+  `CBA4DFNUBVCPLEAUD5O2CHSUB6DRWUNM7A537EBVPAGDETFBB2CABXI2`, predates the
+  `quorum_threshold == 0` fix. Whether it is still live was not re-checked.
 
 ## 4. Deployment and source status
 
 Stated directly:
 
-- The live contracts were **built and deployed with soroban-sdk 28.0.0** and **stellar-cli 28.1.0** on 2026-10-01. Current vault source also uses **soroban-sdk 28.0.0**.
-- **Strict source and deployment parity is established**. The 2026-10-01 deployment completely eliminates the historical mismatch between the SDK 27.0.6 live deployment and the SDK 28.0.0 source.
-- Live verified features now include the zero-balance withdrawal rejection, matching the current source behavior.
-
-- The `quorum_threshold == 0` rejection **is** live (it predates the
-  deployment; rejected live with error `#7`).
+- The current contracts were **built and deployed with soroban-sdk 28.0.0** and
+  **stellar-cli 28.1.0** on 2026-10-01. Current vault source also uses
+  soroban-sdk 28.0.0, and the fetched on-chain WASM hashes equal the hashes
+  recorded for that deployment (section 3). Source and deployment parity is
+  established for the current pair.
+- The `quorum_threshold == 0` rejection is live on the current pair (rejected
+  with error `#7`), and so is the zero-balance rejection in
+  `withdraw_remaining_bond` (a repeat withdrawal on an emptied bond was
+  rejected with `#7`). Source: `vault:evidence/testnet-2026-10-01.md`.
 - **TTL:** current source never extends instance storage, and extends a
-  persistent entry only when it writes it. On 2026-09-29 the live contract
-  instances and WASM code entries, which were due to expire about 2026-10-05,
-  were **extended by hand** by 3,000,000 ledgers (transactions
-  [`b8601edc…`](https://stellar.expert/explorer/testnet/tx/b8601edc018bc487355fb086ea719369e4f543f951fc26da3e8777021bb8fec0),
-  [`1e2b750d…`](https://stellar.expert/explorer/testnet/tx/1e2b750d8b84ff3f672f9ecca240eb78432f87abaa3f9b0dc1b56a381a5e07c8),
-  [`9efdb520…`](https://stellar.expert/explorer/testnet/tx/9efdb520759d278a990ba481b59e10bbee6a67c2017e9961f9af0bc848631281),
-  [`a130b4f3…`](https://stellar.expert/explorer/testnet/tx/a130b4f30b641a4cdae1e671c7f5d89b1ca7f04359b6f8a7561e1288d599fdff)),
-  and the persistent entries the workflow needs (five watcher registrations,
-  SLAs 0 to 2 with their bond balances, settled round 0/1) were extended by
-  twelve further transactions (list in `apps/docs/testnet-deployment.md`). They
-  are live until about ledgers 7932489 to 7932981, roughly 174 days from
-  2026-09-29. This is an operational mitigation, not a source fix: the source
-  policy is unchanged, so the live lifetimes need to be extended again by hand
-  before then. Vote-history entries were not extended.
-- **No contract was redeployed** in any phase after 2026-09-27, and the WASM
-  hashes and live state were unchanged by the extensions.
+  persistent entry only when it writes it. The hand extensions recorded on
+  2026-09-29 (`apps/docs/testnet-deployment.md`) were made on the superseded
+  2026-09-27 pair. No extension of the current pair is recorded in this
+  repository, so its live lifetimes need to be checked and extended by hand
+  when needed.
+- The 2026-09-27 and 2026-09-29 verification records in sections 6 and 7
+  describe the superseded pair and are historical.
 
 ## 5. Product workflow
 
@@ -136,8 +134,31 @@ anyone --> trigger_settlement (sla_vault)
 
 ## 6. Live evidence
 
-All on Testnet; source `vault:evidence/testnet-2026-09-27.md` unless stated.
-Explorer form: `https://stellar.expert/explorer/testnet/tx/<hash>`.
+### 6a. Current evidence: Protocol 28 deployment, 2026-10-01
+
+Source: `vault:evidence/testnet-2026-10-01.md`. Explorer form:
+`https://stellar.expert/explorer/testnet/tx/<hash>`.
+
+| Purpose | Transaction | Result |
+|---|---|---|
+| Quorum-zero rejection | (rejected call, no hash) | `create_sla` with `quorum_threshold` 0 failed with `#7` (InvalidAmount) |
+| `create_sla` (SLA 0) | `84c7626116ec6a26a4c79a40a94263c060bb677b92470ae80a3465f9fc994591` | SLA created |
+| `top_up_bond` (SLA 0) | `9ac7a137a8dde586574b4d8b589bf580f10ef0f3fa8747287e1ba27fea0ec244` | bond topped up |
+| Three Down votes, round 123 | `29388269dafac7b55998e76e8d2c183b72b2131eb972a1707bd599c3c46b0421`, `af94d8ced4cddeca2e55b71248b6757f7e4dca8014bb5a42d1bfae54b215e009`, `278ffdc5d41cd49809ea7d86f94a2bc52f874677537144ce7937b1445dccd697` | quorum reached |
+| `trigger_settlement` | `70395baea57c3c1a3382464026c0c72a67f71f977220ba4ba46094849fc57c7b` | settlement paid |
+| Duplicate settlement | (rejected call, no hash) | failed with `#4` (AlreadySettled) |
+| `create_sla` (SLA 1), `cancel_sla`, `withdraw_remaining_bond` | `91b6bc65ff299a1c823ba470829293a732bbcb16e1560b7c9617976991492eb6`, `ca52984cababecc9ca27318bddbfeb9b8941e2faba1d6a203f39108875f07187`, `9270fb2f858eabaa7e8e9f706b9e8abab158ebe0783fec88ffdb72252aac335f` | cancellation, then withdrawal |
+| Repeat withdrawal on a zero balance | (rejected call, no hash) | failed with `#7` (InvalidAmount) |
+| Vault pause / unpause | `9c470a3b83448f96283254b21b95bfe21e7b9063037bde4d195f4e377b496e5b` / `d7321224da8487cd8c1f40345b22ecf0a31305aca58314e513fbac68e184cfda` | pause and unpause confirmed |
+
+The October 1 evidence does not record a registry pause test, a payout-cap
+run, event decoding, or a watcher daemon run on the current pair.
+
+### 6b. Historical evidence: superseded 2026-09-27 pair
+
+This evidence belongs to the older deployment (section 3) and is **not**
+evidence for the current one. Source: `vault:evidence/testnet-2026-09-27.md`
+unless stated.
 
 | Purpose | Date | Transaction | Contract | What it proved |
 |---|---|---|---|---|
@@ -153,30 +174,37 @@ Explorer form: `https://stellar.expert/explorer/testnet/tx/<hash>`.
 | Vault pause / unpause | 2026-09-27 | `cf4b174aea690625575301225665b37bfcb8f7f012e4df95d434ca1d913a6212` / `4d0f51ad47c6d04235314cf580c60f1144ac7c11f10ba04784bf49cea81c234e` | vault | `create_sla` rejected `#8` while paused; `top_up_bond` still worked |
 | **Live watcher daemon**, four rounds (disposable registered account) | 2026-09-29 | `fd8de72475cfcaaab089db130a7d5d87689c8b57400a84b287d8c74d7e6071b6`, `ccc7fabb84bb423fa61c3e3ea0da48ba179a2b4adbc77c668a3ba57404cfe840`, `563bd1766c0353ec7855375a5e3cc74dcf4bf0c85e5d06719d6e6c3ae04c9bea`, `fb8b4462ec31a9fea1a488971af3c90e8d17ec7e6d0e50bbc9cece3adbf7e722` (rounds 29844195 to 29844198; registered by `a9b53ca277558dc525e696f3597f15efae1908c69445ceef5dfad4cb32e1dc84`, removed by `b6e129cac5de0d7f5509250bf0a474d406038fc7fd82cd52a6452b2eec049142`) | registry | the real `watcher` process checked a real endpoint and submitted votes confirmed on-chain, then shut down cleanly (`evidence/phase-23-verification-2026-09-29.md` Part C) |
 
-Also verified live (details and dates in `evidence/index.md` and the parity
-matrix): all eight event kinds observed on real transactions and re-decoded on
+Also verified live on the superseded pair (details and dates in
+`evidence/index.md` and the parity matrix): all eight event kinds observed on real transactions and re-decoded on
 2026-09-29; the SDK's read functions against the live contracts; all six
 indexer routes against live data from a locally run indexer, and the settlement
 history fix (a route that returned HTTP 500 until 2026-09-29, then returned the
 real SLA 0 settlement row); the frontend in a real browser with a real Freighter
-extension (section 7). The only daemon run was these four rounds; nothing runs a
-watcher continuously.
+extension (section 7). The only daemon run was these four rounds, against the superseded pair;
+none has been run against the current pair, and nothing runs a watcher
+continuously.
 
 ## 7. Frontend
 
 - Source: `apps/web` (Next.js 16, React 19). It is run locally with the
   repository's scripts.
 - Browser-verified on 2026-09-29 with a real Freighter extension and the live
-  Testnet deployment: wallet connect, address display, disconnect and
+  Testnet deployment of that date (the superseded pair; not repeated against the
+  current pair): wallet connect, address display, disconnect and
   reconnect, network identification, the wallet-network-mismatch indicator, and
   the public `/status/0` page with live Testnet data and no wallet connected.
   After the indexer fix the settlement-history panel on `/status/0` was also
   verified rendering the real settlement row. Record:
   `evidence/phase-23-verification-2026-09-29.md` Part B.
-- The mismatch indicator is a warning only; it does not block a transaction.
+- The mismatch indicator is a warning only; it does not block a transaction
+  (hub #13).
 - **Public hosted frontend:** https://slasettle-web.vercel.app (Testnet
   configuration; no indexer, so two panels show "indexer not configured").
-  Verified over HTTPS and in a browser on 2026-09-29: landing, dashboard and
+  **On 2026-10-06 its deployed JavaScript bundle contains the superseded
+  2026-09-27 contract IDs (`CBKAQETJ…`, `CD4FSW2E…`), not the current
+  Protocol 28 pair.** The hosted app has not been redeployed against the
+  current pair. Verified over HTTPS and in a browser on 2026-09-29, against the
+  superseded pair: landing, dashboard and
   status pages load, the network badge reads Testnet, the SLA configuration and
   bond balance are read live, no secret is in the client bundle. Connecting
   Freighter on this hosted origin was not tested.
@@ -228,11 +256,13 @@ It maps no contract error to a name; a failed call surfaces the RPC's message.
 - **Secret scanning** is manual: a pattern scan over both repositories' history
   found nothing; the dedicated scanner build did not complete, so no
   dedicated-scanner result exists.
-- **Dependency scans (2026-09-28, not re-run):** `cargo audit`, one warning
+- **Dependency scans (2026-09-28, except where stated):** `cargo audit`, one warning
   (`paste` unmaintained, transitive through soroban-sdk); `pnpm audit --prod`,
   none; `npm audit --omit=dev` (indexer), none; `govulncheck` (watcher), 25
-  findings, all in the Go standard library and fixed in later 1.25.x patch
-  releases (the local toolchain is 1.25.1; CI uses the current patch).
+  findings on 2026-09-28, all in the Go standard library. `watcher/go.mod` now
+  requests toolchain `go1.25.14`, and `govulncheck ./...` reported 0
+  vulnerabilities on 2026-10-01 (`evidence/final-technical-audit-2026-09-29.md`).
+  The other scans were not re-run.
 - **Vulnerability reporting:** private vulnerability reporting is disabled on
   both repositories and no security contact exists; both `SECURITY.md` files
   say to open a public issue asking for a private channel.
@@ -247,22 +277,27 @@ It maps no contract error to a name; a failed call surfaces the RPC's message.
 
 ## 11. Testing
 
-Run 2026-09-29 (`evidence/final-technical-audit-2026-09-29-r2.md`):
+Run 2026-10-06 on hub `60e7929` and vault `6fa5ad6`, plus the cleanup commits
+that change only documentation and ignore files:
 
 | Suite | Result |
 |---|---|
+| vault `cargo check --workspace` | pass |
 | vault `cargo test --workspace` | 52/52 (34 sla_vault, 18 watcher_registry) |
+| vault `stellar contract build` | pass; the rebuilt WASM SHA-256 values equal the deployed hashes in section 3 |
 | SDK | 29/29 |
 | web | 50/50 |
 | indexer | 45/45 |
-| watcher | 48/48 (`go test`) |
-| hub `pnpm lint`, `typecheck`, `build`; indexer build; watcher `go build`, `go vet`; docs build; vault `stellar contract build` | pass |
-| vault `cargo fmt --check` | fails, 9 diffs (pre-existing drift; informational in CI) |
-| vault `cargo clippy` | 2 known warnings |
+| watcher | 48/48 top-level tests (`go test`; 58 including subtests); `cmd/watcher` has no test files |
+| hub `pnpm install --frozen-lockfile`, `build`, `lint`, `typecheck`; indexer `npm ci` and build; watcher `go build`, `go vet`; docs build | pass |
+| vault `cargo fmt --check` | fails (pre-existing drift; informational in CI) |
+| vault `cargo clippy` | pre-existing style warnings; CI does not deny warnings |
 
-CI on GitHub for the heads before this pack's own commit: vault `caae637` run
-`36591677083`, job `check, test, build`, success; hub `8773628` run
-`36591669274`, jobs `web and sdk`, `indexer`, `watcher`, success.
+The formatting drift and clippy warnings are left as they are during submission
+freeze. No contract source was changed by the 2026-10-06 cleanup.
+
+CI on GitHub: see the final status recorded in the cleanup report; the
+repositories' Actions pages show every run.
 
 What these counts do not show: most contract tests run under
 `mock_all_auths()` (a separate group checks signatures); the payout cap has a
@@ -293,7 +328,11 @@ sections 12 and 13.
 - Source-level instance-lifetime policy is unresolved; live lifetimes need
   manual maintenance (section 4).
 - The SDK, frontend and watcher have no archived-entry restore handling.
-- Testnet-only explorer link in the indexer; no license file (hub #10, vault #2).
+- Testnet-only explorer link in the indexer.
+- The network-mismatch indicator warns and does not block submission (hub #13).
+- The hosted frontend still reads the superseded 2026-09-27 contract pair
+  (section 7).
+- No independent security audit.
 
 ## 13. Unverified items
 
@@ -307,39 +346,52 @@ sections 12 and 13.
   a larger bond).
 - A second live page of settlement pagination.
 - Daemon-to-indexer round read-back.
+- On the current 2026-10-01 pair: a registry pause test, event decoding, a live
+  watcher daemon run, an indexer run, a payout-cap run, and a frontend browser
+  check. The hosted frontend also still points at the superseded pair.
 - The archived-entry restore path.
 
 ## 14. Blocked items
 
 - A permanent source-level instance-lifetime fix.
 
-This requires a contract build and redeployment. It is tracked in vault issue #3 and classified in `evidence/findings-classification-2026-09-29.md`.
+This requires a contract build and redeployment, which is out of scope during
+submission freeze. It is classified in
+`evidence/findings-classification-2026-09-29.md`; no open issue tracks it.
 
 ## 15. Open issues and planned work
 
-Read from GitHub on 2026-09-29; none was closed or modified in this phase.
+Read from GitHub on 2026-10-06. Remaining runway:
 
 | Repo | # | Title | Kind |
 |---|---|---|---|
-| hub | 10 | LICENSE: no authoritative license exists | limitation |
-| hub | 11 | watcher: daemon run live on 2026-09-29; indexer read-back criterion still open | future work (one open criterion: the indexer route reflecting a daemon vote) |
-| hub | 12 | frontend: finish real-browser verification (signed writes, app themes, reduced motion, mobile) | future work (connection and status page already verified) |
+| hub | 11 | watcher: daemon run live on 2026-09-29; indexer read-back criterion still open | future work (watcher daemon to indexer round read-back) |
+| hub | 12 | frontend: finish real-browser verification (signed writes, app themes, reduced motion, mobile) | future work |
 | hub | 13 | frontend: network mismatch should block submission, not just warn | limitation |
-| hub | 14 | watcher: local Go toolchain is behind on stdlib security patches | maintenance |
-| hub | 15 | Backlog from the 2026-09-29 final audit (non-blocking) | future work (live evidence gaps and hardening) |
-| hub | PR 8 | chore(deps-dev): bump eslint from 9.39.5 to 10.11.0 | compatibility; open, CI failing on its head, untouched |
-| vault | 2 | LICENSE: no authoritative license exists | limitation |
-| vault | 3 | Deployment/source parity: live contracts predate the soroban-sdk 28.0.0 bump | compatibility (redeployment decision) |
+| hub | 15 | Backlog from the 2026-09-29 final audit (non-blocking) | future work (remaining evidence gaps and hardening) |
 | vault | 4 | watcher_registry: add commit-reveal to prevent last-mover vote copying | future work |
+
+Resolved since the first version of this pack and closed on GitHub on
+2026-10-06 (not current work): hub #10 and vault #2 (MIT license added), hub #14
+(Go toolchain 1.25.14 requested, `govulncheck` 0 vulnerabilities on
+2026-10-01), vault #3 (the 2026-10-01 deployment restored source and deployment
+parity). Dependabot PR hub #8 (ESLint 10) is closed and not merged; the project
+intentionally stays on ESLint 9.x and does not claim ESLint 10 support.
 
 ## 16. Release
 
-There is currently **no release** and no tag on either repository. Release URL:
-not currently released.
+Both repositories have a public `v0.1.0` release, "v0.1.0: Protocol 28 Ready",
+published 2026-10-01:
+
+- https://github.com/SLASettleHQ/slasettle-hub/releases/tag/v0.1.0
+- https://github.com/SLASettleHQ/slasettle-vault/releases/tag/v0.1.0
+
+Both are Testnet-only and unaudited. The tags were not moved or recreated.
 
 ## 17. Demo
 
-Demo verification pending Phase 33. No demo video or URL exists.
+The required final submission demo video is not yet complete. No demo video or
+URL exists.
 
 ## 18. Repository status
 
@@ -351,23 +403,25 @@ Demo verification pending Phase 33. No demo video or URL exists.
 - GitHub repository Website fields: hub = https://slasettle-web.vercel.app, vault = https://slasettle-docs.vercel.app; both READMEs carry a CI badge (the hub README also carries docs and app badges).
 - Dependabot is configured on both (cargo or npm and gomod, and
   github-actions, weekly).
-- Heads when this pack was prepared: hub `8773628`, vault `caae637`; the pack's
-  own commit follows. Working trees are clean apart from untracked local files
-  that are not committed (a local indexer database directory in the hub, local
-  environment and test-snapshot files in the vault).
-- The commit history contains no Claude or Anthropic attribution.
+- Both repositories are MIT licensed and recognized as such by GitHub.
+- Heads described here: hub `60e7929`, vault `6fa5ad6`; the 2026-10-06
+  consistency commits follow. Local runtime data in the hub (`indexer/data/`)
+  and local environment and test-snapshot files in the vault are gitignored
+  and not committed.
+- Repository history was reviewed for unintended attribution trailers.
 
 ## 19. Reviewer entry path
 
 1. `README.md` (hub): what it is, layout, current status, limitations.
-2. `vault:README.md`: the contracts, deployed IDs, source-versus-deployed
-   warning.
+2. `vault:README.md`: the contracts, current deployed IDs and hashes, and
+   which evidence files are current or historical.
 3. `vault:SLASettle-contract-spec.md`: interface, authorization, events, errors,
    round IDs.
 4. `apps/docs/`: the documentation source.
 5. `evidence/index.md`: the claim ledger with sources and statuses.
-6. `vault:evidence/testnet-2026-09-27.md` and `apps/docs/testnet-deployment.md`:
-   the Testnet deployment and lifetime evidence.
+6. `vault:evidence/testnet-2026-10-01.md` (current deployment) and
+   `vault:evidence/testnet-2026-09-27.md` (historical, superseded deployment),
+   with `apps/docs/testnet-deployment.md`.
 7. `evidence/parity-matrix-2026-09-29.md`: contract, SDK, watcher, indexer,
    frontend and docs compared field by field.
 8. `evidence/claim-traceability-2026-09-29.md`: 80 claims traced to code, test,
@@ -380,19 +434,24 @@ Demo verification pending Phase 33. No demo video or URL exists.
 
 ## 20. Evidence map
 
-| Claim | Strongest evidence |
-|---|---|
-| Contracts are deployed on Testnet at the IDs in section 3 | on-chain WASM fetch and hash, 2026-09-29; `vault:evidence/testnet-2026-09-27.md` |
-| Quorum settlement is permissionless and pays the beneficiary | tx `6522d8b7…`; local test `test_trigger_settlement_needs_no_signature_and_no_role_from_its_caller` |
-| Duplicate votes and settlements are rejected | live rejected simulations `#4`; local tests |
-| Cancellation and withdrawal work | txs `25fb9d95…`, `f2d1be37…` |
-| A real watcher daemon can submit live votes | four txs, section 6; `evidence/phase-23-verification-2026-09-29.md` |
-| Event shapes match the indexer | eight kinds decoded from live events, `evidence/parity-matrix-2026-09-29.md` section 4 |
-| The SDK decodes live contract state | `evidence/parity-matrix-2026-09-29.md` section 0.4 |
-| The frontend connects to Freighter and the status page works | `evidence/phase-23-verification-2026-09-29.md` Part B |
-| Current source differs from the deployed contracts as stated | `evidence/final-technical-audit-2026-09-29.md` section 2 |
-| Missing signatures are rejected (local) | vault tests, `evidence/index.md` row AJ |
-| The indexer and watcher are not hosted, and nothing is released or audited | GitHub API reads, 2026-09-29; `apps/docs/deployment-topology.md`; both `SECURITY.md` |
+Rows marked current rest on the 2026-10-01 deployment. Rows marked historical
+rest on the superseded 2026-09-27 pair and its 2026-09-29 verification.
+
+| Claim | Strongest evidence | Status |
+|---|---|---|
+| Contracts are deployed on Testnet at the IDs in section 3 | on-chain WASM fetch and SHA-256, 2026-10-06; `vault:evidence/testnet-2026-10-01.md` | current |
+| Source and deployment parity | same hashes as the 2026-10-01 record, section 4 | current |
+| Quorum settlement pays the beneficiary and a duplicate is rejected | txs `70395bae…` and `#4` rejection, `vault:evidence/testnet-2026-10-01.md` | current |
+| Quorum of zero is rejected at `create_sla` | `#7` rejection, same record | current |
+| Cancellation, withdrawal and repeat-withdrawal rejection | txs `ca52984c…`, `9270fb2f…`, `#7` rejection, same record | current |
+| Vault pause and unpause | txs `9c470a3b…`, `d7321224…`, same record | current |
+| Settlement is permissionless | tx `6522d8b7…`; local test `test_trigger_settlement_needs_no_signature_and_no_role_from_its_caller` | historical (live), local test current |
+| A real watcher daemon can submit live votes | four txs, section 6b; `evidence/phase-23-verification-2026-09-29.md` | historical |
+| Event shapes match the indexer | eight kinds decoded from live events, `evidence/parity-matrix-2026-09-29.md` section 4 | historical |
+| The SDK decodes live contract state | `evidence/parity-matrix-2026-09-29.md` section 0.4 | historical |
+| The frontend connects to Freighter and the status page works | `evidence/phase-23-verification-2026-09-29.md` Part B | historical |
+| Missing signatures are rejected (local) | vault tests, `evidence/index.md` row AJ | current (local) |
+| The indexer and watcher are not hosted, and no independent audit exists | GitHub reads; `apps/docs/deployment-topology.md`; both `SECURITY.md` | current |
 
 ## 21. Submission truth statement
 
@@ -401,18 +460,27 @@ watcher, a Node indexer, a TypeScript SDK, a Next.js frontend and a VitePress
 documentation source; dated evidence records, an audit, and a classification of
 every finding; CI, Dependabot and protected `main` on both repositories.
 
-**Live:** the two contracts on Stellar Testnet, deployed 2026-09-27 with the
-hashes in section 3, and their lifetimes extended by hand on 2026-09-29.
+**Live (current):** the two contracts on Stellar Testnet, deployed 2026-10-01
+with soroban-sdk 28.0.0 and stellar-cli 28.1.0 at the IDs and WASM hashes in
+section 3. Both on-chain hashes were re-checked on 2026-10-06 and equal the
+hashes recorded for that deployment.
 
-**Verified:** live settlement, duplicate prevention, cancellation, withdrawal,
-pause behavior, all eight event shapes, four live daemon rounds, SDK reads,
-the indexer routes on live data, and Freighter connection with the public status
-page in a real browser.
+**Verified on the current deployment:** quorum-zero rejection, SLA creation,
+top-up, three down votes, settlement, duplicate settlement rejection,
+cancellation, withdrawal, repeat zero-balance withdrawal rejection, and vault
+pause and unpause.
 
-**Hosted:** the frontend (without an indexer) and the documentation on Vercel.
-**Local-only:** the indexer, database and watcher run from source on a developer
-machine; no release or demo exists.
+**Verified on the superseded 2026-09-27 pair only (historical):** registry pause
+behavior, all eight event shapes, four live daemon rounds, SDK reads, the
+indexer routes on live data, and Freighter connection with the public status
+page in a real browser. This was not repeated on the current pair.
+
+**Hosted:** the frontend (without an indexer, and still reading the superseded
+contract pair) and the documentation on Vercel. **Local-only:** the indexer,
+database and watcher run from source on a developer machine. **Released:** both
+repositories have a public Testnet-only `v0.1.0`, unaudited. **Demo:** the
+required final submission demo video is not yet complete.
 
 **Unverified:** section 13. **Blocked:** section 14. **Known limitations:**
-section 12. The current source and the live contracts differ as described in
-section 4.
+section 12. Current source and the current live contracts have matching WASM
+hashes (section 4).
