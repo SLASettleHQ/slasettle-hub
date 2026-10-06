@@ -35,10 +35,12 @@ NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID  # deployed watcher_registry contract I
 NEXT_PUBLIC_INDEXER_API_URL          # indexer base URL
 ```
 
-None of these have defaults or fallbacks — a missing one produces a clear
-"not configured" message in the UI (the network indicator, or an SDK
-`MissingSdkConfigError`/indexer `MissingIndexerConfigError`) rather than a
-silent failure or a blank screen.
+The Soroban RPC URL, passphrase and contract IDs have no defaults. A missing
+one produces a clear "not configured" message in the UI (the network
+indicator, or an SDK `MissingSdkConfigError`), and a malformed one an
+`InvalidSdkConfigError`, rather than a silent failure or a blank screen.
+`NEXT_PUBLIC_INDEXER_API_URL` falls back to the hosted Cloudflare indexer
+named in `lib/indexer.ts` when unset.
 
 ## Running locally
 
@@ -66,10 +68,12 @@ http://localhost:3000.
   (the shared build→sign→submit→poll flow), and the page-level data hooks
   (`use-provider-slas.ts`, `use-sla-config.ts`, `use-round-status.ts`,
   `use-settlement-history.ts`).
-- **`components/status/`** holds the presentational pieces (`WatcherGrid`,
-  `QuorumMeter`, `SettlementList`, `TransactionEvidence`) that back both the
-  real `/status/[slaId]` page and the landing page's labeled example
-  preview — the same components, not a duplicate mockup.
+- **`components/status/`** holds the pieces of the real `/status/[slaId]`
+  page (`RoundPanel`, `WatcherGrid`, `QuorumMeter`, `SettlementList`,
+  `TransactionEvidence`). The landing page contains no example data.
+- **`components/state-notice.tsx`** provides the three states every data
+  region uses and keeps apart: loading, empty (the source answered and
+  there is nothing) and unavailable (the source could not be asked).
 
 ## Wallet flow
 
@@ -83,9 +87,11 @@ user revokes actual site access from the Freighter extension itself.
 
 Every write action (create/top-up/cancel/withdraw an SLA, trigger
 settlement) goes through `lib/use-transaction.ts`, which drives that same
-build→sign→submit→poll sequence and exposes building/signing/submitting/
-confirmed/failed states — `components/transaction-status.tsx` renders them
-consistently everywhere. Nothing is shown as successful before the chain
+build→sign→submit→poll sequence and exposes building, signing, submitting,
+pending (accepted by the network, not yet in a ledger), confirmed, failed,
+rejected (the user declined in the wallet) and unconfirmed (polling ended
+without a result) states. `components/transaction-status.tsx` renders them
+consistently everywhere. Nothing is shown as confirmed before the chain
 confirms it.
 
 ## SDK usage
@@ -97,9 +103,12 @@ transactions by hand.
 
 ## Indexer integration
 
-`lib/indexer.ts` implements five of the indexer's six endpoints
-(everything in `apps/docs/api.md` except `/v1/health`) — no invented
-fields, no assumed shapes. The indexer is a read-side history cache;
+`lib/indexer.ts` implements all six endpoints in `apps/docs/api.md` and no
+others. Every response is validated at runtime, and failures are classified
+as unreachable, bad status or malformed body, so the UI can say which. Round
+status loads each source independently (`use-round-status.ts`): the indexer
+supplies the round and watcher check-ins, Soroban RPC supplies the tally and
+settled flag, so one outage never hides the other. The indexer is a read-side history cache;
 anything that must be current-as-of-right-now (bond balance, SLA status,
 live vote tally) is a direct Soroban read instead. The current round_id
 always comes from the indexer's `/v1/clock`, never from the browser's own
@@ -112,7 +121,7 @@ pnpm test
 ```
 
 vitest + `@testing-library/react` + jsdom. Pure logic (money
-formatting/parsing) is tested directly; components that talk to the wallet,
+formatting and parsing, create-SLA validation, indexer parsing) is tested directly; components that talk to the wallet,
 SDK, or indexer have those modules mocked at the boundary via `vi.mock`,
 rather than hitting a real network or Freighter extension.
 
@@ -123,3 +132,21 @@ pnpm build       # from the repo root: builds the SDK, then this app
 pnpm typecheck
 pnpm lint
 ```
+
+## Versions
+
+Selected on 2026-10-06 from the npm registry's latest stable releases:
+Next.js 16.3.8, React and React DOM 19.3.0, Tailwind CSS 4.3.3,
+`@stellar/stellar-sdk` 17.2.1, `@stellar/freighter-api` 6.0.1, Vitest 5.0.3,
+Testing Library (react 16.3.3, jest-dom 7.0.1, user-event 14.6.7), jsdom
+30.1.2, `@vitejs/plugin-react` 6.1.2, Node 24.21 and pnpm 12.8.2.
+
+Held back on purpose, with the reasons recorded in `CONTRIBUTING.md` and
+`evidence/`: TypeScript stays on 5.9 (7.0 is released, but
+`typescript-eslint` does not support it yet) and ESLint on 9 (10 is
+released, but `eslint-plugin-react`, which `eslint-config-next` depends on, crashes
+under it; reproduced on 2026-10-01).
+Stellar Wallets Kit (2.7.0) is not used: Freighter is the supported wallet.
+pnpm 12.9.1 and `eslint-config-next` 16.4.0 are newer than what is pinned;
+the first is a patch-level change to the package manager and the second is
+ahead of Next.js 16.3.8, so neither was adopted.

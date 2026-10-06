@@ -11,7 +11,10 @@ The SDK has no config file. `getSdkConfig()` reads four environment
 variables directly (see [Environment variables](/environment-variables)
 for the full names) and caches the result. If any is missing, it throws
 `MissingSdkConfigError` naming exactly which ones — it never falls back
-to a guessed value.
+to a guessed value. A value that is present but malformed (an RPC URL that
+is not http(s), a passphrase with stray whitespace, a contract ID that is
+not a valid `C...` strkey) throws `InvalidSdkConfigError` listing each
+problem.
 
 ```ts
 import { getSdkConfig, MissingSdkConfigError } from "@slasettle/sdk";
@@ -99,6 +102,8 @@ mismatch immediately instead of producing a subtly wrong UI value.
 
 ```ts
 class MissingSdkConfigError extends Error { missingKeys: string[] }
+class InvalidSdkConfigError extends Error { problems: string[] }
+class InvalidSdkInputError extends Error { field: string }
 class SorobanSimulationError extends Error {
   contractId: string; method: string; rpcMessage: string;
 }
@@ -107,6 +112,18 @@ class SorobanSimulationError extends Error {
 `SorobanSimulationError` is thrown whenever a simulated read call fails
 — for example, a `get_sla` call for an `sla_id` that doesn't exist will
 surface here with the contract's own error message.
+
+`InvalidSdkInputError` is thrown before any RPC call when an argument is
+one the contract would reject: a malformed address, a non-positive or
+over-`i128` amount, basis points above 10000, a zero quorum, an SLA or round
+ID outside `u64`, or token decimals outside 0 to 38.
+
+## Quorum
+
+There is no contract call for quorum. `sla_vault` owns `quorum_threshold`
+and `watcher_registry` only counts votes, so
+`deriveQuorum(tally, quorumThreshold)` computes it from the two reads:
+`reached` is `votesDown >= quorumThreshold`, and Up votes never count.
 
 ## What this SDK deliberately does not do
 

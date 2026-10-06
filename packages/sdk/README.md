@@ -19,6 +19,11 @@ This package talks directly to Soroban RPC. It has two kinds of exports:
   (`apps/web/lib/wallet.ts`), which is the only place a private key or
   extension signing prompt ever enters the picture.
 
+Builders and reads validate their arguments before any network call and throw
+`InvalidSdkInputError` for values the contract would reject. `deriveQuorum`
+computes quorum from a round tally and an SLA's `quorum_threshold`, because no
+contract function does.
+
 Every binding maps 1:1 to a function documented in
 `SLASettle-contract-spec.md`. There is no wrapper for a function that isn't
 in that spec, and no field on a returned struct that isn't in it either.
@@ -43,7 +48,8 @@ NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID
 ```
 
 Calling any SDK function before these are set throws `MissingSdkConfigError`
-naming exactly which variables are missing. See `apps/web/.env.example` for
+naming exactly which variables are missing, and `InvalidSdkConfigError` if a
+value is malformed (non-http(s) RPC URL, invalid contract ID). See `apps/web/.env.example` for
 where these are actually supplied in the app.
 
 ## Usage
