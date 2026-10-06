@@ -60,3 +60,13 @@ export function parseTokenAmount(input: string, decimals: number): bigint {
   const fraction = BigInt(fractionPart.padEnd(decimals, "0") || "0");
   return whole * 10n ** BigInt(decimals) + fraction;
 }
+
+/**
+ * Formats a basis-point value (1 bp = 0.01%) as a percentage with two
+ * decimals using integer arithmetic, e.g. 9990 -> "99.90%".
+ */
+export function formatBps(bps: number): string {
+  const whole = Math.trunc(bps / 100);
+  const fraction = String(bps % 100).padStart(2, "0");
+  return `${whole}.${fraction}%`;
+}

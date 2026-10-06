@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InvalidTokenAmountError, formatTokenAmount, parseTokenAmount, truncateAddress } from "./format";
+import { InvalidTokenAmountError, formatBps, formatTokenAmount, parseTokenAmount, truncateAddress } from "./format";
 
 describe("truncateAddress", () => {
   it("shortens a long address to head…tail", () => {
@@ -80,5 +80,17 @@ describe("parseTokenAmount", () => {
     // exactly — if this ever silently went through Number(), the result
     // would be corrupted.
     expect(parseTokenAmount("12345678901234567890.1234567", 7)).toBe(123456789012345678901234567n);
+  });
+});
+
+describe("formatBps", () => {
+  it.each([
+    [9990, "99.90%"],
+    [10000, "100.00%"],
+    [0, "0.00%"],
+    [5, "0.05%"],
+    [9999, "99.99%"],
+  ])("formats %i bps as %s", (bps, expected) => {
+    expect(formatBps(bps)).toBe(expected);
   });
 });
