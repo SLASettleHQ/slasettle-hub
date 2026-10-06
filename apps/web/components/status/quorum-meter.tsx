@@ -14,6 +14,8 @@ export function QuorumMeter({
   reached: boolean;
 }) {
   const progress = quorumThreshold > 0 ? Math.min(votesDown / quorumThreshold, 1) : 0;
+  // aria-valuemax must exceed aria-valuemin; a zero threshold is not a valid scale.
+  const ariaMax = Math.max(quorumThreshold, 1);
 
   const wasReached = useRef(reached);
   const [justReached, setJustReached] = useState(false);
@@ -34,7 +36,10 @@ export function QuorumMeter({
     <div>
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-[var(--color-fg-primary)]">
-          {votesUp} up &middot; {votesDown} down &middot; quorum requires {quorumThreshold}
+          <span className="font-mono tabular-nums">
+            {votesDown} / {quorumThreshold}
+          </span>{" "}
+          Down votes required
         </span>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-300 ${justReached ? "animate-pop" : ""} ${
@@ -50,7 +55,7 @@ export function QuorumMeter({
         role="progressbar"
         aria-valuenow={votesDown}
         aria-valuemin={0}
-        aria-valuemax={quorumThreshold}
+        aria-valuemax={ariaMax}
         aria-label="Down votes toward quorum"
         className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-raised)]"
       >
@@ -59,6 +64,10 @@ export function QuorumMeter({
           style={{ width: `${progress * 100}%` }}
         />
       </div>
+      <p className="mt-2 text-xs text-[var(--color-fg-muted)]">
+        {votesUp} Up {votesUp === 1 ? "vote does" : "votes do"} not count toward settlement. Only Down votes
+        are compared with the threshold.
+      </p>
     </div>
   );
 }
