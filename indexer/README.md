@@ -5,9 +5,10 @@ and serves them over the endpoints documented in `apps/docs/api.md`.
 
 ## Verified status
 
-Node 24.21.0 (matches the repository's `.nvmrc`), `npm run build` (`tsc`),
-and `npm test` (`node --test`) all pass. **0 type errors, 62/62 tests
-passing**, as of 2026-10-06.
+Node 24.21.0 (matching the repository's `.nvmrc`) was used for the successful
+install (`npm install`), TypeScript build (`tsc`), and test suite execution
+(`npm test` / `node --test`). **0 type errors, 62/62 tests passing** (expanded
+from the original 24/24 test run), as of 2026-10-06.
 
 All eight event kinds have been confirmed against real emitted Testnet events:
 `watcher_registered`, `watcher_removed`, `check_submitted`, `sla_created`,
