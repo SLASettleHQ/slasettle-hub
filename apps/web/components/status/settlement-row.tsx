@@ -10,7 +10,6 @@ export interface Settlement {
   tokenDecimals: number;
   tokenSymbol: string;
   transactionHash: string;
-  explorerUrl: string;
 }
 
 export function SettlementRow({ settlement }: { settlement: Settlement }) {
@@ -29,10 +28,7 @@ export function SettlementRow({ settlement }: { settlement: Settlement }) {
         symbol={settlement.tokenSymbol}
         className="text-sm"
       />
-      <TransactionEvidence
-        transactionHash={settlement.transactionHash}
-        explorerUrl={settlement.explorerUrl}
-      />
+      <TransactionEvidence transactionHash={settlement.transactionHash} />
     </li>
   );
 }

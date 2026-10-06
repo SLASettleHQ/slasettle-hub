@@ -55,7 +55,12 @@ const STELLAR_EXPERT_NETWORK_SLUGS: Record<string, string> = {
  * showing the raw hash without a link in that case.
  */
 export function explorerTxUrl(transactionHash: string): string | null {
+  // Only a real 32-byte hash is interpolated into a URL; anything else (an
+  // indexer or route value that has not been validated) gets no link.
+  if (!/^[0-9a-fA-F]{64}$/.test(transactionHash)) {
+    return null;
+  }
   const passphrase = getConfiguredNetworkPassphrase();
   const slug = passphrase ? STELLAR_EXPERT_NETWORK_SLUGS[passphrase] : undefined;
-  return slug ? `https://stellar.expert/explorer/${slug}/tx/${transactionHash}` : null;
+  return slug ? `https://stellar.expert/explorer/${slug}/tx/${transactionHash.toLowerCase()}` : null;
 }

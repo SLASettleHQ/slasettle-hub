@@ -177,7 +177,6 @@ export function StatusView({ slaId }: { slaId: bigint }) {
                 tokenDecimals,
                 tokenSymbol,
                 transactionHash: s.txHash,
-                explorerUrl: s.explorerUrl,
               }))}
               hasMore={settlements.nextCursor !== null}
               loadingMore={settlements.loadingMore}
