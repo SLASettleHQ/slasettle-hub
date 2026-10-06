@@ -12,8 +12,8 @@ export interface PollingState<T> {
 
 /**
  * Calls `fetcher` repeatedly, `intervalMs` after the previous call settles,
- * so requests never overlap and a slow backend is not hammered. It pauses
- * while the tab is hidden, fetches immediately when the tab becomes visible
+ * so requests never overlap and a slow backend is not hammered. After the
+ * first load it pauses while the tab is hidden, fetches immediately when the tab becomes visible
  * again, and drops results that arrive after unmount or a restart.
  *
  * `fetcher` must be referentially stable (wrap it in `useCallback`); a new
@@ -26,6 +26,7 @@ export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number) {
   useEffect(() => {
     let cancelled = false;
     let inFlight = false;
+    let hasFetched = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     function schedule() {
@@ -34,11 +35,14 @@ export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number) {
 
     async function tick() {
       if (cancelled || inFlight) return;
-      if (document.hidden) {
+      // Hidden tabs skip refreshes, but never the first load: a page opened in
+      // a background tab would otherwise sit in "loading" until it is focused.
+      if (document.hidden && hasFetched) {
         schedule();
         return;
       }
       inFlight = true;
+      hasFetched = true;
       try {
         const data = await fetcher();
         if (!cancelled) setState({ data, error: null, loading: false });

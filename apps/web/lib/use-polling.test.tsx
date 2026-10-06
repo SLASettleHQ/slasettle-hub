@@ -90,6 +90,19 @@ describe("usePolling", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it("still performs the first load in a hidden tab, so the page does not sit in loading", async () => {
+    setHidden(true);
+    const fetcher = vi.fn().mockResolvedValue("first");
+    const { result } = renderHook(() => usePolling(fetcher, 1000));
+    await act(async () => {});
+    expect(result.current).toMatchObject({ data: "first", loading: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it("stops polling and ignores late results after unmount", async () => {
     let resolveFetch: (value: string) => void = () => {};
     const fetcher = vi.fn().mockImplementation(() => new Promise<string>((resolve) => (resolveFetch = resolve)));
