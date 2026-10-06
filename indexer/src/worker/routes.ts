@@ -6,7 +6,21 @@ import { fetchQuorumThreshold } from "../rpc/liveReads.js";
 import type { WorkerEnv } from "./types.js";
 import { runIngestionStep } from "./ingest.js";
 
-function jsonResponse(data: unknown, status = 200, extraHeaders: HeadersInit = {}): Response {
+function jsonResponse(
+  data: unknown,
+  status = 200,
+  extraHeaders: HeadersInit = {},
+  isHead = false,
+): Response {
+  if (isHead) {
+    return new Response(null, {
+      status,
+      headers: {
+        "Content-Type": "application/json",
+        ...extraHeaders,
+      },
+    });
+  }
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -23,22 +37,25 @@ export async function handleRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname;
+  const isHead = request.method === "HEAD";
+  const isGetOrHead = request.method === "GET" || isHead;
   const d1 = new IndexerD1(env.DB);
   const server = new rpc.Server(env.RPC_URL);
   const roundLengthSeconds = Number(env.ROUND_LENGTH_SECONDS ?? 60);
 
   // GET /v1/health
-  if (request.method === "GET" && path === "/v1/health") {
+  if (isGetOrHead && path === "/v1/health") {
     const cp = await d1.getCheckpoint();
     return jsonResponse(
       { status: "ok", last_indexed_ledger: cp?.last_ledger ?? null },
       200,
       corsHeaders,
+      isHead,
     );
   }
 
   // GET /v1/watchers
-  if (request.method === "GET" && path === "/v1/watchers") {
+  if (isGetOrHead && path === "/v1/watchers") {
     const rows = await d1.getEligibleWatchers();
     return jsonResponse(
       {
@@ -47,11 +64,12 @@ export async function handleRequest(
       },
       200,
       corsHeaders,
+      isHead,
     );
   }
 
   // GET /v1/clock
-  if (request.method === "GET" && path === "/v1/clock") {
+  if (isGetOrHead && path === "/v1/clock") {
     const ledger = await getLatestLedgerInfo(server);
     const roundId = Math.floor(ledger.closeTimeMs / 1000 / roundLengthSeconds);
     return jsonResponse(
@@ -62,12 +80,13 @@ export async function handleRequest(
       },
       200,
       corsHeaders,
+      isHead,
     );
   }
 
   // GET /v1/slas/:slaId/current-round
   const currentRoundMatch = path.match(/^\/v1\/slas\/([^/]+)\/current-round$/);
-  if (request.method === "GET" && currentRoundMatch && currentRoundMatch[1]) {
+  if (isGetOrHead && currentRoundMatch && currentRoundMatch[1]) {
     const slaId = currentRoundMatch[1];
     const ledger = await getLatestLedgerInfo(server);
     const roundId = Math.floor(ledger.closeTimeMs / 1000 / roundLengthSeconds);
@@ -91,12 +110,13 @@ export async function handleRequest(
       },
       200,
       corsHeaders,
+      isHead,
     );
   }
 
   // GET /v1/slas/:slaId/settlements
   const settlementsMatch = path.match(/^\/v1\/slas\/([^/]+)\/settlements$/);
-  if (request.method === "GET" && settlementsMatch && settlementsMatch[1]) {
+  if (isGetOrHead && settlementsMatch && settlementsMatch[1]) {
     const slaId = settlementsMatch[1];
     const limitQuery = url.searchParams.get("limit");
     const requestedLimit = Number(limitQuery ?? 20);
@@ -106,6 +126,7 @@ export async function handleRequest(
         { error: "invalid_limit", message: "limit must not be negative" },
         400,
         corsHeaders,
+        isHead,
       );
     }
     if (Number.isFinite(requestedLimit) && !Number.isInteger(requestedLimit)) {
@@ -113,6 +134,7 @@ export async function handleRequest(
         { error: "invalid_limit", message: "limit must be an integer" },
         400,
         corsHeaders,
+        isHead,
       );
     }
 
@@ -162,12 +184,12 @@ export async function handleRequest(
         ? encodeCursor({ ledgerCloseTime: last.ledger_close_time, eventId: last.event_id })
         : null;
 
-    return jsonResponse({ data, next_cursor: nextCursor }, 200, corsHeaders);
+    return jsonResponse({ data, next_cursor: nextCursor }, 200, corsHeaders, isHead);
   }
 
   // GET /v1/providers/:address/slas
   const providerMatch = path.match(/^\/v1\/providers\/([^/]+)\/slas$/);
-  if (request.method === "GET" && providerMatch && providerMatch[1]) {
+  if (isGetOrHead && providerMatch && providerMatch[1]) {
     const address = providerMatch[1];
     const rows = await d1.getProviderSlas(address);
     return jsonResponse(
@@ -184,6 +206,7 @@ export async function handleRequest(
       },
       200,
       corsHeaders,
+      isHead,
     );
   }
 

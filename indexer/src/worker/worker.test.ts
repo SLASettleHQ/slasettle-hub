@@ -206,3 +206,15 @@ test("Worker: failed ingestion does not incorrectly advance checkpoint", async (
   assert.equal(cp, undefined);
 });
 
+test("Worker: HEAD /v1/health returns 200 with null body", async () => {
+  const { env } = createTestEnv();
+  const res = await worker.fetch(
+    new Request("http://localhost/v1/health", { method: "HEAD" }),
+    env,
+    {} as any,
+  );
+  assert.equal(res.status, 200);
+  assert.equal(res.body, null);
+});
+
+
