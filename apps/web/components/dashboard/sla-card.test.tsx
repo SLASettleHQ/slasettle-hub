@@ -129,3 +129,38 @@ describe("SlaCard actions for a Cancelled SLA", () => {
     expect(screen.getByText(/no bond remains, so there is nothing to withdraw/)).toBeInTheDocument();
   });
 });
+
+describe("top-up validation", () => {
+  async function submitTopUp(amount: string) {
+    const user = userEvent.setup();
+    render(<SlaCard sla={sla()} onChanged={vi.fn()} />);
+    const input = screen.getByLabelText(/Top up amount/);
+    if (amount) await user.type(input, amount);
+    await user.click(screen.getByRole("button", { name: "Top Up Bond" }));
+    return input;
+  }
+
+  it("rejects an empty amount next to the field and builds nothing", async () => {
+    const input = await submitTopUp("");
+    expect(await screen.findByText("Enter the top-up amount.")).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(buildTopUpBondTx).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["0", "The amount must be greater than zero."],
+    ["1.12345678", "This token supports at most 7 decimal places."],
+    ["abc", "Use a plain number such as 1000.50."],
+  ])("rejects %s", async (amount, message) => {
+    await submitTopUp(amount);
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(buildTopUpBondTx).not.toHaveBeenCalled();
+  });
+
+  it("converts to base units with the token's decimals and submits", async () => {
+    await submitTopUp("12.5");
+    await waitFor(() =>
+      expect(buildTopUpBondTx).toHaveBeenCalledWith({ caller: "GPROVIDER", slaId: 4n, amount: 125_000_000n }),
+    );
+  });
+});

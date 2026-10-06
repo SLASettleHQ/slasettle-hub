@@ -7,7 +7,7 @@ import { useNetworkGuard } from "@/components/network/use-network-guard";
 import { TransactionStatus } from "@/components/transaction-status";
 import { useWallet } from "@/components/wallet/wallet-provider";
 import { inputClassName } from "@/components/form-field";
-import { parseTokenAmount } from "@/lib/format";
+import { parsePositiveAmount } from "@/lib/create-sla-validation";
 import { isTransactionBusy, useTransaction } from "@/lib/use-transaction";
 
 export function TopUpBondForm({
@@ -25,25 +25,31 @@ export function TopUpBondForm({
   const { state, run, reset } = useTransaction();
   const guard = useNetworkGuard();
   const [amount, setAmount] = useState("");
+  const [amountError, setAmountError] = useState<string | null>(null);
   const inputId = useId();
+  const errorId = `${inputId}-error`;
 
   const busy = isTransactionBusy(state);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!connection) return;
+    if (!connection || busy) return;
     reset();
 
-    const result = await run(async () => {
-      let parsedAmount: bigint;
-      try {
-        parsedAmount = parseTokenAmount(amount, tokenDecimals);
-      } catch (err) {
-        throw err instanceof Error ? err : new Error("Invalid amount.");
-      }
-      return buildTopUpBondTx({ caller: connection.address, slaId, amount: parsedAmount });
-    }, connection);
+    const parsed = parsePositiveAmount(amount, tokenDecimals, "top-up amount");
+    if ("error" in parsed) {
+      setAmountError(parsed.error);
+      return;
+    }
+    setAmountError(null);
 
+    const result = await run(
+      () => buildTopUpBondTx({ caller: connection.address, slaId, amount: parsed.value }),
+      connection,
+    );
+
+    // The displayed bond only changes when the parent refreshes it from the
+    // contract after confirmation, never optimistically.
     if (result?.status === "SUCCESS") {
       setAmount("");
       onSuccess?.();
@@ -63,8 +69,15 @@ export function TopUpBondForm({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           disabled={busy}
+          aria-invalid={amountError ? true : undefined}
+          aria-describedby={amountError ? errorId : undefined}
           className={`${inputClassName} mt-1 w-36`}
         />
+        {amountError && (
+          <p id={errorId} role="alert" className="mt-1 max-w-xs text-xs text-[var(--color-status-down)]">
+            {amountError}
+          </p>
+        )}
       </div>
       <button
         type="submit"

@@ -75,7 +75,7 @@ export interface AmountFieldsResult {
   penaltyPerBreach?: bigint;
 }
 
-function parsePositiveAmount(
+export function parsePositiveAmount(
   input: string,
   decimals: number,
   label: string,
