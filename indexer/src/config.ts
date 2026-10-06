@@ -6,14 +6,29 @@ import { z } from "zod";
  * hardcoded. Fails fast and loudly on startup if anything required is
  * missing, rather than limping along with an undefined contract ID.
  */
-const ConfigSchema = z.object({
-  RPC_URL: z.string().url().default("https://soroban-testnet.stellar.org"),
-  NETWORK_PASSPHRASE: z.string().default("Test SDF Network ; September 2015"),
-  WATCHER_REGISTRY_CONTRACT_ID: z.string().min(1, "WATCHER_REGISTRY_CONTRACT_ID is required"),
-  SLA_VAULT_CONTRACT_ID: z.string().min(1, "SLA_VAULT_CONTRACT_ID is required"),
-  DB_PATH: z.string().default("./data/indexer.db"),
-  HTTP_PORT: z.coerce.number().int().positive().default(8787),
-  POLL_INTERVAL_MS: z.coerce.number().int().positive().default(5000),
+const ConfigSchema = z.preprocess(
+  (rawEnv) => {
+    if (typeof rawEnv !== "object" || rawEnv === null) return rawEnv;
+    const env = rawEnv as Record<string, unknown>;
+    const resolvedPort =
+      env.HTTP_PORT !== undefined && env.HTTP_PORT !== ""
+        ? env.HTTP_PORT
+        : env.PORT !== undefined && env.PORT !== ""
+          ? env.PORT
+          : 8787;
+    return {
+      ...env,
+      HTTP_PORT: resolvedPort,
+    };
+  },
+  z.object({
+    RPC_URL: z.string().url().default("https://soroban-testnet.stellar.org"),
+    NETWORK_PASSPHRASE: z.string().default("Test SDF Network ; September 2015"),
+    WATCHER_REGISTRY_CONTRACT_ID: z.string().min(1, "WATCHER_REGISTRY_CONTRACT_ID is required"),
+    SLA_VAULT_CONTRACT_ID: z.string().min(1, "SLA_VAULT_CONTRACT_ID is required"),
+    DB_PATH: z.string().default("./data/indexer.db"),
+    HTTP_PORT: z.coerce.number().int().positive(),
+    POLL_INTERVAL_MS: z.coerce.number().int().positive().default(5000),
   // getEvents on Soroban RPC accepts at most 1000 ledgers per request in
   // practice on most public RPC providers, and public nodes generally only
   // retain roughly 7 days (~120,960 ledgers at ~5s/ledger) of history at
@@ -40,7 +55,8 @@ const ConfigSchema = z.object({
         .map((origin) => origin.trim())
         .filter((origin) => origin.length > 0),
     ),
-});
+  }),
+);
 
 export type Config = z.infer<typeof ConfigSchema>;
 
