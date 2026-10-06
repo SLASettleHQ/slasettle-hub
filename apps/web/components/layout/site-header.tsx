@@ -2,15 +2,16 @@ import Link from "next/link";
 import { NetworkIndicator } from "@/components/network/network-indicator";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { WalletButton } from "@/components/wallet/wallet-button";
+import { DesktopNav, MobileNav } from "./primary-nav";
 
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-base)]/90 backdrop-blur supports-[backdrop-filter]:bg-[var(--color-bg-base)]/75">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <div className="flex items-center gap-6">
+      <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Link
             href="/"
-            className="flex items-center gap-2 font-mono text-sm font-semibold tracking-tight text-[var(--color-fg-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
+            className="flex items-center gap-2 rounded-md font-mono text-sm font-semibold tracking-tight text-[var(--color-fg-primary)]"
           >
             <span
               aria-hidden
@@ -18,22 +19,19 @@ export function SiteHeader() {
             >
               S
             </span>
-            SLASettle
+            <span className="hidden min-[400px]:inline">SLASettle</span>
+            <span className="sr-only min-[400px]:hidden">SLASettle home</span>
           </Link>
-          <nav aria-label="Primary" className="hidden sm:block">
-            <Link
-              href="/dashboard"
-              className="text-sm text-[var(--color-fg-secondary)] transition-colors hover:text-[var(--color-fg-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
-            >
-              Dashboard
-            </Link>
-          </nav>
+          <DesktopNav />
         </div>
 
-        <div className="flex items-center gap-3">
-          <NetworkIndicator />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:block">
+            <NetworkIndicator />
+          </div>
           <ThemeToggle />
           <WalletButton />
+          <MobileNav />
         </div>
       </div>
     </header>
