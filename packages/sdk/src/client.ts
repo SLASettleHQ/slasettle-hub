@@ -3,6 +3,7 @@ import {
   BASE_FEE,
   Contract,
   Keypair,
+  StrKey,
   TransactionBuilder,
   rpc,
   scValToNative,
@@ -24,6 +25,14 @@ export class MissingSdkConfigError extends Error {
         "Set these environment variables before using the SDK.",
     );
     this.name = "MissingSdkConfigError";
+  }
+}
+
+/** Thrown when a configuration value is present but malformed. */
+export class InvalidSdkConfigError extends Error {
+  constructor(public readonly problems: string[]) {
+    super(`Invalid SLASettle configuration: ${problems.join(" ")}`);
+    this.name = "InvalidSdkConfigError";
   }
 }
 
@@ -50,13 +59,47 @@ function readConfig(): SdkConfig {
     throw new MissingSdkConfigError(missingKeys);
   }
 
-  return env as SdkConfig;
+  const config = env as SdkConfig;
+  const problems = findConfigProblems(config);
+  if (problems.length > 0) {
+    throw new InvalidSdkConfigError(problems);
+  }
+  return config;
+}
+
+function findConfigProblems(config: SdkConfig): string[] {
+  const problems: string[] = [];
+
+  try {
+    const url = new URL(config.sorobanRpcUrl);
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      problems.push(`${ENV_VAR_NAMES.sorobanRpcUrl} must be an http(s) URL.`);
+    }
+  } catch {
+    problems.push(`${ENV_VAR_NAMES.sorobanRpcUrl} is not a valid URL.`);
+  }
+
+  if (config.networkPassphrase.trim() !== config.networkPassphrase) {
+    problems.push(`${ENV_VAR_NAMES.networkPassphrase} has leading or trailing whitespace.`);
+  }
+
+  for (const key of ["slaVaultContractId", "watcherRegistryContractId"] as const) {
+    if (!StrKey.isValidContract(config[key])) {
+      problems.push(`${ENV_VAR_NAMES[key]} is not a valid contract ID (expected a C... address).`);
+    }
+  }
+
+  return problems;
 }
 
 let cachedConfig: SdkConfig | undefined;
 let cachedServer: rpc.Server | undefined;
 
-/** Reads and validates the SLASettle environment configuration. Throws {@link MissingSdkConfigError} if incomplete. */
+/**
+ * Reads and validates the SLASettle environment configuration. Throws
+ * {@link MissingSdkConfigError} if incomplete and {@link InvalidSdkConfigError}
+ * if a value is malformed.
+ */
 export function getSdkConfig(): SdkConfig {
   if (!cachedConfig) {
     cachedConfig = readConfig();

@@ -2,6 +2,7 @@ export {
   getSdkConfig,
   getRpcServer,
   MissingSdkConfigError,
+  InvalidSdkConfigError,
   SorobanSimulationError,
   type SdkConfig,
 } from "./client.js";

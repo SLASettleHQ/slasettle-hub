@@ -1,4 +1,8 @@
+import { StrKey } from "@stellar/stellar-sdk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const VAULT_ID = StrKey.encodeContract(Buffer.alloc(32, 1));
+const REGISTRY_ID = StrKey.encodeContract(Buffer.alloc(32, 2));
 
 const ENV_KEYS = [
   "NEXT_PUBLIC_SOROBAN_RPC_URL",
@@ -10,8 +14,8 @@ const ENV_KEYS = [
 const VALID_ENV: Record<(typeof ENV_KEYS)[number], string> = {
   NEXT_PUBLIC_SOROBAN_RPC_URL: "https://rpc.example.test",
   NEXT_PUBLIC_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015",
-  NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID: "CVAULT",
-  NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID: "CREGISTRY",
+  NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID: VAULT_ID,
+  NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID: REGISTRY_ID,
 };
 
 describe("getSdkConfig", () => {
@@ -75,5 +79,35 @@ describe("getSdkConfig", () => {
         "NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID",
       ]);
     }
+  });
+
+  it("rejects malformed values with InvalidSdkConfigError listing each problem", async () => {
+    vi.resetModules();
+    Object.assign(process.env, VALID_ENV, {
+      NEXT_PUBLIC_SOROBAN_RPC_URL: "ftp://rpc.example.test",
+      NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID: "CVAULT",
+      NEXT_PUBLIC_NETWORK_PASSPHRASE: " Test SDF Network ; September 2015",
+    });
+    const { getSdkConfig, InvalidSdkConfigError } = await import("./client.js");
+
+    try {
+      getSdkConfig();
+      expect.fail("expected getSdkConfig to throw");
+    } catch (err) {
+      expect(err).toBeInstanceOf(InvalidSdkConfigError);
+      const { problems } = err as InstanceType<typeof InvalidSdkConfigError>;
+      expect(problems).toHaveLength(3);
+      expect(problems.join(" ")).toContain("NEXT_PUBLIC_SOROBAN_RPC_URL");
+      expect(problems.join(" ")).toContain("NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID");
+      expect(problems.join(" ")).toContain("NEXT_PUBLIC_NETWORK_PASSPHRASE");
+    }
+  });
+
+  it("rejects an RPC URL that does not parse", async () => {
+    vi.resetModules();
+    Object.assign(process.env, VALID_ENV, { NEXT_PUBLIC_SOROBAN_RPC_URL: "not a url" });
+    const { getSdkConfig, InvalidSdkConfigError } = await import("./client.js");
+
+    expect(() => getSdkConfig()).toThrow(InvalidSdkConfigError);
   });
 });
