@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/wallet", () => ({
+  isUserRejection: vi.fn(() => false),
   isFreighterAvailable: vi.fn(),
   getActiveWallet: vi.fn(),
   connectWallet: vi.fn(),
