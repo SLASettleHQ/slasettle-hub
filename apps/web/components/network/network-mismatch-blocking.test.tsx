@@ -30,7 +30,8 @@ import { TriggerSettlementAction } from "@/components/status/trigger-settlement-
 
 const TESTNET = "Test SDF Network ; September 2015";
 const FUTURENET = "Test SDF Future Network ; October 2022";
-const MESSAGE = "Switch your wallet to Testnet before submitting transactions.";
+const MESSAGE =
+  "Your wallet is on Futurenet. Switch your wallet to Testnet before submitting transactions.";
 
 function connectWalletOn(networkPassphrase: string | null) {
   vi.mocked(isFreighterAvailable).mockResolvedValue(true);

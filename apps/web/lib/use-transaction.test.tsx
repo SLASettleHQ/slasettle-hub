@@ -59,7 +59,7 @@ describe("useTransaction network guard", () => {
     expect(submitTransaction).not.toHaveBeenCalled();
     expect(result.current.state).toEqual({
       status: "failed",
-      message: "Switch your wallet to Testnet before submitting transactions.",
+      message: "Your wallet is on Futurenet. Switch your wallet to Testnet before submitting transactions.",
     });
   });
 

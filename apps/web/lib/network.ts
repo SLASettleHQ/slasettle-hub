@@ -37,7 +37,7 @@ export function checkWalletNetwork(walletPassphrase: string): WalletNetworkCheck
   if (walletPassphrase !== configured) {
     return {
       allowed: false,
-      message: `Switch your wallet to ${labelForNetworkPassphrase(configured)} before submitting transactions.`,
+      message: `Your wallet is on ${labelForNetworkPassphrase(walletPassphrase)}. Switch your wallet to ${labelForNetworkPassphrase(configured)} before submitting transactions.`,
     };
   }
   return { allowed: true };
