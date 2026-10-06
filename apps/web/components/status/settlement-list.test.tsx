@@ -30,7 +30,7 @@ describe("SettlementList", () => {
   it("shows a real empty state, not a fabricated entry", () => {
     render(<SettlementList settlements={[]} />);
     expect(
-      screen.getByText("No settlements have been triggered for this SLA yet."),
+      screen.getByText("No settlements yet"),
     ).toBeInTheDocument();
   });
 
