@@ -25,15 +25,16 @@ locations in the repositories, not hosted documentation URLs.
   penalty is paid from the bond to the SLA's beneficiary.
 - **Network:** Stellar Testnet only (`Test SDF Network ; September 2015`).
   Nothing is deployed to mainnet.
-- **Status:** a Testnet prototype. It is not production-deployed and not
+- **Status:** a Testnet prototype. It is not production-deployed on mainnet and not
   audited by a third party. The two contracts are deployed on Testnet (section 3); the
-  frontend and the documentation are hosted on Vercel (frontend without an
-  indexer); nothing else is hosted.
-- **Public URLs:** application https://slasettle-web.vercel.app (Testnet; SLA
-  data read live, but no hosted indexer, so the round-status and
-  settlement-history panels show "indexer not configured");
-  documentation https://slasettle-docs.vercel.app. Both are on a personal
-  Vercel account, deployed by hand on 2026-09-29 (`evidence/final-technical-audit-2026-09-29-r3.md`).
+  indexer is deployed as a public service on Cloudflare Workers and D1; the
+  frontend and the documentation are hosted on Vercel.
+- **Public URLs:**
+  - application: https://slasettle-web.vercel.app (Testnet; SLA data read live via SDK and hosted indexer);
+  - indexer API: https://slasettle-indexer.slasettle-indexer.workers.dev (Cloudflare Workers + D1);
+  - documentation: https://slasettle-docs.vercel.app. Both frontend and docs are on a personal
+  Vercel account.
+
 
 ## 2. Repository URLs
 
@@ -229,14 +230,15 @@ continuously.
 
 ## 9. API and SDK
 
-Indexer (`indexer/`, Node with SQLite; run locally, not hosted):
+Indexer (`indexer/`, Cloudflare Workers with Cloudflare D1 in production, or Node with SQLite locally):
 `GET /v1/health`, `GET /v1/watchers`, `GET /v1/slas/:slaId/current-round`,
 `GET /v1/slas/:slaId/settlements` (query `limit` and `before`),
 `GET /v1/providers/:address/slas`, `GET /v1/clock`. Settlement history uses
 cursor pagination over `(ledger_close_time, event_id)`; `limit` defaults to 20,
 is capped at 100, and a negative or fractional value returns HTTP 400. CORS is
 an explicit environment-driven origin allowlist. Amounts are strings. The API
-has no authentication and binds all interfaces. Reference: `apps/docs/api.md`.
+has no authentication. Reference: `apps/docs/api.md` and `indexer/README.md`.
+
 
 SDK (`packages/sdk`, TypeScript, not published): read functions `getSla`,
 `getBondBalance`, `isRoundSettled` (vault) and `getRoundTally`,
@@ -368,13 +370,12 @@ Read from GitHub on 2026-10-06. Remaining runway:
 
 | Repo | # | Title | Kind |
 |---|---|---|---|
-| hub | 11 | watcher: daemon run live on 2026-09-29; indexer read-back criterion still open | future work (watcher daemon to indexer round read-back) |
 | hub | 12 | frontend: finish real-browser verification (signed writes, app themes, reduced motion, mobile) | future work |
 | hub | 15 | Backlog from the 2026-09-29 final audit (non-blocking) | future work (remaining evidence gaps and hardening) |
 | vault | 4 | watcher_registry: add commit-reveal to prevent last-mover vote copying | future work |
 
 Resolved since the first version of this pack and closed on GitHub on
-2026-10-06 (not current work): hub #10 and vault #2 (MIT license added), hub #14
+2026-10-06 (not current work): hub #11 (watcher daemon to indexer read-back pipeline verified live on Testnet and closed), hub #10 and vault #2 (MIT license added), hub #14
 (Go toolchain 1.25.14 requested, `govulncheck` 0 vulnerabilities on
 2026-10-01), vault #3 (the 2026-10-01 deployment restored source and deployment
 parity). Hub #13 (network mismatch blocks writes) is implemented and

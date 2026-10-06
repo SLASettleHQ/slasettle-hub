@@ -12,7 +12,7 @@ own), `indexer`, and `watcher`. None share a single `.env` file.
 | `NEXT_PUBLIC_NETWORK_PASSPHRASE` | yes | e.g. `Test SDF Network ; September 2015` |
 | `NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID` | yes | see [Current Testnet deployment](/testnet-deployment) |
 | `NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID` | yes | see [Current Testnet deployment](/testnet-deployment) |
-| `NEXT_PUBLIC_INDEXER_API_URL` | yes | base URL of a running indexer, e.g. `http://localhost:8787` (the indexer's default `HTTP_PORT`) |
+| `NEXT_PUBLIC_INDEXER_API_URL` | yes | base URL of the indexer API, e.g. `https://slasettle-indexer.slasettle-indexer.workers.dev` (or `http://localhost:8787` in local dev) |
 
 `NEXT_PUBLIC_*` variables are inlined into the Next.js client bundle at
 build time — they are visible to anyone loading the page, which is

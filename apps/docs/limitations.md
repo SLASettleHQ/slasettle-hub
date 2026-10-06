@@ -71,15 +71,15 @@ browser with Freighter, which stays part of
 
 ## Operational
 
-- **The indexer has no public deployment.** The frontend is hosted on
-  Vercel (https://slasettle-web.vercel.app) without an indexer, so its
-  round-status and settlement-history panels cannot load there; the full
-  behavior needs a locally run indexer. See
+- **The watcher daemon has no continuous 24/7 deployment.** The indexer is deployed
+  as a public service on Cloudflare Workers (https://slasettle-indexer.slasettle-indexer.workers.dev)
+  backed by Cloudflare D1, but no standing watcher daemon runs permanently. Watcher
+  submissions were verified live on Testnet during verification passes. See
   [Deployment topology](/deployment-topology).
 - **No independent third-party security audit has been performed** on
   either repository. See [Security](/security).
-- **No license file exists in either repository.** This documentation
-  does not choose or invent one on that repository's behalf.
+- **MIT license files exist in both repositories.** Both repositories include an
+  MIT LICENSE file.
 - **Dependency and secret scanning are manual and one-time, not
   scheduled.** See [Security](/security) for exactly what has been run
   and when.

@@ -21,15 +21,15 @@ Each component is in exactly one of four categories:
 | `sla_vault` contract | CURRENTLY DEPLOYED (Stellar Testnet) |
 | Stellar Testnet RPC | external service, not operated by this project |
 | Native XLM token contract (Testnet SAC) | external, part of the Stellar network |
-| Watcher daemon | LOCALLY RUN, OPTIONAL. Run live on 2026-09-29; no continuous deployment |
-| Indexer | LOCALLY RUN, OPTIONAL |
-| SQLite database | LOCALLY RUN (a file next to the indexer) |
-| Frontend (`apps/web`) | CURRENTLY DEPLOYED on Vercel (2026-09-29), without an indexer; also LOCALLY RUN |
+| Watcher daemon | LOCALLY RUN, OPTIONAL. Run live on 2026-09-29 and 2026-10-06; no continuous deployment |
+| Indexer | CURRENTLY DEPLOYED on Cloudflare Workers; also LOCALLY RUN |
+| Database | Cloudflare D1 (production); SQLite (local dev) |
+| Frontend (`apps/web`) | CURRENTLY DEPLOYED on Vercel; also LOCALLY RUN |
 | SDK (`packages/sdk`) | library; runs inside whatever imports it |
 | User's browser | runs the frontend's JavaScript |
 | Freighter | external browser extension |
 | Documentation site (`apps/docs`) | CURRENTLY DEPLOYED on Vercel (2026-09-29) |
-| Public indexer API, managed database, permanent watcher, automatic deployment pipeline | NOT DEPLOYED |
+| Permanent 24/7 watcher daemon | NOT DEPLOYED |
 
 ## What is deployed, and what has only been run
 
@@ -51,19 +51,18 @@ Each component is in exactly one of four categories:
   standing watcher set; the five registered watcher addresses are accounts
   used for evidence. "The daemon can submit live votes" is **VERIFIED**;
   "the daemon is deployed as a service" is **NOT DEPLOYED**.
-- **The indexer and frontend have been run locally against Testnet**, most
-  recently on 2026-09-29 (the browser and Freighter check, and a
-  fresh indexer run recorded in `evidence/parity-matrix-2026-09-29.md`).
-  Neither is hosted.
+- **The indexer is deployed as a public service on Cloudflare Workers**,
+  operating at `https://slasettle-indexer.slasettle-indexer.workers.dev` and backed
+  by a Cloudflare D1 database with scheduled cron ingestion (`* * * * *`, every minute).
+  It can also be run locally with SQLite as documented in `indexer/README.md`.
 
 ## Not deployed anywhere
 
-- **No public indexer.** The indexer's HTTP API and SQLite file exist only
-  wherever you run `npm start`; there is no hosted instance and no stable
-  URL. It is a long-running Node process with a local SQLite file, so it
-  does not fit Vercel's serverless model, and no long-running host was
-  available.
-- **No managed database, load balancer, reverse proxy or secrets manager.**
+- **No permanent 24/7 watcher daemon service.** The watcher daemon has been verified
+  live on Testnet in multiple test passes (most recently on 2026-10-06 with complete
+  on-chain submission, indexer ingestion, and readback verified), but no standing daemon
+  runs continuously.
+- **No managed dedicated database cluster, load balancer, or secrets manager.**
 - **No permanent watcher service.**
 - **No automatic deployment pipeline.** The two Vercel deployments below
   were made by hand with the Vercel CLI on 2026-09-29; the Vercel projects are
