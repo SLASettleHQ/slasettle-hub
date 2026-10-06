@@ -24,10 +24,11 @@ export function describeReadError(error: unknown): string {
   if (error instanceof InvalidSdkInputError) {
     return error.message;
   }
-  if (error instanceof IndexerUnavailableError) {
-    return `The indexer could not be reached. ${error.message}`;
-  }
-  if (error instanceof IndexerApiError || error instanceof IndexerResponseError) {
+  if (
+    error instanceof IndexerUnavailableError ||
+    error instanceof IndexerApiError ||
+    error instanceof IndexerResponseError
+  ) {
     return error.message;
   }
   if (error instanceof TypeError || error instanceof RangeError) {

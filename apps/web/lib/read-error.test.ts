@@ -19,7 +19,9 @@ describe("describeReadError", () => {
   });
 
   it("separates indexer unavailable, bad status and malformed body", () => {
-    expect(describeReadError(new IndexerUnavailableError("/v1/clock", "fetch failed"))).toMatch(/could not be reached/);
+    expect(describeReadError(new IndexerUnavailableError("/v1/clock", "fetch failed"))).toBe(
+      "The indexer could not be reached for /v1/clock: fetch failed",
+    );
     expect(describeReadError(new IndexerApiError("/v1/clock", 500, "Internal Server Error"))).toMatch(/500/);
     expect(describeReadError(new IndexerResponseError("/v1/clock", "bad body"))).toMatch(/unexpected response/);
   });
