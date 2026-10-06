@@ -114,6 +114,15 @@ body {
   transition: background-color 150ms ease, color 150ms ease;
 }
 
+/*
+ * One visible focus indicator for everything focusable. Components that need a
+ * different offset set their own outline; none of them remove this one.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
