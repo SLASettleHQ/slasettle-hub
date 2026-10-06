@@ -8,6 +8,7 @@ dist/
 out/
 build/
 **/.vitepress/cache/
+.wrangler/
 
 # env files
 .env
