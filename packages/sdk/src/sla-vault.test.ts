@@ -8,6 +8,7 @@ vi.mock("./client.js", () => ({
 }));
 
 import { buildInvokeTx, getSdkConfig, simulateReadCall } from "./client.js";
+import { InvalidSdkInputError } from "./validate.js";
 import {
   buildCancelSlaTx,
   buildCreateSlaTx,
@@ -189,5 +190,77 @@ describe("write transaction builders", () => {
     const [, , method, args] = buildInvokeTxMock.mock.calls[0]!;
     expect(method).toBe("withdraw_remaining_bond");
     expect(args!.map((scVal) => scValToNative(scVal))).toEqual([CALLER, 7n]);
+  });
+});
+
+describe("builder input validation", () => {
+  const VALID_CREATE = {
+    provider: PROVIDER,
+    token: TOKEN,
+    bondAmount: 1_000n,
+    uptimeTargetBps: 9990,
+    quorumThreshold: 3,
+    penaltyPerBreach: 10n,
+    beneficiary: BENEFICIARY,
+  };
+
+  beforeEach(() => {
+    buildInvokeTxMock.mockReset();
+    buildInvokeTxMock.mockResolvedValue({} as never);
+  });
+
+  it.each([
+    ["a malformed token", { token: "CNOTREAL" }, "token"],
+    ["a token given as an account address", { token: PROVIDER }, "token"],
+    ["a malformed beneficiary", { beneficiary: "nope" }, "beneficiary"],
+    ["a zero bond", { bondAmount: 0n }, "bondAmount"],
+    ["a negative penalty", { penaltyPerBreach: -1n }, "penaltyPerBreach"],
+    ["a bond above i128", { bondAmount: 1n << 127n }, "bondAmount"],
+    ["basis points above 10000", { uptimeTargetBps: 10_001 }, "uptimeTargetBps"],
+    ["fractional basis points", { uptimeTargetBps: 99.5 }, "uptimeTargetBps"],
+    ["a zero quorum", { quorumThreshold: 0 }, "quorumThreshold"],
+    ["a quorum above u32", { quorumThreshold: 2 ** 32 }, "quorumThreshold"],
+  ])("buildCreateSlaTx rejects %s before building", async (_label, override, field) => {
+    const promise = buildCreateSlaTx({ ...VALID_CREATE, ...override });
+    await expect(promise).rejects.toBeInstanceOf(InvalidSdkInputError);
+    await expect(promise).rejects.toMatchObject({ field });
+    expect(buildInvokeTxMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts the largest valid i128 amount without precision loss", async () => {
+    const max = (1n << 127n) - 1n;
+    await buildCreateSlaTx({ ...VALID_CREATE, bondAmount: max, penaltyPerBreach: max });
+    const args = buildInvokeTxMock.mock.calls[0]![3]!;
+    expect(scValToNative(args[2]!)).toBe(max);
+  });
+
+  it("rejects a zero top-up and an out-of-range SLA id", async () => {
+    await expect(buildTopUpBondTx({ caller: CALLER, slaId: 1n, amount: 0n })).rejects.toMatchObject({
+      field: "amount",
+    });
+    await expect(
+      buildTopUpBondTx({ caller: CALLER, slaId: 1n << 64n, amount: 1n }),
+    ).rejects.toMatchObject({ field: "slaId" });
+    expect(buildInvokeTxMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a malformed caller on cancel, withdraw and settlement", async () => {
+    await expect(buildCancelSlaTx({ caller: "x", slaId: 1n })).rejects.toBeInstanceOf(InvalidSdkInputError);
+    await expect(buildWithdrawBondTx({ caller: "x", slaId: 1n })).rejects.toBeInstanceOf(InvalidSdkInputError);
+    await expect(
+      buildTriggerSettlementTx({ caller: "x", slaId: 1n, roundId: 1n }),
+    ).rejects.toBeInstanceOf(InvalidSdkInputError);
+    await expect(
+      buildTriggerSettlementTx({ caller: CALLER, slaId: 1n, roundId: -1n }),
+    ).rejects.toMatchObject({ field: "roundId" });
+    expect(buildInvokeTxMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("getSla strict decoding", () => {
+  it("rejects a field with the wrong runtime type instead of casting it", async () => {
+    simulateReadCallMock.mockReset();
+    simulateReadCallMock.mockResolvedValue({ ...RAW_SLA_CONFIG, bond_amount: 5 });
+    await expect(getSla(1n)).rejects.toThrow(/bond_amount.*number, expected bigint/);
   });
 });

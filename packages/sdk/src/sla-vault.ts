@@ -1,5 +1,13 @@
 import { nativeToScVal, type Transaction } from "@stellar/stellar-sdk";
 import { buildInvokeTx, getSdkConfig, simulateReadCall } from "./client.js";
+import {
+  MAX_BPS,
+  assertAddress,
+  assertContractId,
+  assertPositiveAmount,
+  assertU32,
+  assertU64,
+} from "./validate.js";
 import { SLA_STATUS_VARIANTS, type SLAConfig, type SLAStatus } from "./types.js";
 
 function requireField(
@@ -35,19 +43,33 @@ function decodeContractEnum<T extends string>(
   return tag as T;
 }
 
+function expectType<T>(
+  value: unknown,
+  type: "string" | "bigint" | "number",
+  field: string,
+): T {
+  if (typeof value !== type) {
+    throw new TypeError(
+      `get_sla field "${field}" is ${typeof value}, expected ${type}. The deployed ` +
+        "sla_vault contract may not match the SDK's expected SLAConfig shape.",
+    );
+  }
+  return value as T;
+}
+
 function decodeSlaConfig(raw: unknown): SLAConfig {
   if (typeof raw !== "object" || raw === null) {
     throw new TypeError("get_sla did not return a struct-shaped value.");
   }
   const record = raw as Record<string, unknown>;
   return {
-    provider: requireField(record, "provider") as string,
-    token: requireField(record, "token") as string,
-    bondAmount: requireField(record, "bond_amount") as bigint,
-    uptimeTargetBps: requireField(record, "uptime_target_bps") as number,
-    quorumThreshold: requireField(record, "quorum_threshold") as number,
-    penaltyPerBreach: requireField(record, "penalty_per_breach") as bigint,
-    beneficiary: requireField(record, "beneficiary") as string,
+    provider: expectType<string>(requireField(record, "provider"), "string", "provider"),
+    token: expectType<string>(requireField(record, "token"), "string", "token"),
+    bondAmount: expectType<bigint>(requireField(record, "bond_amount"), "bigint", "bond_amount"),
+    uptimeTargetBps: expectType<number>(requireField(record, "uptime_target_bps"), "number", "uptime_target_bps"),
+    quorumThreshold: expectType<number>(requireField(record, "quorum_threshold"), "number", "quorum_threshold"),
+    penaltyPerBreach: expectType<bigint>(requireField(record, "penalty_per_breach"), "bigint", "penalty_per_breach"),
+    beneficiary: expectType<string>(requireField(record, "beneficiary"), "string", "beneficiary"),
     status: decodeContractEnum<SLAStatus>(
       requireField(record, "status"),
       SLA_STATUS_VARIANTS,
@@ -66,6 +88,13 @@ export async function buildCreateSlaTx(params: {
   penaltyPerBreach: bigint;
   beneficiary: string;
 }): Promise<Transaction> {
+  assertAddress(params.provider, "provider");
+  assertContractId(params.token, "token");
+  assertAddress(params.beneficiary, "beneficiary");
+  assertPositiveAmount(params.bondAmount, "bondAmount");
+  assertPositiveAmount(params.penaltyPerBreach, "penaltyPerBreach");
+  assertU32(params.uptimeTargetBps, "uptimeTargetBps", 0, MAX_BPS);
+  assertU32(params.quorumThreshold, "quorumThreshold", 1);
   const config = getSdkConfig();
   return buildInvokeTx(params.provider, config.slaVaultContractId, "create_sla", [
     nativeToScVal(params.provider, { type: "address" }),
@@ -84,6 +113,9 @@ export async function buildTopUpBondTx(params: {
   slaId: bigint;
   amount: bigint;
 }): Promise<Transaction> {
+  assertAddress(params.caller, "caller");
+  assertU64(params.slaId, "slaId");
+  assertPositiveAmount(params.amount, "amount");
   const config = getSdkConfig();
   return buildInvokeTx(params.caller, config.slaVaultContractId, "top_up_bond", [
     nativeToScVal(params.caller, { type: "address" }),
@@ -102,6 +134,9 @@ export async function buildTriggerSettlementTx(params: {
   slaId: bigint;
   roundId: bigint;
 }): Promise<Transaction> {
+  assertAddress(params.caller, "caller");
+  assertU64(params.slaId, "slaId");
+  assertU64(params.roundId, "roundId");
   const config = getSdkConfig();
   return buildInvokeTx(
     params.caller,
@@ -120,6 +155,8 @@ export async function buildCancelSlaTx(params: {
   caller: string;
   slaId: bigint;
 }): Promise<Transaction> {
+  assertAddress(params.caller, "caller");
+  assertU64(params.slaId, "slaId");
   const config = getSdkConfig();
   return buildInvokeTx(params.caller, config.slaVaultContractId, "cancel_sla", [
     nativeToScVal(params.caller, { type: "address" }),
@@ -132,6 +169,8 @@ export async function buildWithdrawBondTx(params: {
   caller: string;
   slaId: bigint;
 }): Promise<Transaction> {
+  assertAddress(params.caller, "caller");
+  assertU64(params.slaId, "slaId");
   const config = getSdkConfig();
   return buildInvokeTx(
     params.caller,
@@ -146,6 +185,7 @@ export async function buildWithdrawBondTx(params: {
 
 /** Reads an SLA's configuration from `sla_vault.get_sla`. */
 export async function getSla(slaId: bigint): Promise<SLAConfig> {
+  assertU64(slaId, "slaId");
   const config = getSdkConfig();
   const result = await simulateReadCall(config.slaVaultContractId, "get_sla", [
     nativeToScVal(slaId, { type: "u64" }),
