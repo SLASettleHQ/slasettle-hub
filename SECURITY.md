@@ -93,13 +93,14 @@ Every `i128`/`u64` amount round-trips as `bigint`, never coerced to
 Wallet interaction goes exclusively through `@stellar/freighter-api`; the
 frontend never constructs, holds, or has access to a private key. A grep
 across `apps/web` for any private-key or secret-signing code found none.
-Network-mismatch detection exists (`components/network/network-indicator.tsx`,
-comparing the connected wallet's actual network passphrase against the
-app's configured one) but is currently visual-only, with no hard block
-before transaction submission; not a fund-safety issue, since Stellar's
-own transaction-signing model bakes the network passphrase into the
-signed payload, so a genuinely mismatched sign/submit combination fails
-at the protocol level, but a real UX gap worth closing.
+Network-mismatch detection (`components/network/network-indicator.tsx`)
+compares the connected wallet's network passphrase against the app's
+configured one. Writes are also blocked: `useTransaction.run` refuses to
+build, sign or submit when the wallet is on a different network or the app
+has no configured network, `signTransaction` in `lib/wallet.ts` re-checks the
+wallet's live network before asking Freighter to sign, and each write action
+disables its button and says why. This is covered by unit tests with a mocked
+wallet. It has not yet been exercised in a real browser with Freighter.
 
 Exactly one `dangerouslySetInnerHTML` use exists in the entire frontend
 (`app/layout.tsx`, the dark-mode flash-prevention script), and its content
@@ -127,10 +128,9 @@ repository as of this date.
 
 ## Known limitations
 
-- Frontend network-mismatch detection is visual only, no hard submit
-  block; this was directly exercised on 2026-09-29 and confirmed to
-  behave exactly as documented (see
-  `evidence/phase-23-verification-2026-09-29.md`).
+- The frontend's network-mismatch block (hub #13) is covered by unit tests
+  with a mocked wallet only. It has not been exercised in a real browser with
+  Freighter.
 - No CI-level dependency or secret scanner runs on a schedule; the checks
   described above were manual and one-time.
 

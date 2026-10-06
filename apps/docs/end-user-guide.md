@@ -83,7 +83,8 @@ directly via the SDK's read functions. It shows:
 
 `components/network/network-indicator.tsx` detects when the connected
 Freighter wallet is on a different network than the frontend is
-configured for, and shows a visual warning. This is a real,
-disclosed gap: it does not currently hard-block a transaction
-submission on mismatch — see [Limitations](/limitations) and hub issue
-[#13](https://github.com/SLASettleHQ/slasettle-hub/issues/13).
+configured for, and shows a warning. In that state the write actions are
+disabled with a message such as "Your wallet is on Futurenet. Switch your
+wallet to Testnet before submitting transactions." Nothing is built, signed or
+submitted until the wallet is on the configured network. Reading pages is not
+affected. See [Limitations](/limitations).

@@ -154,7 +154,9 @@ adds rows for the current pair. Dates in the Source column were not changed.
 | K3 The app identifies the configured network and shows a mismatch warning for a wrong passphrase | browser | same (Futurenet passphrase exercised, then restored) | 2026-09-29 | VERIFIED |
 | K4 Public pages work with no wallet connected | browser | same (`/status/0`) | 2026-09-29 | VERIFIED |
 | K5 Dashboard create, top-up, cancel and withdraw forms through a signed transaction | browser | same: not exercised; also `hub/apps/docs/end-user-guide.md` | 2026-09-29 | UNVERIFIED |
-| K6 A network mismatch does not block a transaction (visual warning only) | source | `hub/apps/web/components/network/network-indicator.tsx`; hub issue #13 (open, checked 2026-09-29) | 2026-09-29 | KNOWN LIMITATION |
+| K6 On 2026-09-29 a network mismatch did not block a transaction (visual warning only). Superseded by row K8 | source | `hub/apps/web/components/network/network-indicator.tsx`; hub issue #13 (open, checked 2026-09-29) | 2026-09-29 | SUPERSEDED |
+| K8 A wallet on a different network, or an app with no configured network, cannot build, sign or submit a transaction, and every write action says why | local test | `hub/apps/web/lib/use-transaction.ts`, `hub/apps/web/lib/wallet.ts`, `hub/apps/web/lib/use-transaction.test.tsx`, `hub/apps/web/components/network/network-mismatch-blocking.test.tsx` (commits `4f2575c`, `cf9427e`) | 2026-10-06 | TESTED LOCALLY |
+| K9 The same block exercised in a real browser with Freighter | none | not run | 2026-10-06 | UNVERIFIED |
 | K7 One first-click "Connecting…" hang, seen once and not reproduced | browser | `hub/evidence/phase-23-verification-2026-09-29.md` Part B | 2026-09-29 | UNVERIFIED |
 
 ## L. Public status page

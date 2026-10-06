@@ -57,16 +57,17 @@ a verification step that genuinely has not happened yet.
   effect), and no other reliable way to force one was available. See
   the evidence file above for the exact detail.
 
-## Frontend: a real, disclosed UX gap
+## Frontend: network mismatch blocks writes, not yet browser-verified
 
-`components/network/network-indicator.tsx` detects when the connected
-wallet's network doesn't match the app's configured network and shows a
-visual warning, but does not currently hard-block a transaction
-submission on mismatch. This is not a fund-safety issue — Stellar's own
-transaction-signing model bakes the network passphrase into the signed
-payload, so a genuinely mismatched sign/submit combination fails at the
-protocol level regardless — but it is a real UX gap, tracked as
-[slasettle-hub#13](https://github.com/SLASettleHQ/slasettle-hub/issues/13).
+`components/network/network-indicator.tsx` shows a warning when the connected
+wallet's network doesn't match the app's configured network. Since
+[slasettle-hub#13](https://github.com/SLASettleHQ/slasettle-hub/issues/13) the
+transaction layer also refuses to build, sign or submit in that case, and when
+the app has no configured network. Each write action (create SLA, top up,
+cancel, withdraw, trigger settlement) is disabled and says why. This is
+covered by unit tests with a mocked wallet. It has not been exercised in a real
+browser with Freighter, which stays part of
+[slasettle-hub#12](https://github.com/SLASettleHQ/slasettle-hub/issues/12).
 
 ## Operational
 

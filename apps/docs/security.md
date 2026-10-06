@@ -72,7 +72,7 @@ documentation applies to itself throughout.
 
 See [Limitations](/limitations) for the complete list with more detail.
 The short version: no commit-reveal for watcher votes, one shared
-watcher set, `uptime_target_bps` not enforced, frontend network-mismatch
-detection is visual-only with no hard submit block, and the current contracts, deployed 2026-10-01, were built
+watcher set, `uptime_target_bps` not enforced, the frontend's network-mismatch
+block is unit-tested but not yet browser-verified, and the current contracts, deployed 2026-10-01, were built
 with `soroban-sdk 28.0.0` and match the vault's current source, which also uses
 `28.0.0` (see [Current Testnet deployment](/testnet-deployment)).

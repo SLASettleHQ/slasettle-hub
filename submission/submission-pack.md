@@ -196,8 +196,9 @@ continuously.
   After the indexer fix the settlement-history panel on `/status/0` was also
   verified rendering the real settlement row. Record:
   `evidence/phase-23-verification-2026-09-29.md` Part B.
-- The mismatch indicator is a warning only; it does not block a transaction
-  (hub #13).
+- The mismatch indicator warns, and since hub #13 the write actions and the
+  transaction layer also block when the wallet is on another network. This is
+  unit-tested with a mocked wallet and not yet verified in a real browser.
 - **Public hosted frontend:** https://slasettle-web.vercel.app (Testnet
   configuration; no indexer, so two panels show "indexer not configured").
   **On 2026-10-06 its deployed JavaScript bundle contains the superseded
@@ -272,7 +273,8 @@ It maps no contract error to a name; a failed call surfaces the RPC's message.
 - **Signatures:** the contracts call `require_auth`; since 2026-09-29 local
   tests show that a missing or wrong signature is rejected for the methods
   listed in `evidence/index.md` row AJ. No live wrongly-signed call was recorded.
-- **Network mismatch** in the frontend is visual only.
+- **Network mismatch** in the frontend blocks writes (unit-tested, not yet
+  browser-verified).
 - This project is not described as audited or security-certified.
 
 ## 11. Testing
@@ -329,7 +331,8 @@ sections 12 and 13.
   manual maintenance (section 4).
 - The SDK, frontend and watcher have no archived-entry restore handling.
 - Testnet-only explorer link in the indexer.
-- The network-mismatch indicator warns and does not block submission (hub #13).
+- The network-mismatch block (hub #13) is unit-tested only, not yet verified in
+  a real browser with Freighter.
 - The hosted frontend still reads the superseded 2026-09-27 contract pair
   (section 7).
 - No independent security audit.
@@ -367,7 +370,6 @@ Read from GitHub on 2026-10-06. Remaining runway:
 |---|---|---|---|
 | hub | 11 | watcher: daemon run live on 2026-09-29; indexer read-back criterion still open | future work (watcher daemon to indexer round read-back) |
 | hub | 12 | frontend: finish real-browser verification (signed writes, app themes, reduced motion, mobile) | future work |
-| hub | 13 | frontend: network mismatch should block submission, not just warn | limitation |
 | hub | 15 | Backlog from the 2026-09-29 final audit (non-blocking) | future work (remaining evidence gaps and hardening) |
 | vault | 4 | watcher_registry: add commit-reveal to prevent last-mover vote copying | future work |
 
@@ -375,7 +377,8 @@ Resolved since the first version of this pack and closed on GitHub on
 2026-10-06 (not current work): hub #10 and vault #2 (MIT license added), hub #14
 (Go toolchain 1.25.14 requested, `govulncheck` 0 vulnerabilities on
 2026-10-01), vault #3 (the 2026-10-01 deployment restored source and deployment
-parity). Dependabot PR hub #8 (ESLint 10) is closed and not merged; the project
+parity). Hub #13 (network mismatch blocks writes) is implemented and
+unit-tested; its real-browser check stays under hub #12. Dependabot PR hub #8 (ESLint 10) is closed and not merged; the project
 intentionally stays on ESLint 9.x and does not claim ESLint 10 support.
 
 ## 16. Release

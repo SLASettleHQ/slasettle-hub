@@ -208,12 +208,10 @@ been performed.
 Beyond the contract-level limitations documented in `slasettle-vault`
 (no commit-reveal, display-only uptime target, one shared watcher set):
 
-- The frontend's network-mismatch detection
-  (`components/network/network-indicator.tsx`) is a visual warning only;
-  nothing blocks a transaction submission if the connected wallet is on a
-  different network than the app is configured for. Not a fund-safety
-  issue, since Stellar's own transaction signing bakes the network
-  passphrase into the signed payload, but a real UX gap.
+- The frontend blocks writes when the connected wallet is on a different
+  network than the app is configured for (hub #13). This is covered by unit
+  tests with a mocked wallet and has not been exercised in a real browser
+  with Freighter.
 - Three of the vault's eight event kinds
   (`bond_topped_up`, `sla_cancelled`, `bond_withdrawn`) were unverified
   against real on-chain events until the 2026-09-27 live evidence pass
