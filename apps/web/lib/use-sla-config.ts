@@ -2,6 +2,7 @@
 
 import { getBondBalance, getSla, getTokenDecimals, getTokenSymbol, type SLAConfig } from "@slasettle/sdk";
 import { useCallback, useEffect, useState } from "react";
+import { describeReadError } from "./read-error";
 
 export interface SlaConfigView {
   config: SLAConfig;
@@ -43,7 +44,7 @@ export function useSlaConfig(slaId: bigint) {
           setState({
             data: null,
             loading: false,
-            error: err instanceof Error ? err.message : `Failed to load SLA #${slaId}.`,
+            error: describeReadError(err),
           });
         }
       }

@@ -3,6 +3,7 @@
 import { getBondBalance, getSla, getTokenDecimals, getTokenSymbol, type SLAConfig } from "@slasettle/sdk";
 import { useCallback, useEffect, useState } from "react";
 import { getProviderSlas } from "./indexer";
+import { describeReadError } from "./read-error";
 
 export interface ProviderSlaView {
   slaId: bigint;
@@ -76,7 +77,7 @@ export function useProviderSlas(address: string | null) {
           setState({
             slas: [],
             loading: false,
-            error: err instanceof Error ? err.message : "Failed to load your SLAs.",
+            error: describeReadError(err),
           });
         }
       }
