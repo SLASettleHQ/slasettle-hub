@@ -4,6 +4,7 @@ import {
   IndexerApiError,
   IndexerResponseError,
   IndexerUnavailableError,
+  MissingIndexerConfigError,
   getClock,
   getCurrentRound,
   getHealth,
@@ -67,6 +68,15 @@ describe("getHealth", () => {
   it("rejects an unexpected status value", async () => {
     respond({ status: "degraded", last_indexed_ledger: 1 });
     await expect(getHealth()).rejects.toBeInstanceOf(IndexerResponseError);
+  });
+});
+
+describe("configuration", () => {
+  it.each([undefined, ""])("has no built-in fallback when the URL is %j", async (value) => {
+    vi.stubEnv("NEXT_PUBLIC_INDEXER_API_URL", value as string);
+    if (value === undefined) delete process.env.NEXT_PUBLIC_INDEXER_API_URL;
+    await expect(getHealth()).rejects.toBeInstanceOf(MissingIndexerConfigError);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

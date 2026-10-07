@@ -17,7 +17,7 @@ export class MissingIndexerConfigError extends Error {
   constructor() {
     super(
       "NEXT_PUBLIC_INDEXER_API_URL is not set. The indexer base URL is " +
-        "supplied per deployment once the indexer is reachable.",
+        "supplied per deployment and has no built-in default.",
     );
     this.name = "MissingIndexerConfigError";
   }
@@ -57,11 +57,10 @@ export class IndexerResponseError extends Error {
   }
 }
 
-const DEFAULT_INDEXER_API_URL = "https://slasettle-indexer.slasettle-indexer.workers.dev";
 const REQUEST_TIMEOUT_MS = 10_000;
 
 function getIndexerBaseUrl(): string {
-  const baseUrl = process.env.NEXT_PUBLIC_INDEXER_API_URL || DEFAULT_INDEXER_API_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_INDEXER_API_URL;
   if (!baseUrl) {
     throw new MissingIndexerConfigError();
   }

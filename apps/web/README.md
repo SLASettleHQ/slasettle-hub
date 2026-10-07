@@ -39,8 +39,9 @@ The Soroban RPC URL, passphrase and contract IDs have no defaults. A missing
 one produces a clear "not configured" message in the UI (the network
 indicator, or an SDK `MissingSdkConfigError`), and a malformed one an
 `InvalidSdkConfigError`, rather than a silent failure or a blank screen.
-`NEXT_PUBLIC_INDEXER_API_URL` falls back to the hosted Cloudflare indexer
-named in `lib/indexer.ts` when unset.
+`NEXT_PUBLIC_INDEXER_API_URL` is authoritative and has no built-in default:
+when unset, the indexer-backed panels show a "not configured" message.
+`.env.example` lists the Cloudflare-hosted Testnet indexer as an example value.
 
 ## Running locally
 
