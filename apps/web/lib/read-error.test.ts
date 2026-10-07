@@ -18,6 +18,18 @@ describe("describeReadError", () => {
     expect(describeReadError(new Error("Network Error"))).toBe("Soroban RPC request failed: Network Error");
   });
 
+  it("says plainly that an SLA does not exist instead of dumping the host error", () => {
+    const raw = 'HostError: Error(Contract, #9) Event log (newest first): 0: [Diagnostic Event] topics:[error, Error(Contract, #9)]';
+    expect(describeReadError(new SorobanSimulationError("C1", "get_sla", raw))).toBe(
+      "No SLA with this ID exists on this network (the contract reported SlaNotFound).",
+    );
+    // Other methods, and other contract errors, keep the raw message.
+    expect(describeReadError(new SorobanSimulationError("C1", "get_bond_balance", raw))).toMatch(/HostError/);
+    expect(describeReadError(new SorobanSimulationError("C1", "get_sla", "Error(Contract, #3)"))).toMatch(
+      /#3/,
+    );
+  });
+
   it("separates indexer unavailable, bad status and malformed body", () => {
     expect(describeReadError(new IndexerUnavailableError("/v1/clock", "fetch failed"))).toBe(
       "The indexer could not be reached for /v1/clock: fetch failed",
