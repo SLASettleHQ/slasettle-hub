@@ -80,26 +80,27 @@ this repository:
 ## Hosted indexer
 
 An indexer is deployed on Cloudflare Workers (backed by D1) at
-`https://slasettle-indexer.slasettle-indexer.workers.dev`. Checked on
-2026-10-07 with `curl` (no browser): `/v1/health` returns `status: ok` with a
-current `last_indexed_ledger`, `/v1/clock` returns a current round, and
-`/v1/slas/0/settlements` returns one settlement row (round 123).
+`https://slasettle-indexer.slasettle-indexer.workers.dev`, and the live
+frontend at https://slasettle-web.vercel.app reads it.
 
-What is **not** verified:
+Verified on 2026-10-07 in a real browser, on both `http://localhost:3000` and
+the deployed origin `https://slasettle-web.vercel.app`: the page's own requests
+to `/v1/clock`, `/v1/slas/0/current-round` and `/v1/slas/0/settlements` return
+200, with no console errors, and SLA 0's settlement row (round 123) renders.
+Details and limits: `evidence/deployed-verification-2026-10-07.md`.
 
-- Browser access. On 2026-10-06 a browser on `localhost` received no
-  `Access-Control-Allow-Origin` header from the indexer and the panels showed
-  their unavailable state. A header-only probe on 2026-10-07 (`curl` with an
-  `Origin` header) did receive that header for `http://localhost:3000` and
-  `https://slasettle-web.vercel.app`, but that is not a browser test. CORS and
-  browser integration, from `localhost` and from the deployed origin, have not
-  been re-tested in a browser and should not be treated as working yet.
+Configuration and limits:
+
 - The web app has no built-in indexer URL. `NEXT_PUBLIC_INDEXER_API_URL` is
-  inlined at build time; when it is unset the indexer-backed panels show a
-  "not configured" state. `apps/web/.env.example` lists the URL above as an
-  example. The Vercel project's own setting for this variable has not been
-  checked, and a deployment built after this change will show "not
-  configured" unless it is set.
+  inlined at build time and must be set in the deployment; when it is unset the
+  indexer-backed panels show a "not configured" state. `apps/web/.env.example`
+  lists the URL above as an example. It is set explicitly in the Vercel
+  project's Production environment.
+- The indexer's CORS allowlist is intentional. An origin that is not on it
+  (for example `http://localhost:3002` or `http://127.0.0.1:3000`) is blocked
+  by the browser, and the app then shows its "indexer could not be reached"
+  state.
+- No wallet-signed transaction has been verified yet. That is a separate step.
 
 ## Environment variables
 

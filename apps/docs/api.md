@@ -13,8 +13,9 @@ comma-separated allowlist, never a wildcard.
 Base URL is whatever `NEXT_PUBLIC_INDEXER_API_URL` is set to for a given
 environment and has no built-in default in the web app. A Cloudflare-hosted
 instance exists at `https://slasettle-indexer.slasettle-indexer.workers.dev`
-(see [Deployment topology](/deployment-topology)); browser (CORS) access to it
-has not been verified.
+(see [Deployment topology](/deployment-topology)). The live frontend reads it
+from a browser, including from `http://localhost:3000`; an origin that is not
+on its allowlist is blocked by CORS.
 
 ## `GET /v1/health`
 
