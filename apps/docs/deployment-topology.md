@@ -79,7 +79,7 @@ Each component is in exactly one of four categories:
 | Surface | URL | Deployed from | Configuration |
 |---|---|---|---|
 | Documentation | https://slasettle-docs.vercel.app | the hub commit recorded in `evidence/final-technical-audit-2026-09-29-r3.md`, first deployed 2026-09-29T15:15Z and redeployed after the documentation changes | `apps/docs/vercel.json`; Vercel root directory `apps/docs` |
-| Frontend | https://slasettle-web.vercel.app | hub `9262026` plus `apps/web/vercel.json` (committed as `f787e55`), deployed 2026-09-29T15:26Z; no `apps/web` source changed since | `apps/web/vercel.json`; root directory `apps/web`; public build-time values for the Testnet RPC, passphrase and the two live contract IDs; the bundle served on 2026-10-07 contains the hosted indexer URL (built with the since-removed code fallback, so this row's deploy details are out of date); the Vercel project's `NEXT_PUBLIC_INDEXER_API_URL` setting is unchecked |
+| Frontend | https://slasettle-web.vercel.app | hub `main` at `5632e59`, uploaded with the Vercel CLI (not Git-connected), deployment `dpl_BD4NUBfQf6yQtKUebe6c4MDL4QwB`, built with the cache bypassed, created 2026-10-07T10:30Z | `apps/web/vercel.json`; root directory `apps/web`; Production environment variables set explicitly for the Testnet RPC, passphrase, the two current contract IDs and `NEXT_PUBLIC_INDEXER_API_URL` (the hosted Cloudflare indexer) |
 
 Both run on a personal Vercel account (`*.vercel.app` addresses, Hobby plan), not
 a project-owned domain. The frontend deployment was checked over HTTPS and in a
