@@ -201,7 +201,9 @@ continuously.
   transaction layer also block when the wallet is on another network. This is
   unit-tested with a mocked wallet and not yet verified in a real browser.
 - **Public hosted frontend:** https://slasettle-web.vercel.app (Testnet
-  configuration; no indexer, so two panels show "indexer not configured").
+  configuration; as of 2026-10-07 its bundle contains the hosted indexer URL, which
+  came from a code fallback removed in hub #21, so a rebuild needs
+  `NEXT_PUBLIC_INDEXER_API_URL` set).
   **On 2026-10-06 its deployed JavaScript bundle contains the superseded
   2026-09-27 contract IDs (`CBKAQETJ…`, `CD4FSW2E…`), not the current
   Protocol 28 pair.** The hosted app has not been redeployed against the
@@ -315,7 +317,7 @@ sections 12 and 13.
 - `uptime_target_bps` is display-only.
 - One shared watcher set for every SLA; watchers are admin-registered.
 - No continuously hosted watcher; one daemon process serves one SLA.
-- No hosted indexer; the hosted frontend and documentation are on a personal Vercel account, not Git-connected, deployed by hand.
+- The indexer is hosted (Cloudflare Workers and D1) but browser access to it, including CORS from the deployed origin, is not yet verified; the hosted frontend and documentation are on a personal Vercel account, not Git-connected, deployed by hand.
 - The indexer API is unauthenticated and binds all interfaces.
 - A repeat `cancel_sla` succeeds and emits another `SlaCancelled` event; no
   funds move.
@@ -455,7 +457,7 @@ rest on the superseded 2026-09-27 pair and its 2026-09-29 verification.
 | The SDK decodes live contract state | `evidence/parity-matrix-2026-09-29.md` section 0.4 | historical |
 | The frontend connects to Freighter and the status page works | `evidence/phase-23-verification-2026-09-29.md` Part B | historical |
 | Missing signatures are rejected (local) | vault tests, `evidence/index.md` row AJ | current (local) |
-| The indexer and watcher are not hosted, and no independent audit exists | GitHub reads; `apps/docs/deployment-topology.md`; both `SECURITY.md` | current |
+| The watcher is not hosted, the indexer is hosted with browser access unverified, and no independent audit exists | GitHub reads; `apps/docs/deployment-topology.md`; both `SECURITY.md` | current |
 
 ## 21. Submission truth statement
 
@@ -479,9 +481,10 @@ behavior, all eight event shapes, four live daemon rounds, SDK reads, the
 indexer routes on live data, and Freighter connection with the public status
 page in a real browser. This was not repeated on the current pair.
 
-**Hosted:** the frontend (without an indexer, and still reading the superseded
-contract pair) and the documentation on Vercel. **Local-only:** the indexer,
-database and watcher run from source on a developer machine. **Released:** both
+**Hosted:** the frontend (still reading the superseded contract pair) and the
+documentation on Vercel, and the indexer on Cloudflare Workers with D1 (checked
+with `curl` on 2026-10-07; browser access not yet verified). **Local-only:** the
+watcher runs from source on a developer machine. **Released:** both
 repositories have a public Testnet-only `v0.1.0`, unaudited. **Demo:** the
 required final submission demo video is not yet complete.
 
