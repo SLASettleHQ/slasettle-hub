@@ -201,7 +201,7 @@ continuously.
   transaction layer also block when the wallet is on another network. This is
   unit-tested with a mocked wallet and not yet verified in a real browser.
 - **Public hosted frontend:** https://slasettle-web.vercel.app (Testnet).
-  Redeployed on 2026-10-07 from hub `main` at `5632e59` against the current
+  Redeployed on 2026-10-07 from hub `main` at `0c1e107` against the current
   Protocol 28 pair, with every public setting, including
   `NEXT_PUBLIC_INDEXER_API_URL`, set explicitly in the Vercel project (the
   superseded 2026-09-27 contract IDs are no longer in its bundle; this
@@ -211,10 +211,17 @@ continuously.
   (`evidence/deployed-verification-2026-10-07.md`). Earlier, on 2026-09-29, the
   landing, dashboard and status pages, the Testnet badge, live SLA
   configuration and bond reads and the absence of any secret in the client
-  bundle were verified against the superseded pair. Connecting
-  Freighter on this hosted origin was not tested.
+  bundle were verified against the superseded pair. On 2026-10-07 Freighter
+  was connected on this hosted origin and the signed dashboard writes were
+  verified live on Testnet (next item).
 - **Signed dashboard writes** (create, top-up, cancel, withdraw) through the UI
-  remain UNVERIFIED. **Narrow-viewport and mobile checks** are only partly verified: 390 px and 820 px widths were checked in same-origin iframes on 2026-10-07, not on a physical device or with touch.
+  were verified live on Testnet on 2026-10-07 on SLA #2, each checked against
+  Horizon, direct contract reads, the explorer and the frontend, with full
+  transaction hashes in `evidence/phase7-live-write-verification-2026-10-07.md`.
+  A frontend-driven `trigger_settlement` was **not** live-submitted because no
+  genuine unsettled quorum round existed; none was fabricated. Wallet
+  rejection, failed and unconfirmed states are covered by tests only.
+  **Narrow-viewport and mobile checks** are only partly verified: 390 px and 820 px widths were checked in same-origin iframes on 2026-10-07, not on a physical device or with touch.
 
 ## 8. Documentation
 
@@ -338,13 +345,13 @@ sections 12 and 13.
 - Testnet-only explorer link in the indexer.
 - The network-mismatch block (hub #13) is unit-tested only, not yet verified in
   a real browser with Freighter.
-- The hosted frontend still reads the superseded 2026-09-27 contract pair
-  (section 7).
 - No independent security audit.
 
 ## 13. Unverified items
 
-- Signed dashboard writes through the UI.
+- A frontend-driven `trigger_settlement` (no genuine unsettled quorum round existed on 2026-10-07).
+- Wallet rejection, failed and unconfirmed transaction states on a live wallet (tests only).
+- Physical-device mobile and tablet behaviour, and the actual `prefers-reduced-motion` media query (partly verified).
 - Narrow-viewport and mobile verification of the documentation site (and the app).
 - A dedicated secret-scanning tool run.
 - A live wrongly-signed call rejection.
