@@ -156,20 +156,9 @@ Every submission link has been verified live (HTTP 200 OK):
 
 ## 8. Release Status & Strategy
 
-### Existing Published Releases
-- `slasettle-vault`: Release [`v0.1.0`](https://github.com/SLASettleHQ/slasettle-vault/releases/tag/v0.1.0) ("v0.1.0: Protocol 28 Ready") published 2026-10-01. Matches deployed Protocol 28 contract bytecode byte-for-byte.
-- `slasettle-hub`: Release [`v0.1.0`](https://github.com/SLASettleHQ/slasettle-hub/releases/tag/v0.1.0) ("v0.1.0: Protocol 28 Ready") published 2026-10-01.
-
-### Recommended Release Posture
-- **`slasettle-vault`:** `CURRENT RELEASE SUFFICIENT`. The smart contract source and compiled WASM bytecode remain identical to `v0.1.0`. All post-v0.1.0 commits are documentation, issue templates, and test snapshot hygiene.
-- **`slasettle-hub`:** `NEW RELEASE RECOMMENDED` as `v0.1.1` (or `v0.2.0`). Significant full-stack progress occurred since `v0.1.0`:
-  - Live write verification on Testnet with Freighter (create, top-up, cancel, withdraw).
-  - Web test suite expanded to 245 passing tests across 26 test files.
-  - SDK expanded to 57 passing unit tests.
-  - Indexer test suite expanded to 62 tests covering D1 migrations, cursor pagination, and network retries.
-  - Hosted Vercel web console aligned to Protocol 28 contracts.
-  - Documentation expanded from 14 to 28 comprehensive pages with zero broken links.
-  - *Note: Tagging will be performed upon explicit user authorization.*
+### Published Releases
+- **`slasettle-vault`:** Release [`v0.1.0`](https://github.com/SLASettleHQ/slasettle-vault/releases/tag/v0.1.0) ("v0.1.0: Protocol 28 Ready") published 2026-10-01. Matches deployed Protocol 28 contract bytecode byte-for-byte. Status: `CURRENT RELEASE SUFFICIENT`.
+- **`slasettle-hub`:** Release [`v0.1.1`](https://github.com/SLASettleHQ/slasettle-hub/releases/tag/v0.1.1) ("SLASettle Hub v0.1.1 - Testnet Verification and Documentation Release") published 2026-10-07. Encapsulates full-stack client hardening, live write verification on SLA #2, 416-test suite validation, hosted indexer, and canonical 28-page documentation site.
 
 ---
 

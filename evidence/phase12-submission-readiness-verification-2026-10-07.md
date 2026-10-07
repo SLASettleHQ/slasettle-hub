@@ -72,15 +72,11 @@ Byte-for-byte reproducibility was verified by fetching on-chain bytecode using `
 
 ---
 
-## 5. Release Audit & Recommendations
+## 5. Release Audit & Status
 
-### Current State
-- `slasettle-vault`: Has release `v0.1.0: Protocol 28 Ready` published on 2026-10-01 (target commit `c4243ba`). The smart contract source and WASM bytecode are identical to the live deployed contracts.
-- `slasettle-hub`: Has release `v0.1.0: Protocol 28 Ready` published on 2026-10-01 (target commit `4e18134`).
-
-### Recommendation
-- **`slasettle-vault`:** `CURRENT RELEASE SUFFICIENT`. No new release is required because smart contract code and bytecode have zero changes since `v0.1.0`.
-- **`slasettle-hub`:** `NEW RELEASE RECOMMENDED` as `v0.1.1` (or `v0.2.0`). Significant full-stack client, documentation, and test additions occurred across Phases 7–12. Tagging should be performed after Phase 12 PR merge upon explicit user direction.
+### Published Releases
+- **`slasettle-vault`:** Release `v0.1.0: Protocol 28 Ready` published on 2026-10-01 (target commit `c4243ba`). The smart contract source and WASM bytecode are identical to the live deployed contracts. Status: `CURRENT RELEASE SUFFICIENT`.
+- **`slasettle-hub`:** Release `v0.1.1: SLASettle Hub v0.1.1 - Testnet Verification and Documentation Release` published on 2026-10-07 (tag commit `7f80620`). Captures full-stack client hardening, live write verification on SLA #2, 416-test suite validation, and canonical 28-page documentation site. Status: `RELEASED`.
 
 ---
 
