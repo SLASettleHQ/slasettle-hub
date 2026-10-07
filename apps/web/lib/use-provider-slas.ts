@@ -1,7 +1,7 @@
 "use client";
 
 import { getBondBalance, getSla, getTokenDecimals, getTokenSymbol, type SLAConfig } from "@slasettle/sdk";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getProviderSlas } from "./indexer";
 import { describeReadError } from "./read-error";
 
@@ -93,10 +93,28 @@ export async function fetchProviderSlas(address: string): Promise<ProviderSlaRes
   return { slas, failures };
 }
 
-/** Provider SLAs for the connected wallet. `refresh` re-reads without clearing what is on screen. */
+/**
+ * The indexer ingests on a schedule, so an SLA created a moment ago can be
+ * missing from the first read after its transaction confirms. Retry for about
+ * a minute and a half rather than leaving a confirmed SLA out of the list.
+ */
+const INDEXING_RETRY_MS = 5_000;
+const INDEXING_RETRY_LIMIT = 18;
+
+/**
+ * Provider SLAs for the connected wallet. `refresh` re-reads without clearing what is on screen.
+ * `refreshAfterCreate` re-reads and keeps retrying until the list grows or the retries run out.
+ */
 export function useProviderSlas(address: string | null) {
   const [state, setState] = useState<State>({ slas: [], failures: [], loading: false, error: null });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [awaitingMoreThan, setAwaitingMoreThan] = useState<number | null>(null);
+  const [retries, setRetries] = useState(0);
+  const count = state.slas.length + state.failures.length;
+  const countRef = useRef(count);
+  useEffect(() => {
+    countRef.current = count;
+  }, [count]);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +141,25 @@ export function useProviderSlas(address: string | null) {
     };
   }, [address, refreshKey]);
 
-  const refresh = useCallback(() => setRefreshKey((key) => key + 1), []);
+  useEffect(() => {
+    if (awaitingMoreThan === null || state.loading) return;
+    if (count > awaitingMoreThan || retries >= INDEXING_RETRY_LIMIT) {
+      setAwaitingMoreThan(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setRetries((n) => n + 1);
+      setRefreshKey((key) => key + 1);
+    }, INDEXING_RETRY_MS);
+    return () => clearTimeout(timer);
+  }, [awaitingMoreThan, count, retries, state.loading]);
 
-  return { ...state, refresh };
+  const refresh = useCallback(() => setRefreshKey((key) => key + 1), []);
+  const refreshAfterCreate = useCallback(() => {
+    setRetries(0);
+    setAwaitingMoreThan(countRef.current);
+    setRefreshKey((key) => key + 1);
+  }, []);
+
+  return { ...state, refresh, refreshAfterCreate };
 }
