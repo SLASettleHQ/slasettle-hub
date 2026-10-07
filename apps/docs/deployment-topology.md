@@ -79,7 +79,7 @@ Each component is in exactly one of four categories:
 | Surface | URL | Deployed from | Configuration |
 |---|---|---|---|
 | Documentation | https://slasettle-docs.vercel.app | the hub commit recorded in `evidence/final-technical-audit-2026-09-29-r3.md`, first deployed 2026-09-29T15:15Z and redeployed after the documentation changes | `apps/docs/vercel.json`; Vercel root directory `apps/docs` |
-| Frontend | https://slasettle-web.vercel.app | hub `main` at `5632e59`, uploaded with the Vercel CLI (not Git-connected), deployment `dpl_BD4NUBfQf6yQtKUebe6c4MDL4QwB`, built with the cache bypassed, created 2026-10-07T10:30Z | `apps/web/vercel.json`; root directory `apps/web`; Production environment variables set explicitly for the Testnet RPC, passphrase, the two current contract IDs and `NEXT_PUBLIC_INDEXER_API_URL` (the hosted Cloudflare indexer) |
+| Frontend | https://slasettle-web.vercel.app | hub `main` at `0c1e107`, uploaded with the Vercel CLI (not Git-connected), deployment `dpl_3GiQGWRH4t59vp55cSkZD5obLQUF`, built with the cache bypassed, created 2026-10-07T11:33Z | `apps/web/vercel.json`; root directory `apps/web`; Production environment variables set explicitly for the Testnet RPC, passphrase, the two current contract IDs and `NEXT_PUBLIC_INDEXER_API_URL` (the hosted Cloudflare indexer) |
 
 Both run on a personal Vercel account (`*.vercel.app` addresses, Hobby plan), not
 a project-owned domain. The frontend deployment was checked over HTTPS and in a
@@ -87,7 +87,9 @@ browser: the landing page, dashboard and status page load, the network badge
 reads Testnet, the SLA configuration and bond balance are read live from
 Testnet, the four public values are inlined, no secret appears in the client
 bundle, and the two indexer-dependent panels show the "indexer not configured"
-message. Connecting Freighter on the hosted origin was not tested.
+message. (That describes the 2026-09-29 check; wallet connection and signed
+writes on the hosted origin were verified on 2026-10-07, see
+`evidence/phase7-live-write-verification-2026-10-07.md`.)
 
 ## The picture
 
@@ -268,8 +270,10 @@ SECRET; the per-variable tables are in
   an unsigned transaction handed to Freighter (`lib/wallet.ts`).
 - **Verified:** wallet connect, disconnect, reconnect, network display, the
   mismatch indicator and the public status page, in a real browser with a
-  real Freighter on 2026-09-29. **UNVERIFIED:** the dashboard write forms
-  through a signed transaction.
+  real Freighter on 2026-09-29. The dashboard write forms (create, top-up,
+  cancel, withdraw) through a signed transaction were **VERIFIED** live on
+  2026-10-07; a frontend-driven settlement was not exercised (no genuine
+  quorum round existed).
 
 ### SDK (`packages/sdk`)
 
@@ -293,7 +297,8 @@ SECRET; the per-variable tables are in
   for each signature, and reports the wallet's network. It is not part of
   this project. The frontend talks to it through `@stellar/freighter-api`.
   Connection, display and network detection are **VERIFIED**
-  (2026-09-29); signing a dashboard write is **UNVERIFIED**.
+  (2026-09-29); signing dashboard writes (create, top-up, cancel, withdraw) is
+  **VERIFIED** (2026-10-07).
 
 ### Stellar Testnet RPC
 

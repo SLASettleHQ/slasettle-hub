@@ -100,7 +100,15 @@ Configuration and limits:
   (for example `http://localhost:3002` or `http://127.0.0.1:3000`) is blocked
   by the browser, and the app then shows its "indexer could not be reached"
   state.
-- No wallet-signed transaction has been verified yet. That is a separate step.
+- Wallet-signed writes were verified live on Testnet on 2026-10-07 through the
+  deployed app and a real Freighter: create SLA, top up bond, cancel SLA and
+  withdraw remaining bond (`evidence/phase7-live-write-verification-2026-10-07.md`). A
+  frontend-driven `trigger_settlement` was not submitted, because no genuine
+  unsettled round at quorum existed and none was fabricated. Settlement is
+  covered by automated tests and earlier Testnet evidence.
+- Not verified: wallet rejection, failed and unconfirmed transaction states
+  (tests only), physical-device mobile and tablet behaviour, and the actual
+  `prefers-reduced-motion` media query.
 
 ## Environment variables
 
