@@ -11,7 +11,7 @@
 
 **Quick links** (Stellar Testnet only)
 
-- [Live App](https://slasettle-web.vercel.app) (frontend only: SLA configuration and bond are read live from Testnet, but there is no hosted indexer, so round-status and settlement-history panels show an "indexer not configured" message)
+- [Live App](https://slasettle-web.vercel.app) (frontend; SLA configuration and bond are read live from Testnet. The indexer-backed round-status and settlement-history panels need `NEXT_PUBLIC_INDEXER_API_URL` at build time; see [Hosted indexer](#hosted-indexer))
 - [Documentation](https://slasettle-docs.vercel.app)
 - [SLASettle Vault](https://github.com/SLASettleHQ/slasettle-vault) (contracts repository)
 - [Testnet deployment](./apps/docs/testnet-deployment.md)
@@ -43,7 +43,7 @@ contract-level detail is in `slasettle-vault`'s `SLASettle-contract-spec.md`.
 ```
 apps/web        Next.js frontend: landing page, wallet-gated dashboard,
                  per-SLA status page (unauthenticated; a Testnet
-                 deployment without an indexer is linked above)
+                 deployment is linked above)
 packages/sdk     TypeScript bindings for the contracts and SEP-41 token
                  metadata; unsigned-transaction builders only, never
                  signs or holds a key
@@ -76,6 +76,30 @@ this repository:
 - Go 1.25 (`watcher/go.mod`'s declared minimum; its `toolchain` line asks for
   1.25.14, and CI runners use whatever 1.25.x is current, which also picks up
   Go's own stdlib security patches)
+
+## Hosted indexer
+
+An indexer is deployed on Cloudflare Workers (backed by D1) at
+`https://slasettle-indexer.slasettle-indexer.workers.dev`. Checked on
+2026-10-07 with `curl` (no browser): `/v1/health` returns `status: ok` with a
+current `last_indexed_ledger`, `/v1/clock` returns a current round, and
+`/v1/slas/0/settlements` returns one settlement row (round 123).
+
+What is **not** verified:
+
+- Browser access. On 2026-10-06 a browser on `localhost` received no
+  `Access-Control-Allow-Origin` header from the indexer and the panels showed
+  their unavailable state. A header-only probe on 2026-10-07 (`curl` with an
+  `Origin` header) did receive that header for `http://localhost:3000` and
+  `https://slasettle-web.vercel.app`, but that is not a browser test. CORS and
+  browser integration, from `localhost` and from the deployed origin, have not
+  been re-tested in a browser and should not be treated as working yet.
+- The web app has no built-in indexer URL. `NEXT_PUBLIC_INDEXER_API_URL` is
+  inlined at build time; when it is unset the indexer-backed panels show a
+  "not configured" state. `apps/web/.env.example` lists the URL above as an
+  example. The Vercel project's own setting for this variable has not been
+  checked, and a deployment built after this change will show "not
+  configured" unless it is set.
 
 ## Environment variables
 

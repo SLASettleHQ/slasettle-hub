@@ -11,8 +11,10 @@ CORS is controlled by `ALLOWED_ORIGINS` (see
 comma-separated allowlist, never a wildcard.
 
 Base URL is whatever `NEXT_PUBLIC_INDEXER_API_URL` is set to for a given
-environment; there is no publicly hosted indexer (see
-[Deployment topology](/deployment-topology)).
+environment and has no built-in default in the web app. A Cloudflare-hosted
+instance exists at `https://slasettle-indexer.slasettle-indexer.workers.dev`
+(see [Deployment topology](/deployment-topology)); browser (CORS) access to it
+has not been verified.
 
 ## `GET /v1/health`
 
