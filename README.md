@@ -1,259 +1,247 @@
-<h1 align="center">SLASettle Hub</h1>
-<p align="center">Frontend, SDK, indexer, and watcher daemon for the SLASettle protocol on Stellar</p>
+<div align="center">
 
-<p align="center">
-  <a href="https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml"><img src="https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://slasettle-docs.vercel.app"><img src="https://img.shields.io/badge/docs-online-blue" alt="Docs"></a>
-  <a href="https://slasettle-web.vercel.app"><img src="https://img.shields.io/badge/app-Testnet-orange" alt="App"></a>
-  <a href="https://stellar.org"><img src="https://img.shields.io/badge/Stellar-Protocol_28-black" alt="Stellar"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT"></a>
-</p>
+<img src="assets/slasettle-hub-banner.webp" alt="SLASettle Hub Banner" width="100%" />
 
-**Quick links** (Stellar Testnet only)
+# SLASettle Hub
 
-- [Live App](https://slasettle-web.vercel.app) (frontend; SLA configuration and bond are read live from Testnet. The indexer-backed round-status and settlement-history panels need `NEXT_PUBLIC_INDEXER_API_URL` at build time; see [Hosted indexer](#hosted-indexer))
-- [Documentation](https://slasettle-docs.vercel.app)
-- [SLASettle Vault](https://github.com/SLASettleHQ/slasettle-vault) (contracts repository)
-- [Testnet deployment](./apps/docs/testnet-deployment.md)
-- [Evidence index](./evidence/index.md)
+Web application, SDK, indexer, watcher tooling, and documentation for SLASettle on Stellar.
 
-The watcher daemon, event indexer, TypeScript SDK, and frontend for
-SLASettle. The Soroban contracts (`watcher_registry` and `sla_vault`)
-live in the separate repository
-[SLASettle Vault](https://github.com/SLASettleHQ/slasettle-vault); this
-repository never defines contract logic, only the off-chain services and
-UI that talk to it.
+[![CI](https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/SLASettleHQ/slasettle-hub/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live App](https://img.shields.io/badge/App-Testnet-orange.svg)](https://slasettle-web.vercel.app)
+[![Documentation](https://img.shields.io/badge/Docs-Online-blue.svg)](https://slasettle-docs.vercel.app)
+[![Hosted Indexer](https://img.shields.io/badge/Indexer-Online-brightgreen.svg)](https://slasettle-indexer.slasettle-indexer.workers.dev)
+[![Stellar Testnet](https://img.shields.io/badge/Stellar-Testnet-black.svg)](https://stellar.org)
+[![Branch Protected](https://img.shields.io/badge/Branch_Protection-Active-success.svg)](https://github.com/SLASettleHQ/slasettle-hub/tree/main)
 
-Testnet only, for now. Nothing here has been audited; see
-[`SECURITY.md`](./SECURITY.md).
+[Live App](https://slasettle-web.vercel.app) · [Documentation](https://slasettle-docs.vercel.app) · [Hosted Indexer](https://slasettle-indexer.slasettle-indexer.workers.dev) · [SLASettle Vault](https://github.com/SLASettleHQ/slasettle-vault) · [Evidence Index](evidence/index.md) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
 
-## What SLASettle is
+</div>
 
-A Stellar-based service backs its uptime promise with a real bond.
-Watchers, independent of the provider by design, report whether the service
-was up or down each round; when enough of them have voted it down and anyone
-calls `trigger_settlement`, `sla_vault` pays a fixed penalty to the beneficiary
-out of the bond. Nothing in either repository calls it automatically, and on
-the current Testnet deployment the watcher addresses were registered by the
-project admin for evidence runs, not by independent operators. Full
-contract-level detail is in `slasettle-vault`'s `SLASettle-contract-spec.md`.
+---
 
-## Repository structure
+## What is SLASettle Hub?
+
+SLASettle Hub provides the complete client, developer, and indexing infrastructure for the SLASettle protocol on Stellar. While the Soroban smart contracts live in [SLASettle Vault](https://github.com/SLASettleHQ/slasettle-vault), this workspace contains all off-chain software required to interact with, monitor, and inspect bonded service-level agreements:
+
+- **Web Dashboard (`apps/web`)**: A Next.js application providing a public landing page, interactive SLA creation and lifecycle management, wallet-connected dashboards, and indexer-backed round status displays.
+- **TypeScript SDK (`packages/sdk`)**: A typed client library providing contract bindings, unsigned transaction construction, Horizon/RPC utilities, and SEP-41 token interactions.
+- **Event Indexer (`indexer`)**: A Node.js and Cloudflare Workers service that ingests contract events, persists round history and tallies into Cloudflare D1 (SQLite), and exposes a read-only HTTP API.
+- **Watcher Daemon (`watcher`)**: An independent Go daemon that executes periodic HTTP health probes against monitored endpoints and signs and submits vote checks to `watcher_registry`.
+- **Documentation (`apps/docs`)**: A VitePress documentation site detailing protocol concepts, deployment topologies, contract specifications, and verification evidence.
+
+## Why it exists
+
+Smart contracts provide custody and settlement guarantees, but operators and customers need off-chain interfaces to use them:
+- Providers need a clear interface to create SLAs, deposit and top up token bonds, and track agreement health.
+- Customers and beneficiaries require independent verification of endpoint status without relying on provider self-reporting.
+- Watcher nodes need lightweight, robust daemon software to run checks and submit transactions reliably without handling custodian funds.
+- Web clients require efficient event caching and round aggregation rather than repeatedly polling complex raw RPC logs.
+
+## Live Testnet status
+
+| Service | Host | Status | Details |
+|---|---|---|---|
+| Web Application | Vercel | [Live App](https://slasettle-web.vercel.app) | Connected to Testnet RPC and Hosted Indexer |
+| Documentation | Vercel | [Documentation](https://slasettle-docs.vercel.app) | Architecture, guides, and evidence |
+| Hosted Indexer API | Cloudflare Workers | [Indexer API](https://slasettle-indexer.slasettle-indexer.workers.dev) | Backed by Cloudflare D1 (SQLite) |
+| Watcher Daemon | Local / Operator-run | Operational | Independent Go binary; test rounds maintainer-driven |
+| Target Network | Stellar Testnet | Connected | RPC at `https://soroban-testnet.stellar.org` |
+| Contracts Repo | GitHub | [slasettle-vault](https://github.com/SLASettleHQ/slasettle-vault) | Protocol 28 contracts (`sla_vault`, `watcher_registry`) |
+
+## Components
 
 ```
-apps/web        Next.js frontend: landing page, wallet-gated dashboard,
-                 per-SLA status page (unauthenticated; a Testnet
-                 deployment is linked above)
-packages/sdk     TypeScript bindings for the contracts and SEP-41 token
-                 metadata; unsigned-transaction builders only, never
-                 signs or holds a key
-indexer          Indexes the two contracts' events into SQLite and
-                 serves them over a small HTTP API
-watcher          The independent Go daemon that checks an endpoint each
-                 round and submits its vote
+apps/web          Next.js frontend: landing page, wallet-gated dashboard,
+                  per-SLA status and agreement management
+packages/sdk      TypeScript contract bindings and transaction builders;
+                  unsigned envelopes only, never holds private keys
+indexer           Cloudflare Worker / Node service indexing contract events
+                  into D1 / SQLite with read-only REST API
+watcher           Independent Go daemon probing endpoints and submitting
+                  watcher votes to watcher_registry
+apps/docs         VitePress documentation site covering architecture,
+                  operational runbooks, and verification evidence
 ```
 
-`apps/web` and `packages/sdk` share a single pnpm workspace at the
-repository root (`pnpm-workspace.yaml`). `indexer` is a separate npm
-project with its own lockfile. `watcher` is a separate Go module. Each has
-its own README with more detail than this file repeats.
+`apps/web` and `packages/sdk` share a single pnpm workspace at repository root (`pnpm-workspace.yaml`). `indexer` is an npm project with its own lockfile. `watcher` is a standalone Go module.
 
-## Setup
+## Features
+
+- **On-Chain SLA Creation**: Providers configure recipient beneficiaries, uptime target indicators, observation round lengths, and lock real collateral tokens.
+- **Direct RPC Contract Reads**: The web application reads authoritative bond balances and SLA metadata directly from Soroban RPC via `@slasettle/sdk`.
+- **Indexer-Backed Round Analytics**: Cloudflare D1 stores historical round votes, tallies, and past settlement events for instant dashboard inspection.
+- **Non-Custodial Wallet Integration**: Integrates Freighter wallet for user-signed transactions; private keys never leave the user's browser.
+- **Independent Health Probes**: The Go watcher daemon operates with its own signing key, submitting round checks without custody over any agreement funds.
+
+## Architecture
+
+The production hosting topology verified in Phase 9 separates user interaction, scheduled indexing, and on-chain settlement:
+
+```mermaid
+flowchart TD
+    subgraph Clients["User & Operator Interfaces"]
+        Browser["User Browser"]
+        FreighterExt["Freighter Wallet"]
+        WatcherNode["Watcher Daemon (Go)"]
+    end
+
+    subgraph VercelHost["Vercel Edge Platform"]
+        WebApp["Web App (Next.js)<br/>slasettle-web.vercel.app"]
+        DocsApp["Documentation<br/>slasettle-docs.vercel.app"]
+    end
+
+    subgraph CloudflarePlatform["Cloudflare Serverless"]
+        IndexerWorker["Indexer API (Worker)<br/>slasettle-indexer.workers.dev"]
+        CronTrigger["Cloudflare Cron (* * * * *)"]
+        D1DB[("Cloudflare D1 (SQLite)")]
+    end
+
+    subgraph StellarTestnet["Stellar Testnet (Protocol 28)"]
+        RPCNode["Soroban RPC Node<br/>soroban-testnet.stellar.org"]
+        SLAVault["sla_vault Contract"]
+        WatcherRegistry["watcher_registry Contract"]
+    end
+
+    Browser -->|Loads UI| WebApp
+    Browser -->|Reads Docs| DocsApp
+    Browser -.->|Signs transactions| FreighterExt
+    FreighterExt -->|Submits signed tx| RPCNode
+
+    WebApp -->|Direct contract reads| RPCNode
+    WebApp -->|Queries rounds & history| IndexerWorker
+
+    CronTrigger -->|Triggers scheduled poll| IndexerWorker
+    IndexerWorker -->|Fetches contract events| RPCNode
+    IndexerWorker <-->|Internal binding| D1DB
+
+    WatcherNode -->|Submits vote checks| RPCNode
+    WatcherNode -->|HTTP probe| TargetEndpoint["Target Endpoint"]
+
+    RPCNode --> SLAVault
+    RPCNode --> WatcherRegistry
+    SLAVault <--> WatcherRegistry
+```
+
+## Verification status
+
+| Verification Class | Scope | Evidence |
+|---|---|---|
+| Live Verified | Create SLA, top-up bond, cancel SLA, withdraw remaining bond, direct contract reads, hosted indexer API | [Phase 7 Live Write Evidence](evidence/phase7-live-write-verification-2026-10-07.md) |
+| Hosted Browser Verification | Real browser with Freighter extension on deployed Vercel origin | [Deployed Verification 2026-10-07](evidence/deployed-verification-2026-10-07.md) |
+| Toolchain & WASM Parity | Byte-for-byte local/deployed WASM hash match on Protocol 28 | [Phase 8 Toolchain & Deployment](evidence/phase8-toolchain-deployment-verification-2026-10-07.md) |
+| Hosting & Topology | Service boundaries, network paths, CORS policies, secrets audit | [Phase 9 Hosting Topology](evidence/phase9-hosting-topology-verification-2026-10-07.md) |
+| Historical Settlement | On-chain settlement transaction on Testnet | [Testnet Evidence 2026-10-01](https://github.com/SLASettleHQ/slasettle-vault/blob/main/evidence/testnet-2026-10-01.md) |
+| Test Covered | Wallet rejection paths, unconfirmed transaction states, mock settlement | `pnpm run test` (SDK & Web), `npm test` (Indexer), `go test` (Watcher) |
+| Partial / Unverified | Real-device mobile touch testing, OS-level `prefers-reduced-motion` | Deferred operational observation |
+
+## Quick start
 
 ```bash
+# Install SDK and Web dependencies
 pnpm install
+
+# Build SDK and Web app
+pnpm run build
+
+# Run local development server
+pnpm --filter web dev
 ```
 
-installs `apps/web` and `packages/sdk`. `indexer` and `watcher` are set up
-independently; see their own READMEs (`indexer/README.md`,
-`watcher/README.md`).
-
-Toolchain, pinned and verified against what actually builds and tests
-this repository:
-
-- Node 24.21.0 (`.nvmrc`)
-- pnpm 12.8.2 (`packageManager` field)
-- Go 1.25 (`watcher/go.mod`'s declared minimum; its `toolchain` line asks for
-  1.25.14, and CI runners use whatever 1.25.x is current, which also picks up
-  Go's own stdlib security patches)
-
-## Hosted indexer
-
-An indexer is deployed on Cloudflare Workers (backed by D1) at
-`https://slasettle-indexer.slasettle-indexer.workers.dev`, and the live
-frontend at https://slasettle-web.vercel.app reads it.
-
-Verified on 2026-10-07 in a real browser, on both `http://localhost:3000` and
-the deployed origin `https://slasettle-web.vercel.app`: the page's own requests
-to `/v1/clock`, `/v1/slas/0/current-round` and `/v1/slas/0/settlements` return
-200, with no console errors, and SLA 0's settlement row (round 123) renders.
-Details and limits: `evidence/deployed-verification-2026-10-07.md`.
-
-Configuration and limits:
-
-- The web app has no built-in indexer URL. `NEXT_PUBLIC_INDEXER_API_URL` is
-  inlined at build time and must be set in the deployment; when it is unset the
-  indexer-backed panels show a "not configured" state. `apps/web/.env.example`
-  lists the URL above as an example. It is set explicitly in the Vercel
-  project's Production environment.
-- The indexer's CORS allowlist is intentional. An origin that is not on it
-  (for example `http://localhost:3002` or `http://127.0.0.1:3000`) is blocked
-  by the browser, and the app then shows its "indexer could not be reached"
-  state.
-- Wallet-signed writes were verified live on Testnet on 2026-10-07 through the
-  deployed app and a real Freighter: create SLA, top up bond, cancel SLA and
-  withdraw remaining bond (`evidence/phase7-live-write-verification-2026-10-07.md`). A
-  frontend-driven `trigger_settlement` was not submitted, because no genuine
-  unsettled round at quorum existed and none was fabricated. Settlement is
-  covered by automated tests and earlier Testnet evidence.
-- Not verified: wallet rejection, failed and unconfirmed transaction states
-  (tests only), physical-device mobile and tablet behaviour, and the actual
-  `prefers-reduced-motion` media query.
+Toolchain versions verified:
+- Node.js `24.21.0` (`.nvmrc`)
+- pnpm `12.8.2`
+- Go `1.25.x` (`watcher/go.mod`)
 
 ## Environment variables
 
-`apps/web/.env.example`:
-
+### `apps/web/.env.example`
 ```text
-NEXT_PUBLIC_SOROBAN_RPC_URL
-NEXT_PUBLIC_NETWORK_PASSPHRASE
-NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID
-NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID
-NEXT_PUBLIC_INDEXER_API_URL
+NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+NEXT_PUBLIC_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID=CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN
+NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID=CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF
+NEXT_PUBLIC_INDEXER_API_URL=https://slasettle-indexer.slasettle-indexer.workers.dev
 ```
 
-`packages/sdk` reads the first four of those directly (it has no config
-file of its own). None have defaults; a missing one throws a named error
-rather than proceeding with a guessed value.
-
-`indexer/.env.example`:
-
+### `indexer/.env.example`
 ```text
-WATCHER_REGISTRY_CONTRACT_ID   (required)
-SLA_VAULT_CONTRACT_ID          (required)
-RPC_URL                        (default: Testnet)
-NETWORK_PASSPHRASE             (default: Testnet)
-DB_PATH, HTTP_PORT, POLL_INTERVAL_MS, MAX_LEDGERS_PER_REQUEST,
-ROUND_LENGTH_SECONDS, START_LEDGER, ALLOWED_ORIGINS, LOG_LEVEL
+WATCHER_REGISTRY_CONTRACT_ID=CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF
+SLA_VAULT_CONTRACT_ID=CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN
+RPC_URL=https://soroban-testnet.stellar.org
+NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+ALLOWED_ORIGINS=https://slasettle-web.vercel.app,http://localhost:3000
 ```
 
-`ALLOWED_ORIGINS` is the indexer's CORS allowlist (comma-separated exact
-origins, never a wildcard); see `indexer/README.md` for the full table.
-
-`watcher/.env.example`:
-
+### `watcher/.env.example`
 ```text
-WATCHER_REGISTRY_CONTRACT_ID, WATCHER_SECRET_KEY, TARGET_URL, SLA_ID
-RPC_URL, NETWORK_PASSPHRASE, ROUND_LENGTH_SECONDS,
-HTTP_TIMEOUT_SECONDS, HTTP_EXPECT_MAX_STATUS
+WATCHER_REGISTRY_CONTRACT_ID=CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF
+WATCHER_SECRET_KEY=S...
+TARGET_URL=https://example.com/health
+SLA_ID=0
+RPC_URL=https://soroban-testnet.stellar.org
+NETWORK_PASSPHRASE=Test SDF Network ; September 2015
 ```
-
-`WATCHER_SECRET_KEY` is a real Stellar secret key. It is read once from
-the environment, never logged, and `.env` (as opposed to `.env.example`)
-is gitignored in that directory.
 
 ## Build and test
 
 ```bash
-pnpm run build       # sdk, then web
+# SDK and Web
+pnpm run build
 pnpm run lint
 pnpm run typecheck
-pnpm run test         # sdk + web
+pnpm run test
+
+# Indexer
+cd indexer && npm ci && npm run build && npm test && cd ..
+
+# Watcher
+cd watcher && go build ./... && go vet ./... && go test ./... && cd ..
 ```
 
-```bash
-cd indexer && npm ci && npm run build && npm test
-```
+## Deployment
 
-```bash
-cd watcher && go build ./... && go vet ./... && go test ./...
-```
+- **Web Frontend**: Hosted on Vercel with production environment variables matching `.env.example`.
+- **Documentation**: Hosted on Vercel from `apps/docs`.
+- **Indexer**: Hosted on Cloudflare Workers with a bound Cloudflare D1 database and 1-minute cron triggers.
+- **Watcher Daemon**: Run as a systemd service, container, or standalone background process by independent operators.
 
-## Continuous integration and dependency maintenance
+Detailed hosting topologies and network paths are documented in [`evidence/phase9-hosting-topology-verification-2026-10-07.md`](evidence/phase9-hosting-topology-verification-2026-10-07.md).
 
-`.github/workflows/ci.yml` runs three jobs on every push to `main` and
-every pull request against it: web-and-sdk (build/lint/typecheck/test),
-indexer (build/test), watcher (build/vet/test). `main` is currently green.
+## Continuous integration
 
-Dependabot is configured (`.github/dependabot.yml`) for `npm` (both the
-pnpm workspace root and `indexer` separately), `gomod` (`watcher`), and
-`github-actions`, weekly. Several real dependency PRs have already been
-merged (Next.js, `@types/node`, `eslint-config-next`, `jsdom`, `tsx`,
-`@types/better-sqlite3`, `go-stellar-sdk`). The ESLint 10 Dependabot PR
-([SLASettleHQ/slasettle-hub#8](https://github.com/SLASettleHQ/slasettle-hub/pull/8))
-was closed without merging after compatibility testing showed that the current
-`eslint-plugin-react` dependency chain does not yet support ESLint 10.
-The project remains on ESLint 9.39.5.
+`.github/workflows/ci.yml` runs three jobs on every push and pull request against `main`:
+1. `web and sdk (build, lint, typecheck, test)`
+2. `indexer (build, test)`
+3. `watcher (build, vet, test)`
 
-`main` is branch-protected: pull requests are required, all three CI jobs
-above are required status checks, force pushes and branch deletion are
-disabled. Required approving reviews are set to 0, since this is
-currently a solo-maintained repository. Protection is not enforced for
-repository administrators (`enforce_admins` is off, read from the
-branch-protection API on 2026-09-29), so an administrator can push to
-`main` directly.
+Branch protection requires pull requests and passing status checks across all three CI jobs. Required approving reviews are currently set to 0 for small-team velocity. Protection is not enforced for repository administrators (`enforce_admins` is off), allowing direct administrative resolution if required.
 
-## Current Testnet status
+Dependabot (`.github/dependabot.yml`) checks `npm` (root workspace and `indexer`), `gomod` (`watcher`), and `github-actions` weekly.
 
-The contracts this repository's services point at, as of 2026-10-01:
+## Security and privacy
 
-| Contract | ID | Explorer |
-|---|---|---|
-| `watcher_registry` | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF) |
-| `sla_vault` | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN) |
+See [`SECURITY.md`](SECURITY.md).
 
-Full live evidence (real SLA creation, real watcher votes, a real
-settlement, cancellation, withdrawal) is in `slasettle-vault`'s
-[`evidence/testnet-2026-10-01.md`](https://github.com/SLASettleHQ/slasettle-vault/blob/main/evidence/testnet-2026-10-01.md). That evidence confirms strict parity
-with the current Protocol 28 deployment built with `soroban-sdk` 28.0.0.
-See the vault README for exact details.
+**This project has not undergone an independent third-party security audit.**
 
-A live, end-to-end watcher daemon run against real Testnet RPC, and a
-real browser/Freighter verification of the frontend, were both performed
-on 2026-09-29 using the then-current Testnet deployment and a disposable
-Testnet watcher account. See
-[`evidence/phase-23-verification-2026-09-29.md`](./evidence/phase-23-verification-2026-09-29.md) for the full record,
-including transaction hashes and one real defect it surfaced along the
-way: a 500 error in the indexer's settlement-history endpoint, caused by
-an invalid hardcoded dummy account in `indexer/src/rpc/liveReads.ts`.
-That defect has since been fixed, covered by a regression test, and
-re-verified live against that same historical deployment; see the same evidence
-file's follow-up section for the fix record.
-
-## Evidence
-
-Every externally important claim about this project, with its source and
-current status, is indexed in [`evidence/index.md`](./evidence/index.md).
-The cross-repository consistency audit of 2026-09-29 is
-[`evidence/parity-matrix-2026-09-29.md`](./evidence/parity-matrix-2026-09-29.md).
-Each high-value claim traced to code, test, live evidence and documentation is in
-[`evidence/claim-traceability-2026-09-29.md`](./evidence/claim-traceability-2026-09-29.md),
-and a review written from an outsider's viewpoint is in
-[`evidence/external-review-2026-09-29.md`](./evidence/external-review-2026-09-29.md).
-
-## Security
-
-See [`SECURITY.md`](./SECURITY.md). No independent security audit has
-been performed.
+- **Key Management**: `@slasettle/sdk` and `apps/web` never request, store, or log secret keys. All transaction signing is delegated to user-controlled wallet extensions (Freighter).
+- **Watcher Secrets**: `WATCHER_SECRET_KEY` is loaded strictly from environment configuration and is never logged or exposed.
+- **CORS Policies**: The hosted indexer enforces an explicit origin allowlist (`ALLOWED_ORIGINS`) and rejects unauthorized origins.
 
 ## Known limitations
 
-Beyond the contract-level limitations documented in `slasettle-vault`
-(no commit-reveal, display-only uptime target, one shared watcher set):
+1. **Frontend-Driven Settlement**: A frontend-driven `trigger_settlement` was not submitted in the Phase 7 pass because no genuine unsettled quorum-reached round existed on Testnet, and no artificial votes were fabricated.
+2. **Watcher Decentralization**: In the current Testnet demonstration, watcher addresses were initialized and tested by project maintainers rather than a distributed set of independent third-party operators.
+3. **Network Mismatch Guards**: The web interface blocks write operations when the connected wallet is on a different network than configured; verified with unit tests and simulated wallets.
+4. **Physical Device Touch Testing**: Mobile and tablet browser flows are verified with viewport emulation; physical touch testing remains partial.
 
-- The frontend blocks writes when the connected wallet is on a different
-  network than the app is configured for (hub #13). This is covered by unit
-  tests with a mocked wallet and has not been exercised in a real browser
-  with Freighter.
-- Three of the vault's eight event kinds
-  (`bond_topped_up`, `sla_cancelled`, `bond_withdrawn`) were unverified
-  against real on-chain events until the 2026-09-27 live evidence pass
-  confirmed all eight; see `slasettle-vault`'s evidence directory.
-- The indexer's watcher registration/removal ordering bug (fixed; see its
-  own commit history and `slasettle-vault`'s
-  `evidence/recovery-2026-09-28.md`) is the kind of real correctness gap
-  that live evidence surfaces and unit tests alone would not have caught.
+For full contract-level limitations (e.g. lack of commit-reveal vote protection), see [SLASettle Vault](https://github.com/SLASettleHQ/slasettle-vault).
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
