@@ -1,5 +1,6 @@
 import { Keypair, StrKey } from "@stellar/stellar-sdk";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@slasettle/sdk", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@slasettle/sdk")>()),
@@ -15,7 +16,7 @@ vi.mock("./indexer", async (importOriginal) => ({
 
 import { getBondBalance, getSla, getTokenDecimals, getTokenSymbol, type SLAConfig } from "@slasettle/sdk";
 import { IndexerUnavailableError, getProviderSlas } from "./indexer";
-import { fetchProviderSlas } from "./use-provider-slas";
+import { fetchProviderSlas, useProviderSlas } from "./use-provider-slas";
 
 const PROVIDER = Keypair.random().publicKey();
 const TOKEN_A = StrKey.encodeContract(Buffer.alloc(32, 1));
@@ -115,5 +116,57 @@ describe("fetchProviderSlas", () => {
 
     expect(peak).toBeLessThanOrEqual(4);
     expect(peak).toBeGreaterThan(1);
+  });
+});
+
+describe("useProviderSlas refreshAfterCreate", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("keeps re-reading until a just-created SLA appears, then stops", async () => {
+    const getProviderSlasMock = vi.mocked(getProviderSlas);
+    getProviderSlasMock.mockResolvedValue({ data: [summary(0n), summary(1n)], nextCursor: null });
+    const { result } = renderHook(() => useProviderSlas(PROVIDER));
+    await waitFor(() => expect(result.current.slas).toHaveLength(2));
+    const callsBefore = getProviderSlasMock.mock.calls.length;
+
+    // The indexer has not ingested the new SLA yet: the first re-read is unchanged.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    act(() => result.current.refreshAfterCreate());
+    await waitFor(() => expect(getProviderSlasMock.mock.calls.length).toBe(callsBefore + 1));
+    expect(result.current.slas).toHaveLength(2);
+
+    // Once it has, the next retry picks it up.
+    getProviderSlasMock.mockResolvedValue({ data: [summary(0n), summary(1n), summary(2n)], nextCursor: null });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    await waitFor(() => expect(result.current.slas).toHaveLength(3));
+
+    // And it stops retrying.
+    const callsAfterFound = getProviderSlasMock.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(getProviderSlasMock.mock.calls.length).toBe(callsAfterFound);
+  });
+
+  it("gives up after a bounded number of retries when nothing new appears", async () => {
+    const getProviderSlasMock = vi.mocked(getProviderSlas);
+    getProviderSlasMock.mockResolvedValue({ data: [summary(0n)], nextCursor: null });
+    const { result } = renderHook(() => useProviderSlas(PROVIDER));
+    await waitFor(() => expect(result.current.slas).toHaveLength(1));
+
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    act(() => result.current.refreshAfterCreate());
+    for (let step = 0; step < 40; step++) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5_000);
+      });
+    }
+    // One initial read, one immediate re-read, then at most 18 retries.
+    expect(getProviderSlasMock.mock.calls.length).toBeLessThanOrEqual(1 + 1 + 18);
+    expect(getProviderSlasMock.mock.calls.length).toBe(1 + 1 + 18);
   });
 });

@@ -43,11 +43,11 @@ export function DashboardView() {
 }
 
 function ConnectedDashboard({ address }: { address: string }) {
-  const { slas, failures, loading, error, refresh } = useProviderSlas(address);
+  const { slas, failures, loading, error, refresh, refreshAfterCreate } = useProviderSlas(address);
 
   return (
     <div className="mt-6 space-y-8">
-      <CreateSlaForm onCreated={refresh} />
+      <CreateSlaForm onCreated={refreshAfterCreate} />
       <section>
         <h2 className="text-sm font-semibold text-[var(--color-fg-primary)]">Your SLAs</h2>
         <div className="mt-3">
