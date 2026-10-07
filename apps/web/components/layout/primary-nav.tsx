@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { NetworkIndicator } from "@/components/network/network-indicator";
 
 export const NAV_LINKS = [
@@ -58,11 +58,17 @@ export function MobileNav() {
   // without an effect that sets state.
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpenOn(null);
+      if (event.key !== "Escape") return;
+      // A focused link unmounts with the panel, which would drop focus to the
+      // page body, so hand it back to the button that opened the menu.
+      if (panelRef.current?.contains(document.activeElement)) buttonRef.current?.focus();
+      setOpenOn(null);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -71,6 +77,7 @@ export function MobileNav() {
   return (
     <div className="sm:hidden">
       <button
+        ref={buttonRef}
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
@@ -86,6 +93,7 @@ export function MobileNav() {
       </button>
       {open && (
         <nav
+          ref={panelRef}
           id={panelId}
           aria-label="Primary"
           className="animate-dropdown-in absolute inset-x-0 top-full z-20 border-b border-[var(--color-border-default)] bg-[var(--color-bg-raised)] px-4 py-3 shadow-[var(--shadow-raised)]"
