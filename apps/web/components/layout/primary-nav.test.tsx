@@ -65,6 +65,20 @@ describe("MobileNav", () => {
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
 
+  it("returns focus to the menu button when Escape closes the menu from inside it", async () => {
+    const user = userEvent.setup();
+    render(<MobileNav />);
+    const button = screen.getByRole("button", { name: "Menu" });
+
+    await user.click(button);
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveFocus();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+  });
+
   it("closes itself when the page changes", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<MobileNav />);

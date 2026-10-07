@@ -19,6 +19,11 @@ export function describeReadError(error: unknown): string {
     return error.message;
   }
   if (error instanceof SorobanSimulationError) {
+    // sla_vault error #9 is SlaNotFound (apps/docs/contracts.md). Scoped to
+    // get_sla because watcher_registry numbers its errors independently.
+    if (error.method === "get_sla" && /Error\(Contract, #9\)/.test(error.rpcMessage)) {
+      return "No SLA with this ID exists on this network (the contract reported SlaNotFound).";
+    }
     return `The contract rejected the read: ${error.rpcMessage}`;
   }
   if (error instanceof InvalidSdkInputError) {
