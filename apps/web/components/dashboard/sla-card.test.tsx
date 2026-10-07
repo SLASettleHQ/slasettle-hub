@@ -93,6 +93,39 @@ describe("SlaCard actions for an Active SLA", () => {
   });
 });
 
+describe("SlaCard after a transaction changes the card", () => {
+  const HASH = "a".repeat(64);
+
+  it("keeps the cancel confirmation and hash visible once the card is Cancelled", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<SlaCard sla={sla()} onChanged={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Cancel SLA" }));
+    await user.click(screen.getByRole("button", { name: "Sign and cancel" }));
+    await waitFor(() => expect(buildCancelSlaTx).toHaveBeenCalled());
+
+    // The refresh now reports the SLA as Cancelled, so the cancel action is gone.
+    rerender(<SlaCard sla={sla({}, { status: "Cancelled" })} onChanged={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Cancel SLA" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Confirmed.");
+    expect(screen.getByRole("link", { name: /aaaaaa/ })).toHaveAttribute("href", expect.stringContaining(HASH));
+  });
+
+  it("stops offering withdrawal once the withdrawal empties the bond, and keeps its confirmation", async () => {
+    const user = userEvent.setup();
+    const cancelled = (overrides: Partial<ProviderSlaView> = {}) => sla(overrides, { status: "Cancelled" });
+    const { rerender } = render(<SlaCard sla={cancelled()} onChanged={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Withdraw remaining bond" }));
+    await user.click(screen.getByRole("button", { name: "Sign and withdraw" }));
+    await waitFor(() => expect(buildWithdrawBondTx).toHaveBeenCalled());
+    await screen.findByText(/Confirmed\./);
+
+    rerender(<SlaCard sla={cancelled({ bondBalance: 0n })} onChanged={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: /withdraw/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/nothing to withdraw/)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Confirmed.");
+  });
+});
+
 describe("SlaCard actions for a Cancelled SLA", () => {
   const cancelled = (overrides: Partial<ProviderSlaView> = {}) => sla(overrides, { status: "Cancelled" });
 

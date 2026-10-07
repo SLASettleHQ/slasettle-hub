@@ -45,11 +45,17 @@ export function WithdrawBondAction({
     }
   }
 
-  if (bondBalance === 0n && state.status !== "confirmed") {
+  // Nothing left to withdraw: never offer the button. After this component's
+  // own withdrawal confirms, the balance reads zero, and the confirmation (hash
+  // and explorer link) stays visible next to the statement.
+  if (bondBalance === 0n) {
     return (
-      <p className="text-sm text-[var(--color-fg-muted)]">
-        This SLA is cancelled and no bond remains, so there is nothing to withdraw.
-      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm text-[var(--color-fg-muted)]">
+          This SLA is cancelled and no bond remains, so there is nothing to withdraw.
+        </p>
+        <TransactionStatus state={state} />
+      </div>
     );
   }
 

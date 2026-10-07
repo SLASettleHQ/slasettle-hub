@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { useState } from "react";
 import { TokenAmount } from "@/components/token-amount";
+import { TransactionStatus } from "@/components/transaction-status";
 import { formatBps, truncateAddress } from "@/lib/format";
 import type { ProviderSlaView } from "@/lib/use-provider-slas";
 import { CancelSlaAction } from "./cancel-sla-action";
@@ -8,6 +10,9 @@ import { WithdrawBondAction } from "./withdraw-bond-action";
 
 export function SlaCard({ sla, onChanged }: { sla: ProviderSlaView; onChanged: () => void }) {
   const { slaId, config, bondBalance, tokenDecimals, tokenSymbol } = sla;
+  // A confirmed cancel turns the card into a Cancelled one, which unmounts the
+  // cancel action and with it the confirmation. Keep the hash visible here.
+  const [cancelHash, setCancelHash] = useState<string | null>(null);
 
   return (
     <div className="animate-fade-in-up rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5">
@@ -73,16 +78,25 @@ export function SlaCard({ sla, onChanged }: { sla: ProviderSlaView; onChanged: (
               tokenSymbol={tokenSymbol}
               onSuccess={onChanged}
             />
-            <CancelSlaAction slaId={slaId} onSuccess={onChanged} />
+            <CancelSlaAction
+              slaId={slaId}
+              onSuccess={(result) => {
+                setCancelHash(result.hash);
+                onChanged();
+              }}
+            />
           </div>
         ) : (
-          <WithdrawBondAction
-            slaId={slaId}
-            bondBalance={bondBalance}
-            tokenDecimals={tokenDecimals}
-            tokenSymbol={tokenSymbol}
-            onSuccess={onChanged}
-          />
+          <div className="flex flex-col gap-3">
+            {cancelHash && <TransactionStatus state={{ status: "confirmed", hash: cancelHash }} />}
+            <WithdrawBondAction
+              slaId={slaId}
+              bondBalance={bondBalance}
+              tokenDecimals={tokenDecimals}
+              tokenSymbol={tokenSymbol}
+              onSuccess={onChanged}
+            />
+          </div>
         )}
       </div>
     </div>

@@ -7,8 +7,9 @@ import { useNetworkGuard } from "@/components/network/use-network-guard";
 import { TransactionStatus } from "@/components/transaction-status";
 import { useWallet } from "@/components/wallet/wallet-provider";
 import { isTransactionBusy, useTransaction } from "@/lib/use-transaction";
+import type { SubmittedTransaction } from "@/lib/wallet";
 
-export function CancelSlaAction({ slaId, onSuccess }: { slaId: bigint; onSuccess?: () => void }) {
+export function CancelSlaAction({ slaId, onSuccess }: { slaId: bigint; onSuccess?: (result: SubmittedTransaction) => void }) {
   const { connection } = useWallet();
   const { state, run } = useTransaction();
   const guard = useNetworkGuard();
@@ -22,7 +23,7 @@ export function CancelSlaAction({ slaId, onSuccess }: { slaId: bigint; onSuccess
       connection,
     );
     if (result?.status === "SUCCESS") {
-      onSuccess?.();
+      onSuccess?.(result);
     }
   }
 
