@@ -40,4 +40,4 @@ Soroban uses state archival to manage ledger storage growth:
 ### Operational Caveats
 - **Testnet Only**: SLASettle is deployed on Stellar Testnet and has not been deployed to Stellar Mainnet.
 - **Unaudited**: While extensive automated testing and static analysis have been conducted, the codebase has not undergone a formal third-party security audit.
-- **Watcher Daemon Hosting**: While the indexer and web dashboard are continuously hosted on production cloud infrastructure, watcher daemons are intended to be run by independent operators and are not hosted as a continuous monolithic service by the repository maintainers.
+- **Watcher Daemon Hosting**: While the indexer and web dashboard are continuously hosted on production cloud infrastructure, watcher daemons are intended to be run by independent operators and are not hosted as a continuous monolithic service by the maintainer.

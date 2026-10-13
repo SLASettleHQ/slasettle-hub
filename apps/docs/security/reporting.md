@@ -1,6 +1,6 @@
 # Vulnerability Reporting
 
-The SLASettle maintainers take the security of smart contracts, off-chain infrastructure, and client applications seriously. We welcome responsible disclosure of potential security vulnerabilities.
+The SLASettle maintainer takes the security of smart contracts, off-chain infrastructure, and client applications seriously. Responsible disclosure of potential security vulnerabilities is welcomed.
 
 ## Scope
 
@@ -48,4 +48,4 @@ Please include the following information in your advisory:
 
 - **Testnet Status**: The SLASettle protocol is currently deployed exclusively to Stellar Testnet.
 - **Audit Status**: The codebase has undergone comprehensive automated testing (416 tests) and internal static analysis, but has **not yet completed a formal external third-party security audit**.
-- **No Active Bug Bounty**: As an open-source testnet research project, monetary bug bounties are not currently offered. We gratefully credit security researchers in our release notes and changelogs.
+- **No Active Bug Bounty**: As an open-source testnet research project, monetary bug bounties are not currently offered. Security researchers will be credited in our release notes and changelogs.

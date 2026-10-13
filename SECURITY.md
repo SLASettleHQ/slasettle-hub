@@ -3,8 +3,7 @@
 `slasettle-hub` contains the watcher daemon, event indexer, TypeScript
 SDK, and frontend for SLASettle. Testnet only, for now. **No independent
 third-party security audit has been performed on this code.** Everything
-in this document reflects an internal engineering review by the people
-building this repository, not an external audit.
+in this document reflects an internal engineering review by the maintainer, not an external audit.
 
 ## Scope
 
@@ -164,6 +163,7 @@ repository as of this date.
 
 ## Supported versions
 
-Testnet only. There is no versioned release yet, and no mainnet
-deployment. This document will be updated once a release process and a
-mainnet target exist.
+Testnet only. Public releases `v0.1.0` and `v0.1.1` are Testnet releases. They
+are unaudited and are not production deployments. There is no mainnet deployment
+and no mainnet support. This document will be updated once a mainnet target
+exists.

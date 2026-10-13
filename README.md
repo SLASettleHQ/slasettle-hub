@@ -215,7 +215,7 @@ Detailed hosting topologies and network paths are documented in [`evidence/phase
 2. `indexer (build, test)`
 3. `watcher (build, vet, test)`
 
-Branch protection requires pull requests and passing status checks across all three CI jobs. Required approving reviews are currently set to 0 for small-team velocity. Protection is not enforced for repository administrators (`enforce_admins` is off), allowing direct administrative resolution if required.
+Branch protection requires pull requests and passing status checks across all three CI jobs. Required approving reviews are currently set to 0 for solo-maintainer velocity. Protection is not enforced for repository administrators (`enforce_admins` is off), allowing direct administrative resolution if required.
 
 Dependabot (`.github/dependabot.yml`) checks `npm` (root workspace and `indexer`), `gomod` (`watcher`), and `github-actions` weekly.
 
@@ -232,7 +232,7 @@ See [`SECURITY.md`](SECURITY.md).
 ## Known limitations
 
 1. **Frontend-Driven Settlement**: A frontend-driven `trigger_settlement` was not submitted in the Phase 7 pass because no genuine unsettled quorum-reached round existed on Testnet, and no artificial votes were fabricated.
-2. **Watcher Decentralization**: In the current Testnet demonstration, watcher addresses were initialized and tested by project maintainers rather than a distributed set of independent third-party operators.
+2. **Watcher Decentralization**: In the current Testnet demonstration, watcher addresses were initialized and tested by the maintainer for testing rather than a distributed set of independent third-party operators.
 3. **Network Mismatch Guards**: The web interface blocks write operations when the connected wallet is on a different network than configured; verified with unit tests and simulated wallets.
 4. **Physical Device Touch Testing**: Mobile and tablet browser flows are verified with viewport emulation; physical touch testing remains partial.
 

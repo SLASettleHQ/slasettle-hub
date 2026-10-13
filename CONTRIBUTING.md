@@ -105,7 +105,7 @@ Do not guess at a contract's behavior from this repository; read
 jobs (`web and sdk (build, lint, typecheck, test)`, `indexer (build,
 test)`, `watcher (build, vet, test)`) must pass before merging. Force
 pushes and branch deletion are disabled. Required approving reviews are
-currently set to 0 for small-team velocity; all pull requests still strictly
+currently set to 0 for solo-maintainer velocity; all pull requests still strictly
 require passing automated CI status checks before merging.
 
 ```text
