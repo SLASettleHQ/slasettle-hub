@@ -64,6 +64,7 @@ export async function runOnce(deps: PollerDeps): Promise<boolean> {
       checks: [],
       slas: [],
       settlements: [],
+      lifecycleEvents: [],
     });
     return false;
   }

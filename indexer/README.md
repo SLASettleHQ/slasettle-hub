@@ -7,12 +7,19 @@ and serves them over the endpoints documented in `apps/docs/api.md`.
 
 Node 24.21.0 (matching the repository's `.nvmrc`) was used for the successful
 install (`npm install`), TypeScript build (`tsc`), and test suite execution
-(`npm test` / `node --test`). **0 type errors, 62/62 tests passing** (expanded
-from the original 24/24 test run), as of 2026-10-06.
+(`npm test` / `node --test`). **0 type errors** — run `npm test` for the
+current pass count rather than trusting a number in this file, which drifts
+every time tests are added.
 
-All eight event kinds have been confirmed against real emitted Testnet events:
-`watcher_registered`, `watcher_removed`, `check_submitted`, `sla_created`,
-`settlement_paid`, `bond_topped_up`, `sla_cancelled`, and `bond_withdrawn`.
+This describes the **v0.2 contract interface**: the hosted production
+service below is still ingesting v0.1 events against the deployed v0.1
+contracts. v0.2 adds `endpoint_hash` to `check_submitted`/`sla_created`,
+`uptime_target_bps`/`quorum_threshold`/`penalty_per_breach` to
+`sla_created`, and persists `bond_topped_up`/`sla_cancelled`/
+`bond_withdrawn` (previously decoded correctly but discarded) to a new
+`sla_lifecycle_events` table. All eight event kinds' v0.1 shapes were
+confirmed against real emitted Testnet events; the v0.2 additions have not
+yet had an equivalent live-Testnet confirmation, since v0.2 isn't deployed.
 The wire format of every kind is documented at the top of `src/rpc/decode.ts`.
 
 ## Hosted Production Service (Cloudflare Workers + D1)

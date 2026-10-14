@@ -14,8 +14,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function createTestEnv(): { env: WorkerEnv; d1: IndexerD1; rawDb: Database.Database } {
   const rawDb = new Database(":memory:");
-  const schema = readFileSync(join(__dirname, "../../migrations/0001_initial_schema.sql"), "utf-8");
-  rawDb.exec(schema);
+  for (const migration of ["0001_initial_schema.sql", "0002_v0.2_endpoint_lifecycle.sql"]) {
+    rawDb.exec(readFileSync(join(__dirname, "../../migrations", migration), "utf-8"));
+  }
   const mockD1 = createMockD1(rawDb);
   const d1 = new IndexerD1(mockD1);
 
@@ -50,6 +51,7 @@ test("Worker: GET /v1/health returns ok and checkpoint status", async () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   res = await worker.fetch(new Request("http://localhost/v1/health"), env, {} as any);
@@ -124,6 +126,7 @@ test("Worker: GET /v1/watchers returns eligible watchers", async () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   const res = await worker.fetch(new Request("http://localhost/v1/watchers"), env, {} as any);
@@ -148,6 +151,7 @@ test("Worker: GET /v1/providers/:address/slas returns provider slas", async () =
         sla_id: "0",
         provider: "GPROVIDER1",
         token: "GTOKEN",
+        endpoint_hash: "aa".repeat(32),
         bond_amount_at_creation: "1000",
         quorum_threshold: 3,
         beneficiary: "GBENEFICIARY",
@@ -156,6 +160,7 @@ test("Worker: GET /v1/providers/:address/slas returns provider slas", async () =
       },
     ],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   const res = await worker.fetch(

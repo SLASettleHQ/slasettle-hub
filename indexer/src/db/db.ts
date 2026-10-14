@@ -23,6 +23,8 @@ export interface CheckRow {
   round_id: string;
   watcher: string;
   status: "up" | "down";
+  /** Lowercase hex-encoded endpoint commitment this check was submitted under. */
+  endpoint_hash: string;
   checked_at: string;
 }
 
@@ -30,11 +32,29 @@ export interface SlaRow {
   sla_id: string;
   provider: string;
   token: string;
+  /** Lowercase hex-encoded endpoint commitment this SLA was created with. */
+  endpoint_hash: string;
   bond_amount_at_creation: string;
   quorum_threshold: number | null;
   beneficiary: string;
   created_at: string;
   tx_hash: string;
+}
+
+/**
+ * One bond_topped_up / sla_cancelled / bond_withdrawn event. These were
+ * previously recognized and decoded correctly but not persisted (see
+ * classify.ts's pre-v0.2 history); kept as a single lifecycle table rather
+ * than three near-identical ones, since none of the three needs its own
+ * extra columns beyond a nullable `amount` (sla_cancelled carries none).
+ */
+export interface LifecycleEventRow {
+  event_id: string;
+  sla_id: string;
+  event_type: "bond_topped_up" | "sla_cancelled" | "bond_withdrawn";
+  amount: string | null;
+  tx_hash: string;
+  ledger_close_time: string;
 }
 
 /**
@@ -98,6 +118,7 @@ export class IndexerDb {
     checks: CheckRow[];
     slas: SlaRow[];
     settlements: SettlementRow[];
+    lifecycleEvents: LifecycleEventRow[];
   }): void {
     const tx = this.raw.transaction(() => {
       this.raw
@@ -118,28 +139,37 @@ export class IndexerDb {
       }
 
       const insertCheck = this.raw.prepare(
-        `INSERT OR IGNORE INTO checks (event_id, sla_id, round_id, watcher, status, checked_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT OR IGNORE INTO checks (event_id, sla_id, round_id, watcher, status, endpoint_hash, checked_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
       );
       for (const c of params.checks) {
-        insertCheck.run(c.event_id, c.sla_id, c.round_id, c.watcher, c.status, c.checked_at);
+        insertCheck.run(c.event_id, c.sla_id, c.round_id, c.watcher, c.status, c.endpoint_hash, c.checked_at);
       }
 
       const insertSla = this.raw.prepare(
-        `INSERT OR IGNORE INTO slas (sla_id, provider, token, bond_amount_at_creation, quorum_threshold, beneficiary, created_at, tx_hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT OR IGNORE INTO slas (sla_id, provider, token, endpoint_hash, bond_amount_at_creation, quorum_threshold, beneficiary, created_at, tx_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       );
       for (const s of params.slas) {
         insertSla.run(
           s.sla_id,
           s.provider,
           s.token,
+          s.endpoint_hash,
           s.bond_amount_at_creation,
           s.quorum_threshold,
           s.beneficiary,
           s.created_at,
           s.tx_hash,
         );
+      }
+
+      const insertLifecycleEvent = this.raw.prepare(
+        `INSERT OR IGNORE INTO sla_lifecycle_events (event_id, sla_id, event_type, amount, tx_hash, ledger_close_time)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      for (const l of params.lifecycleEvents) {
+        insertLifecycleEvent.run(l.event_id, l.sla_id, l.event_type, l.amount, l.tx_hash, l.ledger_close_time);
       }
 
       const insertSettlement = this.raw.prepare(
@@ -184,6 +214,16 @@ export class IndexerDb {
         .run(quorumThreshold, slaId);
     });
     tx();
+  }
+
+  /** Most recent lifecycle events for an SLA, newest first, capped at 100 — see LifecycleEventRow. */
+  getLifecycleEvents(slaId: string): Array<Omit<LifecycleEventRow, "sla_id">> {
+    return this.raw
+      .prepare(
+        `SELECT event_id, event_type, amount, tx_hash, ledger_close_time
+         FROM sla_lifecycle_events WHERE sla_id = ? ORDER BY ledger_close_time DESC LIMIT 100`,
+      )
+      .all(slaId) as Array<Omit<LifecycleEventRow, "sla_id">>;
   }
 
   close(): void {

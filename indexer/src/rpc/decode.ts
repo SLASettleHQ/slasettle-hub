@@ -1,23 +1,29 @@
 import { rpc, scValToNative } from "@stellar/stellar-sdk";
 
 /**
- * Event wire format, as observed on real Testnet transactions (see
- * slasettle-vault/evidence/testnet-2026-09-27.md and, for the current
- * deployment's re-check on 2026-09-29,
- * evidence/parity-matrix-2026-09-29.md section 4). Every event's topic[0] is
- * the event's name as a snake_case symbol — the #[contractevent] macro
- * lower-snakes the Rust struct name — followed by the fields the contract
- * marked #[topic]. The remaining fields are `value`, decoded as a map keyed
- * by field name; an event with no such fields decodes to `{}`.
+ * Event wire format, as declared by the v0.2 contract events
+ * (slasettle-vault contracts/{sla_vault,watcher_registry}/src/events.rs —
+ * the v0.1 shapes below were previously pinned against observed Testnet
+ * transactions; v0.2 adds endpoint_hash and, for sla_created,
+ * uptime_target_bps/quorum_threshold/penalty_per_breach, which have not yet
+ * had an equivalent live-Testnet confirmation since v0.2 isn't deployed).
+ * Every event's topic[0] is the event's name as a snake_case symbol — the
+ * #[contractevent] macro lower-snakes the Rust struct name — followed by
+ * the fields the contract marked #[topic]. The remaining fields are
+ * `value`, decoded as a map keyed by field name; an event with no such
+ * fields decodes to `{}`.
  *
  *   watcher_registered / watcher_removed
  *     topics = [symbol, watcher: address]        data = {}
  *   check_submitted
  *     topics = [symbol, sla_id: u64, watcher: address]
- *     data   = { round_id: u64, status: Vec<Symbol> }  e.g. status = ["Up"]
+ *     data   = { round_id: u64, endpoint_hash: BytesN<32>, status: Vec<Symbol> }
+ *              e.g. status = ["Up"]
  *   sla_created
  *     topics = [symbol, sla_id: u64, provider: address]
- *     data   = { token: address, bond_amount: i128, beneficiary: address }
+ *     data   = { token: address, endpoint_hash: BytesN<32>, bond_amount: i128,
+ *                uptime_target_bps: u32, quorum_threshold: u32,
+ *                penalty_per_breach: i128, beneficiary: address }
  *   bond_topped_up
  *     topics = [symbol, sla_id: u64]             data = { amount: i128 }
  *   settlement_paid
@@ -108,4 +114,22 @@ export function amountToString(value: unknown): string {
     );
   }
   throw new Error(`amountToString received an unexpected type: ${typeof value}`);
+}
+
+/**
+ * Hex-encodes an endpoint_hash decoded from an event's `data` field.
+ * scValToNative decodes a Soroban `BytesN<32>`/`Bytes` as a Buffer or
+ * Uint8Array depending on runtime (Node vs Workers) — this normalizes
+ * either to a lowercase hex string, the representation this indexer stores
+ * and serves consistently (never attempts to reverse it into a URL; see
+ * SLASettle-contract-spec.md section 3 on why that's not possible or
+ * meaningful).
+ */
+export function bytesToHex(value: unknown): string {
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value).toString("hex");
+  }
+  throw new Error(
+    `bytesToHex received a non-byte-array value: ${typeof value}. This means the event's endpoint_hash field isn't shaped as expected — investigate before trusting this value.`,
+  );
 }

@@ -21,13 +21,16 @@ CREATE TABLE IF NOT EXISTS watchers (
 
 -- One row per submit_check event. event_id is the idempotency key —
 -- re-processing an already-seen ledger range on restart must not double
--- count a vote.
+-- count a vote. endpoint_hash (lowercase hex) is the v0.2 commitment this
+-- check was submitted under — never reversible into a URL, stored for
+-- audit/dispute purposes only.
 CREATE TABLE IF NOT EXISTS checks (
   event_id TEXT PRIMARY KEY,
   sla_id TEXT NOT NULL,
   round_id TEXT NOT NULL,
   watcher TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('up', 'down')),
+  endpoint_hash TEXT NOT NULL,
   checked_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_checks_sla_round ON checks (sla_id, round_id);
@@ -36,16 +39,20 @@ CREATE INDEX IF NOT EXISTS idx_checks_sla_round ON checks (sla_id, round_id);
 -- creation time only — live balance is never tracked here, it's always a
 -- direct contract read from the SDK. See the indexer API spec for why.
 --
--- quorum_threshold is nullable and NOT populated from the event itself —
--- the contract's sla_created event does not carry it (see the contract
--- spec's event list). It never changes after an SLA is created, so it is
--- fetched with a single live get_sla read the first time an API response
--- needs it, then cached here. See api/routes/settlements.ts and
--- rpc/liveReads.ts.
+-- endpoint_hash (lowercase hex) is the v0.2 commitment this SLA was created
+-- with — see the checks table comment above.
+--
+-- quorum_threshold comes directly from the v0.2 sla_created event. It's
+-- still nullable because v0.1-ingested rows (before this migration) never
+-- had it in the event payload; those are filled lazily by a one-time live
+-- get_sla read the first time an API response needs it, then cached here —
+-- see api/routes.ts and rpc/liveReads.ts. New v0.2 rows never need that
+-- fallback.
 CREATE TABLE IF NOT EXISTS slas (
   sla_id TEXT PRIMARY KEY,
   provider TEXT NOT NULL,
   token TEXT NOT NULL,
+  endpoint_hash TEXT NOT NULL,
   bond_amount_at_creation TEXT NOT NULL,
   quorum_threshold INTEGER,
   beneficiary TEXT NOT NULL,
@@ -67,3 +74,16 @@ CREATE TABLE IF NOT EXISTS settlements (
   ledger_close_time TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_settlements_sla ON settlements (sla_id, ledger_close_time);
+
+-- One row per bond_topped_up / sla_cancelled / bond_withdrawn event —
+-- previously recognized and decoded correctly but not persisted. `amount`
+-- is null for sla_cancelled, which carries no amount.
+CREATE TABLE IF NOT EXISTS sla_lifecycle_events (
+  event_id TEXT PRIMARY KEY,
+  sla_id TEXT NOT NULL,
+  event_type TEXT NOT NULL CHECK (event_type IN ('bond_topped_up', 'sla_cancelled', 'bond_withdrawn')),
+  amount TEXT,
+  tx_hash TEXT NOT NULL,
+  ledger_close_time TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_lifecycle_sla ON sla_lifecycle_events (sla_id, ledger_close_time DESC);

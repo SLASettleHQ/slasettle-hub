@@ -52,6 +52,7 @@ test("runOnce resumes from a stored cursor, not a fresh startLedger, on a second
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   let calledWith: { kind: string; value: string | number } | undefined;

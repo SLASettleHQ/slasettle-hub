@@ -68,6 +68,7 @@ export async function runIngestionStep(env: WorkerEnv): Promise<IngestionResult>
     checks: batch.checks,
     slas: batch.slas,
     settlements: batch.settlements,
+    lifecycleEvents: batch.lifecycleEvents,
   });
 
   return {
