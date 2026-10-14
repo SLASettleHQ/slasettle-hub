@@ -8,7 +8,15 @@ vi.mock("./client.js", () => ({
 }));
 
 import { getSdkConfig, simulateReadCall } from "./client.js";
-import { getRoundTally, getWatcherCount, hasWatcherVoted, isWatcher } from "./watcher-registry.js";
+import {
+  getCurrentRound,
+  getRoundTally,
+  getWatcherCount,
+  hasWatcherVoted,
+  isWatcher,
+} from "./watcher-registry.js";
+
+const ENDPOINT_HASH = new Uint8Array(32).fill(9);
 
 const simulateReadCallMock = vi.mocked(simulateReadCall);
 const getSdkConfigMock = vi.mocked(getSdkConfig);
@@ -30,7 +38,10 @@ beforeEach(() => {
 describe("getRoundTally", () => {
   it("decodes votes_up/votes_down into camelCase RoundTally", async () => {
     simulateReadCallMock.mockResolvedValue({ votes_up: 3, votes_down: 5 });
-    await expect(getRoundTally(1n, 2n)).resolves.toEqual({ votesUp: 3, votesDown: 5 });
+    await expect(getRoundTally(1n, 2n, ENDPOINT_HASH)).resolves.toEqual({
+      votesUp: 3,
+      votesDown: 5,
+    });
     expect(simulateReadCallMock).toHaveBeenCalledWith(
       REGISTRY_CONTRACT_ID,
       "get_round_tally",
@@ -38,20 +49,35 @@ describe("getRoundTally", () => {
     );
   });
 
+  it("encodes (sla_id, round_id, endpoint_hash) as the call args", async () => {
+    simulateReadCallMock.mockResolvedValue({ votes_up: 0, votes_down: 0 });
+    await getRoundTally(1n, 2n, ENDPOINT_HASH);
+    const args = simulateReadCallMock.mock.calls[0]![2] as import("@stellar/stellar-sdk").xdr.ScVal[];
+    const decoded = args.map((scVal) => scValToNative(scVal));
+    expect(decoded[0]).toBe(1n);
+    expect(decoded[1]).toBe(2n);
+    expect(new Uint8Array(decoded[2] as Uint8Array)).toEqual(ENDPOINT_HASH);
+  });
+
   it("throws a clear error when the tally is missing fields", async () => {
     simulateReadCallMock.mockResolvedValue({ votes_up: 3 });
-    await expect(getRoundTally(1n, 2n)).rejects.toThrow(/missing votes_up\/votes_down/);
+    await expect(getRoundTally(1n, 2n, ENDPOINT_HASH)).rejects.toThrow(/missing votes_up\/votes_down/);
   });
 });
 
 describe("getRoundTally strictness", () => {
   it("rejects a tally whose counts are not numbers", async () => {
     simulateReadCallMock.mockResolvedValue({ votes_up: "3", votes_down: 5 });
-    await expect(getRoundTally(1n, 2n)).rejects.toThrow(/expected numbers/);
+    await expect(getRoundTally(1n, 2n, ENDPOINT_HASH)).rejects.toThrow(/expected numbers/);
   });
 
   it("rejects an out-of-range round id before any RPC call", async () => {
-    await expect(getRoundTally(1n, -1n)).rejects.toMatchObject({ field: "roundId" });
+    await expect(getRoundTally(1n, -1n, ENDPOINT_HASH)).rejects.toMatchObject({ field: "roundId" });
+    expect(simulateReadCallMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an endpoint hash that isn't 32 bytes, before any RPC call", async () => {
+    await expect(getRoundTally(1n, 2n, new Uint8Array(31))).rejects.toThrow(/32 bytes/);
     expect(simulateReadCallMock).not.toHaveBeenCalled();
   });
 
@@ -59,6 +85,23 @@ describe("getRoundTally strictness", () => {
     await expect(isWatcher("not-an-address")).rejects.toMatchObject({ field: "watcher" });
     await expect(hasWatcherVoted(1n, 2n, "bad")).rejects.toMatchObject({ field: "watcher" });
     expect(simulateReadCallMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("getCurrentRound", () => {
+  it("returns the raw round id as a bigint", async () => {
+    simulateReadCallMock.mockResolvedValue(42n);
+    await expect(getCurrentRound()).resolves.toBe(42n);
+    expect(simulateReadCallMock).toHaveBeenCalledWith(
+      REGISTRY_CONTRACT_ID,
+      "get_current_round",
+      [],
+    );
+  });
+
+  it("rejects a non-bigint result", async () => {
+    simulateReadCallMock.mockResolvedValue(42);
+    await expect(getCurrentRound()).rejects.toThrow(/expected a bigint/);
   });
 });
 

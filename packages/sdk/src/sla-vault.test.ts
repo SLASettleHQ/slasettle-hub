@@ -40,9 +40,12 @@ getSdkConfigMock.mockReturnValue({
   watcherRegistryContractId: Address.contract(new Uint8Array(32).fill(3)).toString(),
 });
 
+const ENDPOINT_HASH = new Uint8Array(32).fill(9);
+
 const RAW_SLA_CONFIG = {
   provider: PROVIDER,
   token: TOKEN,
+  endpoint_hash: Buffer.from(ENDPOINT_HASH),
   bond_amount: 1_000_000_000n,
   uptime_target_bps: 9990,
   quorum_threshold: 3,
@@ -61,9 +64,11 @@ describe("getSla", () => {
 
     const config = await getSla(7n);
 
-    expect(config).toEqual({
+    expect(new Uint8Array(config.endpointHash)).toEqual(ENDPOINT_HASH);
+    expect({ ...config, endpointHash: undefined }).toEqual({
       provider: PROVIDER,
       token: TOKEN,
+      endpointHash: undefined,
       bondAmount: 1_000_000_000n,
       uptimeTargetBps: 9990,
       quorumThreshold: 3,
@@ -135,10 +140,11 @@ describe("write transaction builders", () => {
     buildInvokeTxMock.mockResolvedValue({} as never);
   });
 
-  it("buildCreateSlaTx encodes every field and targets create_sla", async () => {
+  it("buildCreateSlaTx encodes every field (via endpointHash) and targets create_sla", async () => {
     await buildCreateSlaTx({
       provider: PROVIDER,
       token: TOKEN,
+      endpointHash: ENDPOINT_HASH,
       bondAmount: 1_000_000_000n,
       uptimeTargetBps: 9990,
       quorumThreshold: 3,
@@ -151,16 +157,61 @@ describe("write transaction builders", () => {
     expect(caller).toBe(PROVIDER);
     expect(contractId).toBe(VAULT_CONTRACT_ID);
     expect(method).toBe("create_sla");
-    expect(args).toHaveLength(7);
-    expect(args!.map((scVal) => scValToNative(scVal))).toEqual([
-      PROVIDER,
-      TOKEN,
-      1_000_000_000n,
-      9990,
-      3,
-      50_000_000n,
-      BENEFICIARY,
-    ]);
+    expect(args).toHaveLength(8);
+    const decoded = args!.map((scVal) => scValToNative(scVal));
+    expect(decoded[0]).toBe(PROVIDER);
+    expect(decoded[1]).toBe(TOKEN);
+    expect(new Uint8Array(decoded[2] as Uint8Array)).toEqual(ENDPOINT_HASH);
+    expect(decoded.slice(3)).toEqual([1_000_000_000n, 9990, 3, 50_000_000n, BENEFICIARY]);
+  });
+
+  it("buildCreateSlaTx hashes endpointUrl locally rather than sending the raw URL", async () => {
+    await buildCreateSlaTx({
+      provider: PROVIDER,
+      token: TOKEN,
+      endpointUrl: "https://api.example.com/health",
+      bondAmount: 1_000_000_000n,
+      uptimeTargetBps: 9990,
+      quorumThreshold: 3,
+      penaltyPerBreach: 50_000_000n,
+      beneficiary: BENEFICIARY,
+    });
+
+    const args = buildInvokeTxMock.mock.calls[0]![3]!;
+    const encodedHash = scValToNative(args[2]!) as Uint8Array;
+    expect(encodedHash).toHaveLength(32);
+  });
+
+  it("buildCreateSlaTx rejects passing both endpointUrl and endpointHash", async () => {
+    await expect(
+      buildCreateSlaTx({
+        provider: PROVIDER,
+        token: TOKEN,
+        endpointUrl: "https://api.example.com/health",
+        endpointHash: ENDPOINT_HASH,
+        bondAmount: 1_000_000_000n,
+        uptimeTargetBps: 9990,
+        quorumThreshold: 3,
+        penaltyPerBreach: 50_000_000n,
+        beneficiary: BENEFICIARY,
+      }),
+    ).rejects.toBeInstanceOf(InvalidSdkInputError);
+    expect(buildInvokeTxMock).not.toHaveBeenCalled();
+  });
+
+  it("buildCreateSlaTx rejects passing neither endpointUrl nor endpointHash", async () => {
+    await expect(
+      buildCreateSlaTx({
+        provider: PROVIDER,
+        token: TOKEN,
+        bondAmount: 1_000_000_000n,
+        uptimeTargetBps: 9990,
+        quorumThreshold: 3,
+        penaltyPerBreach: 50_000_000n,
+        beneficiary: BENEFICIARY,
+      }),
+    ).rejects.toBeInstanceOf(InvalidSdkInputError);
+    expect(buildInvokeTxMock).not.toHaveBeenCalled();
   });
 
   it("buildTopUpBondTx targets top_up_bond with (caller, sla_id, amount)", async () => {
@@ -197,6 +248,7 @@ describe("builder input validation", () => {
   const VALID_CREATE = {
     provider: PROVIDER,
     token: TOKEN,
+    endpointHash: ENDPOINT_HASH,
     bondAmount: 1_000n,
     uptimeTargetBps: 9990,
     quorumThreshold: 3,
@@ -231,7 +283,7 @@ describe("builder input validation", () => {
     const max = (1n << 127n) - 1n;
     await buildCreateSlaTx({ ...VALID_CREATE, bondAmount: max, penaltyPerBreach: max });
     const args = buildInvokeTxMock.mock.calls[0]![3]!;
-    expect(scValToNative(args[2]!)).toBe(max);
+    expect(scValToNative(args[3]!)).toBe(max);
   });
 
   it("rejects a zero top-up and an out-of-range SLA id", async () => {

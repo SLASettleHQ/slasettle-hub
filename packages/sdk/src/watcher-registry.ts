@@ -1,5 +1,5 @@
-import { nativeToScVal } from "@stellar/stellar-sdk";
-import { getSdkConfig, simulateReadCall } from "./client.js";
+import { nativeToScVal, type Transaction } from "@stellar/stellar-sdk";
+import { buildInvokeTx, getSdkConfig, simulateReadCall } from "./client.js";
 import type { RoundTally } from "./types.js";
 import { assertAddress, assertU64 } from "./validate.js";
 
@@ -24,18 +24,31 @@ function decodeRoundTally(raw: unknown): RoundTally {
   return { votesUp, votesDown };
 }
 
-/** Reads a round's vote tally from `watcher_registry.get_round_tally`. */
+/**
+ * Reads a round's vote tally from `watcher_registry.get_round_tally`.
+ * `endpointHash` is required in v0.2 — tallies are partitioned per
+ * `(sla_id, round_id, endpoint_hash)`, so querying without it would silently
+ * read the wrong (or an empty) tally.
+ */
 export async function getRoundTally(
   slaId: bigint,
   roundId: bigint,
+  endpointHash: Uint8Array,
 ): Promise<RoundTally> {
   assertU64(slaId, "slaId");
   assertU64(roundId, "roundId");
+  if (endpointHash.length !== 32) {
+    throw new TypeError("getRoundTally: endpointHash must be exactly 32 bytes.");
+  }
   const config = getSdkConfig();
   const result = await simulateReadCall(
     config.watcherRegistryContractId,
     "get_round_tally",
-    [nativeToScVal(slaId, { type: "u64" }), nativeToScVal(roundId, { type: "u64" })],
+    [
+      nativeToScVal(slaId, { type: "u64" }),
+      nativeToScVal(roundId, { type: "u64" }),
+      nativeToScVal(endpointHash, { type: "bytes" }),
+    ],
   );
   return decodeRoundTally(result);
 }
@@ -82,6 +95,28 @@ export async function isWatcher(watcher: string): Promise<boolean> {
   return result;
 }
 
+/**
+ * Reads the contract's authoritative current round from
+ * `watcher_registry.get_current_round`. Callers that need "the" current
+ * round for a submission or a tally lookup should use this rather than
+ * deriving it from `Date.now()` — the contract is the source of truth for
+ * round freshness, and `submit_check` validates `round_id` against it.
+ */
+export async function getCurrentRound(): Promise<bigint> {
+  const config = getSdkConfig();
+  const result = await simulateReadCall(
+    config.watcherRegistryContractId,
+    "get_current_round",
+    [],
+  );
+  if (typeof result !== "bigint") {
+    throw new TypeError(
+      `get_current_round returned ${typeof result}, expected a bigint (u64).`,
+    );
+  }
+  return result;
+}
+
 /** Reads the eligible watcher count from `watcher_registry.get_watcher_count`. */
 export async function getWatcherCount(): Promise<number> {
   const config = getSdkConfig();
@@ -96,4 +131,16 @@ export async function getWatcherCount(): Promise<number> {
     );
   }
   return result;
+}
+
+/**
+ * Builds an unsigned transaction that calls
+ * `watcher_registry.extend_contract_ttl`. Public maintenance entrypoint: no
+ * auth required by the contract, but still needs a funded `caller` account
+ * to pay the transaction fee.
+ */
+export async function buildExtendWatcherRegistryTtlTx(caller: string): Promise<Transaction> {
+  assertAddress(caller, "caller");
+  const config = getSdkConfig();
+  return buildInvokeTx(caller, config.watcherRegistryContractId, "extend_contract_ttl", []);
 }

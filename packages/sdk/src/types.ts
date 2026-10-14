@@ -27,6 +27,13 @@ export type CheckStatus = (typeof CHECK_STATUS_VARIANTS)[number];
 export interface SLAConfig {
   provider: string;
   token: string;
+  /**
+   * The endpoint commitment this SLA is bound to — see
+   * `computeEndpointHash` in ./hash.ts and SLASettle-contract-spec.md
+   * section 3 for exactly how this is derived. 32 bytes; not reversible
+   * into the original URL.
+   */
+  endpointHash: Uint8Array;
   bondAmount: bigint;
   /**
    * Display-only in v1. Not enforced as a monthly aggregate uptime

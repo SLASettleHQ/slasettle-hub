@@ -129,6 +129,29 @@ export class SorobanSimulationError extends Error {
 }
 
 /**
+ * Thrown when simulation succeeds but reports that the entries this call
+ * needs are archived and must be restored first (`rpc.Api.isSimulationRestore`).
+ * The SDK deliberately does not attempt automatic restoration — building and
+ * submitting a `restoreFootprint` operation is a separate, fee-paying
+ * transaction with its own signing requirements, so it's surfaced here as a
+ * typed, explicit failure rather than guessed at.
+ */
+export class SorobanRestoreRequiredError extends Error {
+  constructor(
+    public readonly contractId: string,
+    public readonly method: string,
+    public readonly minResourceFee: string,
+  ) {
+    super(
+      `Simulating "${method}" on contract ${contractId} requires restoring archived ` +
+        "ledger entries before this call can succeed. Submit a restoreFootprint " +
+        "transaction for the reported transaction data, then retry.",
+    );
+    this.name = "SorobanRestoreRequiredError";
+  }
+}
+
+/**
  * A throwaway, unfunded source account used only to satisfy the transaction
  * envelope shape required to simulate a read-only contract invocation.
  * Soroban RPC's `simulateTransaction` does not submit or validate this
@@ -163,6 +186,14 @@ export async function simulateReadCall(
 
   if (rpc.Api.isSimulationError(simulation)) {
     throw new SorobanSimulationError(contractId, method, simulation.error);
+  }
+
+  if (rpc.Api.isSimulationRestore(simulation)) {
+    throw new SorobanRestoreRequiredError(
+      contractId,
+      method,
+      simulation.restorePreamble.minResourceFee,
+    );
   }
 
   if (!simulation.result) {
@@ -200,6 +231,22 @@ export async function buildInvokeTx(
     .addOperation(contract.call(method, ...args))
     .setTimeout(30)
     .build();
+
+  // Soroban's own prepareTransaction doesn't check for the "needs restore"
+  // case — it would otherwise fail opaquely inside assembleTransaction, so
+  // this checks explicitly first and surfaces a typed, descriptive error
+  // instead (see SorobanRestoreRequiredError).
+  const simulation = await server.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(simulation)) {
+    throw new SorobanSimulationError(contractId, method, simulation.error);
+  }
+  if (rpc.Api.isSimulationRestore(simulation)) {
+    throw new SorobanRestoreRequiredError(
+      contractId,
+      method,
+      simulation.restorePreamble.minResourceFee,
+    );
+  }
 
   return server.prepareTransaction(tx);
 }
