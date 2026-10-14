@@ -383,18 +383,69 @@ func TestDecodeScValPrimitives(t *testing.T) {
 }
 
 func TestDecodeScValUnhandledTypeReturnsError(t *testing.T) {
-	// ScvMap is a real, valid ScVal type this daemon has no reader for.
-	// decodeScVal must report that plainly rather than silently returning a
-	// zero value that could be mistaken for real contract state.
-	empty := xdr.ScMap{}
-	sv, err := xdr.NewScVal(xdr.ScValTypeScvMap, &empty)
+	// ScvVec is a real, valid ScVal type this daemon has no general reader
+	// for (CheckStatus's specific vec[symbol] shape is decoded separately,
+	// not through this generic path). decodeScVal must report an unhandled
+	// type plainly rather than silently returning a zero value that could
+	// be mistaken for real contract state.
+	empty := xdr.ScVec{}
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvVec, &empty)
 	if err != nil {
-		t.Fatalf("NewScVal map: %v", err)
+		t.Fatalf("NewScVal vec: %v", err)
 	}
 	_, err = decodeScVal(scValBase64(t, sv))
 	if err == nil {
 		t.Fatal("expected an error for an unhandled ScVal type, got nil")
 	}
+}
+
+func TestDecodeScValMapDecodesStructFields(t *testing.T) {
+	hashBytes := xdr.ScBytes(make([]byte, 32))
+	for i := range hashBytes {
+		hashBytes[i] = byte(i)
+	}
+	entries := xdr.ScMap{
+		{Key: mustSymbolScVal(t, "endpoint_hash"), Val: mustScVal(t, xdr.ScValTypeScvBytes, hashBytes)},
+		{Key: mustSymbolScVal(t, "bond_amount"), Val: mustU64(42)},
+	}
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvMap, &entries)
+	if err != nil {
+		t.Fatalf("NewScVal map: %v", err)
+	}
+
+	got, err := decodeScVal(scValBase64(t, sv))
+	if err != nil {
+		t.Fatalf("decodeScVal: %v", err)
+	}
+	record, ok := got.(map[string]interface{})
+	if !ok {
+		t.Fatalf("got %#v, want map[string]interface{}", got)
+	}
+	hashVal, ok := record["endpoint_hash"].([]byte)
+	if !ok || len(hashVal) != 32 {
+		t.Fatalf("endpoint_hash = %#v, want 32 bytes", record["endpoint_hash"])
+	}
+	if record["bond_amount"] != uint64(42) {
+		t.Fatalf("bond_amount = %#v, want uint64(42)", record["bond_amount"])
+	}
+}
+
+func mustSymbolScVal(t *testing.T, s string) xdr.ScVal {
+	t.Helper()
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvSymbol, xdr.ScSymbol(s))
+	if err != nil {
+		t.Fatalf("NewScVal symbol %q: %v", s, err)
+	}
+	return sv
+}
+
+func mustScVal(t *testing.T, typ xdr.ScValType, v interface{}) xdr.ScVal {
+	t.Helper()
+	sv, err := xdr.NewScVal(typ, v)
+	if err != nil {
+		t.Fatalf("NewScVal: %v", err)
+	}
+	return sv
 }
 
 func TestDecodeScValMalformedXDRReturnsError(t *testing.T) {

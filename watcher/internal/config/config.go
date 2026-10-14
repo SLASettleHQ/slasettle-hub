@@ -16,6 +16,7 @@ type Config struct {
 	RPCURL              string
 	NetworkPassphrase   string
 	WatcherRegistryID   string
+	SLAVaultID          string
 	WatcherSecretKey    string
 	SLAID               uint64
 	TargetURL           string
@@ -46,6 +47,7 @@ func Load(lookup func(string) (string, bool)) (Config, error) {
 		RPCURL:            getOrDefault(lookup, "RPC_URL", "https://soroban-testnet.stellar.org"),
 		NetworkPassphrase: getOrDefault(lookup, "NETWORK_PASSPHRASE", "Test SDF Network ; September 2015"),
 		WatcherRegistryID: require("WATCHER_REGISTRY_CONTRACT_ID"),
+		SLAVaultID:        require("SLA_VAULT_CONTRACT_ID"),
 		WatcherSecretKey:  require("WATCHER_SECRET_KEY"),
 		TargetURL:         require("TARGET_URL"),
 	}
