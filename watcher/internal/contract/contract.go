@@ -47,9 +47,9 @@ package contract
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 
+	"github.com/SLASettleHQ/slasettle-hub/watcher/internal/endpoint"
 	"github.com/stellar/go-stellar-sdk/clients/rpcclient"
 	"github.com/stellar/go-stellar-sdk/keypair"
 	protocol "github.com/stellar/go-stellar-sdk/protocols/rpc"
@@ -86,14 +86,13 @@ func NewClient(rpcURL, networkPassphrase, registryContractID, watcherSecretKey s
 	}, nil
 }
 
-// EndpointHash matches the contract's endpoint_hash: BytesN<32> parameter —
-// a plain sha256 of the target URL, so a dispute can later confirm which
-// endpoint this watcher actually checked, cross-referenced against the
-// SLA's config. This daemon does not validate the hash against anything
-// itself; see the contract spec for why that check is deliberately not
-// this daemon's job.
-func EndpointHash(targetURL string) [32]byte {
-	return sha256.Sum256([]byte(targetURL))
+// EndpointHash computes the v0.2 endpoint commitment hash for targetURL —
+// see internal/endpoint for the exact algorithm, which must stay
+// byte-for-byte identical to the TypeScript SDK's and to
+// SLASettle-contract-spec.md section 3. Returns an error if targetURL isn't
+// (once ASCII-trimmed) an absolute http(s) URL.
+func EndpointHash(targetURL string) ([32]byte, error) {
+	return endpoint.ComputeEndpointHash(targetURL)
 }
 
 // HasVoted reads watcher_registry.has_watcher_voted for this watcher's own

@@ -31,7 +31,10 @@ func main() {
 	}
 
 	checker := health.NewChecker(cfg.HTTPTimeout, cfg.HTTPExpectMaxStatus)
-	endpointHash := contract.EndpointHash(cfg.TargetURL)
+	endpointHash, err := contract.EndpointHash(cfg.TargetURL)
+	if err != nil {
+		log.Fatalf("invalid TARGET_URL: %v", err)
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

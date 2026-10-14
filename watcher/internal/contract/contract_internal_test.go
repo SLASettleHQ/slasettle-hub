@@ -6,9 +6,9 @@ package contract
 // not by comparing against an opaque mock.
 
 import (
-	"crypto/sha256"
 	"testing"
 
+	"github.com/SLASettleHQ/slasettle-hub/watcher/internal/endpoint"
 	"github.com/stellar/go-stellar-sdk/keypair"
 	"github.com/stellar/go-stellar-sdk/strkey"
 	"github.com/stellar/go-stellar-sdk/xdr"
@@ -56,10 +56,20 @@ func TestMustBytesN32EncodesExactBytesNoTruncationOrPadding(t *testing.T) {
 	}
 }
 
-func TestEndpointHashIsPlainSHA256(t *testing.T) {
+// The full v0.2 endpoint commitment algorithm (ASCII trim + domain prefix +
+// sha256) is tested in internal/endpoint; this only checks that
+// contract.EndpointHash actually delegates to it rather than, say, a plain
+// sha256 of the raw URL.
+func TestEndpointHashDelegatesToEndpointPackage(t *testing.T) {
 	url := "https://example.com/health"
-	got := EndpointHash(url)
-	want := sha256.Sum256([]byte(url))
+	got, err := EndpointHash(url)
+	if err != nil {
+		t.Fatalf("EndpointHash(%q) returned error: %v", url, err)
+	}
+	want, err := endpoint.ComputeEndpointHash(url)
+	if err != nil {
+		t.Fatalf("endpoint.ComputeEndpointHash(%q) returned error: %v", url, err)
+	}
 	if got != want {
 		t.Fatalf("EndpointHash(%q) = %x, want %x", url, got, want)
 	}
