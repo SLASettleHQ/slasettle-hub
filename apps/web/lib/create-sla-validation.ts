@@ -1,7 +1,13 @@
 import { StrKey } from "@stellar/stellar-sdk";
+import {
+  computeEndpointHash,
+  InvalidSdkInputError,
+  trimEndpointInput,
+} from "@slasettle/sdk";
 import { InvalidTokenAmountError, formatTokenAmount, parseTokenAmount } from "./format";
 
 export interface CreateSlaFormValues {
+  endpoint: string;
   token: string;
   bondAmount: string;
   uptimeTargetPercent: string;
@@ -18,6 +24,8 @@ const MAX_BPS = 10_000;
 
 export interface StaticFieldsResult {
   errors: CreateSlaFieldErrors;
+  endpoint?: string;
+  endpointHash?: Uint8Array;
   quorumThreshold?: number;
   uptimeTargetBps?: number;
 }
@@ -30,6 +38,25 @@ export function validateStaticFields(values: CreateSlaFormValues): StaticFieldsR
   const errors: CreateSlaFieldErrors = {};
   const token = values.token.trim();
   const beneficiary = values.beneficiary.trim();
+
+  let endpoint: string | undefined;
+  let endpointHash: Uint8Array | undefined;
+  try {
+    endpoint = trimEndpointInput(values.endpoint);
+    endpointHash = computeEndpointHash(values.endpoint, "endpoint");
+  } catch (error) {
+    if (error instanceof InvalidSdkInputError) {
+      if (trimEndpointInput(values.endpoint).length === 0) {
+        errors.endpoint = "Enter the service endpoint.";
+      } else if (/http:\/\/ or https:\/\//.test(error.message)) {
+        errors.endpoint = "Use an absolute HTTP or HTTPS URL.";
+      } else {
+        errors.endpoint = "Enter a valid absolute URL, including http:// or https://.";
+      }
+    } else {
+      throw error;
+    }
+  }
 
   if (!token) errors.token = "Enter the token contract ID.";
   else if (!StrKey.isValidContract(token)) errors.token = "Not a valid token contract ID. It should start with C and be 56 characters.";
@@ -66,7 +93,7 @@ export function validateStaticFields(values: CreateSlaFormValues): StaticFieldsR
     }
   }
 
-  return { errors, quorumThreshold, uptimeTargetBps };
+  return { errors, endpoint, endpointHash, quorumThreshold, uptimeTargetBps };
 }
 
 export interface AmountFieldsResult {
