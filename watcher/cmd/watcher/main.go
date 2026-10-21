@@ -1,8 +1,7 @@
-// Command watcher is the independent third-party daemon: it checks a
-// target endpoint once per round and submits its vote to watcher_registry.
-// Anyone can run their own copy of this against their own watcher address
-// registered by the contract's admin — that's the whole point of the
-// quorum design (see SLASettle-contract-spec.md).
+// Command watcher runs the SLASettle watcher daemon. It checks a target
+// endpoint once per round and submits its vote to watcher_registry.
+// Registered external operators can run their own instances using watcher
+// addresses approved by the contract's admin (see SLASettle-contract-spec.md).
 package main
 
 import (
@@ -59,7 +58,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log.Printf("starting watcher for sla_id=%d, target=%s, round_length=%ds", cfg.SLAID, cfg.TargetURL, cfg.RoundLengthSeconds)
+	log.Printf("starting watcher for sla_id=%d, round_length=%ds", cfg.SLAID, cfg.RoundLengthSeconds)
 
 	for {
 		select {
