@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SLAConfig } from "@slasettle/sdk";
 import type { PollingState } from "@/lib/use-polling";
 import type { RoundStatusView } from "@/lib/use-round-status";
+import { TEST_ENDPOINT_HASH } from "@/test/fixtures";
 
 vi.mock("@/components/wallet/wallet-provider", () => ({
   useWallet: () => ({ status: "disconnected", connection: null, error: null, connect: vi.fn(), disconnect: vi.fn() }),
@@ -21,6 +22,7 @@ const CONFIG: SLAConfig = {
   quorumThreshold: 2,
   penaltyPerBreach: 50_0000000n,
   beneficiary: "GB",
+  endpointHash: TEST_ENDPOINT_HASH,
   status: "Active",
 };
 

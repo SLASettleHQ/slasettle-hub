@@ -27,6 +27,7 @@ vi.mock("@slasettle/sdk", () => ({
 
 import { buildCancelSlaTx, buildTopUpBondTx, buildWithdrawBondTx } from "@slasettle/sdk";
 import type { ProviderSlaView } from "@/lib/use-provider-slas";
+import { TEST_ENDPOINT_HASH } from "@/test/fixtures";
 import { SlaCard } from "./sla-card";
 
 const CONFIG: SLAConfig = {
@@ -37,6 +38,7 @@ const CONFIG: SLAConfig = {
   quorumThreshold: 3,
   penaltyPerBreach: 50_0000000n,
   beneficiary: "GBENEFICIARY",
+  endpointHash: TEST_ENDPOINT_HASH,
   status: "Active",
 };
 

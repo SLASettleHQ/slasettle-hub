@@ -15,7 +15,7 @@ const sectionHeadingClass = "text-xs font-medium uppercase tracking-wide text-[v
 
 export function StatusView({ slaId }: { slaId: bigint }) {
   const slaConfig = useSlaConfig(slaId);
-  const roundStatus = useRoundStatus(slaId);
+  const roundStatus = useRoundStatus(slaId, slaConfig.data?.config.endpointHash ?? null);
   const settlements = useSettlementHistory(slaId);
 
   if (slaConfig.loading) {

@@ -17,6 +17,7 @@ vi.mock("./indexer", async (importOriginal) => ({
 import { getBondBalance, getSla, getTokenDecimals, getTokenSymbol, type SLAConfig } from "@slasettle/sdk";
 import { IndexerUnavailableError, getProviderSlas } from "./indexer";
 import { fetchProviderSlas, useProviderSlas } from "./use-provider-slas";
+import { TEST_ENDPOINT_HASH } from "@/test/fixtures";
 
 const PROVIDER = Keypair.random().publicKey();
 const TOKEN_A = StrKey.encodeContract(Buffer.alloc(32, 1));
@@ -42,6 +43,7 @@ function config(token: string): SLAConfig {
     quorumThreshold: 3,
     penaltyPerBreach: 10n,
     beneficiary: PROVIDER,
+    endpointHash: TEST_ENDPOINT_HASH,
     status: "Active",
   };
 }
