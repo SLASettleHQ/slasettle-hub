@@ -172,8 +172,8 @@ describe("CreateSlaForm", () => {
   });
 
   it.each([
-    ["/health", "Enter a valid absolute URL, including http:// or https://."],
-    ["example.com/status", "Enter a valid absolute URL, including http:// or https://."],
+    ["/health", "Use an absolute HTTP or HTTPS URL."],
+    ["example.com/status", "Use an absolute HTTP or HTTPS URL."],
     ["ftp://example.com/status", "Use an absolute HTTP or HTTPS URL."],
   ])("rejects invalid endpoint %s", async (endpoint, message) => {
     const user = userEvent.setup();

@@ -44,10 +44,23 @@ func TestValidateEndpointURL(t *testing.T) {
 		}
 	}
 
-	invalid := []string{"", "/health", "ftp://api.example.com/health", "not a url"}
+	invalid := []string{
+		"",
+		"http:example.com",
+		"http:/example.com",
+		"https:example.com",
+		"http://",
+		"https://",
+		"ftp://example.com",
+		"example.com",
+		"/health",
+	}
 	for _, v := range invalid {
 		if err := ValidateEndpointURL(v); err == nil {
 			t.Errorf("ValidateEndpointURL(%q) expected an error, got nil", v)
+		}
+		if _, err := ComputeEndpointHash(v); err == nil {
+			t.Errorf("ComputeEndpointHash(%q) expected an error, got nil", v)
 		}
 	}
 }

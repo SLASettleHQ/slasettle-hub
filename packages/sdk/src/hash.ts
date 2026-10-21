@@ -38,14 +38,17 @@ export function validateEndpointUrl(endpoint: string, field = "endpoint"): void 
   if (endpoint.length === 0) {
     throw new InvalidSdkInputError(field, "must not be empty after trimming whitespace.");
   }
+  if (!endpoint.startsWith("http://") && !endpoint.startsWith("https://")) {
+    throw new InvalidSdkInputError(field, "must begin with http:// or https://.");
+  }
   let url: URL;
   try {
     url = new URL(endpoint);
   } catch {
     throw new InvalidSdkInputError(field, "is not a valid absolute URL.");
   }
-  if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new InvalidSdkInputError(field, `must be an http:// or https:// URL, got "${url.protocol}".`);
+  if (url.host.length === 0) {
+    throw new InvalidSdkInputError(field, "must include a host.");
   }
 }
 

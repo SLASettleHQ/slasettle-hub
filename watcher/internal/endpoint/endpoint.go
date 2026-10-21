@@ -43,15 +43,15 @@ func ValidateEndpointURL(endpoint string) error {
 	if endpoint == "" {
 		return fmt.Errorf("endpoint must not be empty after trimming whitespace")
 	}
+	if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
+		return fmt.Errorf("endpoint must begin with http:// or https://")
+	}
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return fmt.Errorf("endpoint is not a valid URL: %w", err)
 	}
-	if !u.IsAbs() {
-		return fmt.Errorf("endpoint must be an absolute URL")
-	}
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return fmt.Errorf("endpoint must be an http:// or https:// URL, got scheme %q", u.Scheme)
+	if u.Host == "" {
+		return fmt.Errorf("endpoint must include a host")
 	}
 	return nil
 }

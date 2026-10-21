@@ -49,16 +49,18 @@ describe("validateEndpointUrl", () => {
     expect(() => validateEndpointUrl("")).toThrow(InvalidSdkInputError);
   });
 
-  it("rejects a relative path", () => {
-    expect(() => validateEndpointUrl("/health")).toThrow(InvalidSdkInputError);
-  });
-
-  it("rejects a non-http(s) scheme", () => {
-    expect(() => validateEndpointUrl("ftp://api.example.com/health")).toThrow(InvalidSdkInputError);
-  });
-
-  it("rejects a string that isn't a URL at all", () => {
-    expect(() => validateEndpointUrl("not a url")).toThrow(InvalidSdkInputError);
+  it.each([
+    "http:example.com",
+    "http:/example.com",
+    "https:example.com",
+    "http://",
+    "https://",
+    "ftp://example.com",
+    "example.com",
+    "/health",
+  ])("rejects non-hierarchical or malformed endpoint %s", (endpoint) => {
+    expect(() => validateEndpointUrl(endpoint)).toThrow(InvalidSdkInputError);
+    expect(() => computeEndpointHash(endpoint)).toThrow(InvalidSdkInputError);
   });
 });
 

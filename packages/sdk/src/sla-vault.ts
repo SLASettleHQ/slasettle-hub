@@ -134,7 +134,7 @@ export async function buildCreateSlaTx(params: {
   assertAddress(params.beneficiary, "beneficiary");
   assertPositiveAmount(params.bondAmount, "bondAmount");
   assertPositiveAmount(params.penaltyPerBreach, "penaltyPerBreach");
-  assertU32(params.uptimeTargetBps, "uptimeTargetBps", 0, MAX_BPS);
+  assertU32(params.uptimeTargetBps, "uptimeTargetBps", 1, MAX_BPS);
   assertU32(params.quorumThreshold, "quorumThreshold", 1);
   const endpointHash = resolveEndpointHash(params);
   const config = getSdkConfig();

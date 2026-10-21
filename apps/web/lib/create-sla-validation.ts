@@ -83,7 +83,8 @@ export function validateStaticFields(values: CreateSlaFormValues): StaticFieldsR
   else {
     try {
       const bps = parseTokenAmount(uptime, 2);
-      if (bps > BigInt(MAX_BPS)) errors.uptimeTargetPercent = "The target cannot be more than 100%.";
+      if (bps < 1n) errors.uptimeTargetPercent = "The uptime target must be greater than 0%.";
+      else if (bps > BigInt(MAX_BPS)) errors.uptimeTargetPercent = "The target cannot be more than 100%.";
       else uptimeTargetBps = Number(bps);
     } catch (err) {
       errors.uptimeTargetPercent =

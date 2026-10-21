@@ -268,6 +268,7 @@ describe("builder input validation", () => {
     ["a zero bond", { bondAmount: 0n }, "bondAmount"],
     ["a negative penalty", { penaltyPerBreach: -1n }, "penaltyPerBreach"],
     ["a bond above i128", { bondAmount: 1n << 127n }, "bondAmount"],
+    ["zero uptime basis points", { uptimeTargetBps: 0 }, "uptimeTargetBps"],
     ["basis points above 10000", { uptimeTargetBps: 10_001 }, "uptimeTargetBps"],
     ["fractional basis points", { uptimeTargetBps: 99.5 }, "uptimeTargetBps"],
     ["a zero quorum", { quorumThreshold: 0 }, "quorumThreshold"],
@@ -277,6 +278,13 @@ describe("builder input validation", () => {
     await expect(promise).rejects.toBeInstanceOf(InvalidSdkInputError);
     await expect(promise).rejects.toMatchObject({ field });
     expect(buildInvokeTxMock).not.toHaveBeenCalled();
+  });
+
+  it.each([1, 10_000])("buildCreateSlaTx accepts the uptime boundary %d", async (uptimeTargetBps) => {
+    await buildCreateSlaTx({ ...VALID_CREATE, uptimeTargetBps });
+    expect(buildInvokeTxMock).toHaveBeenCalledTimes(1);
+    const args = buildInvokeTxMock.mock.calls[0]![3]!;
+    expect(scValToNative(args[4]!)).toBe(uptimeTargetBps);
   });
 
   it("accepts the largest valid i128 amount without precision loss", async () => {
