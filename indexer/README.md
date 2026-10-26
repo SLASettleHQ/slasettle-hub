@@ -11,15 +11,19 @@ install (`npm install`), TypeScript build (`tsc`), and test suite execution
 current pass count rather than trusting a number in this file, which drifts
 every time tests are added.
 
-This describes the **v0.2 contract interface**: the hosted production
-service below is still ingesting v0.1 events against the deployed v0.1
-contracts. v0.2 adds `endpoint_hash` to `check_submitted`/`sla_created`,
+This describes the **v0.2 contract interface**, which the hosted production
+service below (GREEN, `slasettle-indexer-v02`) ingests against the deployed
+v0.2 contracts. v0.2 adds `endpoint_hash` to `check_submitted`/`sla_created`,
 `uptime_target_bps`/`quorum_threshold`/`penalty_per_breach` to
 `sla_created`, and persists `bond_topped_up`/`sla_cancelled`/
-`bond_withdrawn` (previously decoded correctly but discarded) to a new
-`sla_lifecycle_events` table. All eight event kinds' v0.1 shapes were
-confirmed against real emitted Testnet events; the v0.2 additions have not
-yet had an equivalent live-Testnet confirmation, since v0.2 isn't deployed.
+`bond_withdrawn` (previously decoded correctly but discarded) to the
+`sla_lifecycle_events` table. All event kinds, including the v0.2 additions,
+have been confirmed against real emitted Testnet events — see the live
+lifecycle evidence in `apps/docs/testnet-deployment.md` and
+`evidence/v0.2-production-cutover-2026-10-26.md`. The historical BLUE/v0.1
+Worker (`slasettle-indexer`) remains deployed separately as rollback
+infrastructure, still ingesting v0.1 events against the v0.1 contracts; it is
+not the service described below.
 The wire format of every kind is documented at the top of `src/rpc/decode.ts`.
 
 ## Hosted Production Service (Cloudflare Workers + D1)
@@ -27,7 +31,7 @@ The wire format of every kind is documented at the top of `src/rpc/decode.ts`.
 The production indexer is deployed as a public service on Cloudflare's Free Tier ($0 operational cost):
 
 - Public Service URL: `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`
-- Database: Cloudflare D1 (`slasettle-indexer`, SQLite dialect)
+- Database: Cloudflare D1 (`slasettle-indexer-v02`, SQLite dialect)
 - Ingestion Trigger: Cloudflare Worker Cron Trigger (`* * * * *`, every minute)
 - Network: Stellar Testnet (Protocol 29 at v0.2 cutover verification)
 - Target Contracts:
@@ -66,7 +70,7 @@ checkpoint into Cloudflare D1.
 - `GET /v1/slas/:slaId/settlements` : paginated settlement history with vote tallies
 - `GET /v1/providers/:address/slas` : list SLAs created by a provider
 
-CORS allows requests from `https://slasettle-web.vercel.app` and `http://localhost:3000`.
+CORS allows requests from an explicit allowlist of exact origins (no wildcard) — currently `https://slasettle-web.vercel.app`, the protected Vercel Preview origin, and `http://localhost:3000` for local development.
 
 ## Local Development (Node + SQLite)
 
@@ -100,8 +104,8 @@ Or for local watch mode: `npm run dev` (uses `tsx watch`).
 
 ## Known Limitations
 
-1. **`bond_topped_up`, `sla_cancelled` and `bond_withdrawn` are decoded but not persisted.** No endpoint needs their history, so `classifyEvents` recognizes them and drops them deliberately.
-2. **RPC retention is roughly 7 days.** If the indexer is down longer than the RPC retention window, historical events in that gap cannot be recovered from RPC alone.
-3. **No backfill-from-genesis mode.** An unset `START_LEDGER` starts near the current chain tip to avoid unbounded initial sync.
-4. **Single global watcher set and per-round settlement**, matching contract design limitations.
-5. **Worker Free CPU Limit.** Event batches are bounded to stay well within Cloudflare Worker 10 ms CPU limits.
+1. **RPC retention is roughly 7 days.** If the indexer is down longer than the RPC retention window, historical events in that gap cannot be recovered from RPC alone.
+2. **No backfill-from-genesis mode.** An unset `START_LEDGER` starts near the current chain tip to avoid unbounded initial sync.
+3. **Single global watcher set and per-round settlement**, matching contract design limitations.
+4. **Worker Free CPU Limit.** Event batches are bounded to stay well within Cloudflare Worker 10 ms CPU limits.
+5. **No per-deployment namespace in the schema.** `slas.sla_id` is the sole primary key; a second contract deployment pointed at the same D1 would collide with an existing SLA ID. This is why GREEN uses its own dedicated D1 rather than reusing BLUE's — see `apps/docs/developers/v0.2-cutover.md` and `src/db/cutover-collision.test.ts`.
