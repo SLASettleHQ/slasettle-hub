@@ -1,6 +1,27 @@
 # Evidence index
 
-**Current production record (2026-10-26).** The v0.2 GREEN production identity, promotion, smoke checks, lifecycle references, and preserved BLUE rollback state are recorded in [`v0.2-production-cutover-2026-10-26.md`](v0.2-production-cutover-2026-10-26.md). Earlier rows below are dated historical evidence and retain the state observed at that time.
+## CURRENT v0.2 REVIEWER PATH
+
+Use these records in order for the current state. Older Phase 7–12 and
+2026-09 records below remain dated historical evidence; they are not the
+authoritative description of v0.2.
+
+1. [Current v0.2 submission readiness](submission-readiness-v0.2-2026-10-26.md)
+2. [Problem validation](../research/problem-validation.md)
+3. [Ecosystem recon](../research/ecosystem-recon.md)
+4. [v0.2 claim traceability](claim-traceability-v0.2-2026-10-26.md)
+5. [Skeptical external review](external-review-v0.2-2026-10-26.md)
+6. [v0.2 production cutover](v0.2-production-cutover-2026-10-26.md)
+7. [Live v0.2 lifecycle](../apps/docs/testnet-deployment.md#live-lifecycle-verification-2026-10-26)
+8. [Vault v0.2 deployment evidence](https://github.com/SLASettleHQ/slasettle-vault/blob/main/evidence/testnet-v0.2-2026-10-26.md)
+9. [Security model](../SECURITY.md) and [protocol limitations](../apps/docs/protocol/limitations.md)
+10. [Hub v0.2.0 release](https://github.com/SLASettleHQ/slasettle-hub/releases/tag/v0.2.0) and [Vault v0.2.0 release](https://github.com/SLASettleHQ/slasettle-vault/releases/tag/v0.2.0)
+
+**Current production record (2026-10-26).** The v0.2 GREEN production
+identity, promotion, smoke checks, lifecycle references, and preserved BLUE
+rollback state are recorded in the cutover evidence above.
+
+## Historical claim ledger — 2026-09-29
 
 Phase 26. One row per externally important claim about SLASettle, with where
 the proof is and how strong it is. It is built from the evidence records and

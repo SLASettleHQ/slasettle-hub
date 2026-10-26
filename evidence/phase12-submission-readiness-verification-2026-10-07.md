@@ -1,5 +1,14 @@
 # Phase 12: Submission Readiness Verification
 
+> **Superseded attribution conclusion (2026-10-26).** This is a historical
+> Phase 12 record. Its statements “clean git history without AI co-author
+> pollution” and “Zero AI / co-author attribution verified” are not accurate
+> descriptions of the complete repository history. Older commits include
+> co-author/tool attribution. Current v0.2 remediation commits were separately
+> checked under the present contribution policy; no claim is made that the
+> repository's entire historical record was always free of such attribution.
+> The original text remains below so the dated evidence is not rewritten.
+
 Date: 2026-10-07  
 Status: **PHASE 12: PASS**  
 Organization: [SLASettleHQ](https://github.com/SLASettleHQ)  
