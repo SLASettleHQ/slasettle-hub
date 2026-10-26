@@ -4,7 +4,7 @@ SLASettle maintains automated test suites across every layer of the architecture
 
 ## Automated Test Coverage Summary
 
-Across both repositories, **592 automated tests** pass with zero failures:
+Across both repositories, **595 automated tests** pass with zero failures:
 
 | Component | Framework / Runner | Test Count | Pass Rate |
 | :--- | :--- | :--- | :--- |
@@ -12,8 +12,8 @@ Across both repositories, **592 automated tests** pass with zero failures:
 | **`@slasettle/sdk` Library** | Vitest | **89 passed** | 100% |
 | **`apps/web` Operations Console** | Vitest + React Testing Library | **277 passed** | 100% |
 | **`indexer` Service** | Node Test Runner (`node --test`) | **69 passed** | 100% |
-| **`watcher` Daemon** | Go `testing` Package | **85 passed** | 100% |
-| **Total Automated Tests** | | **592 passed** | **100%** |
+| **`watcher` Daemon** | Go `testing` Package | **88 passed** | 100% |
+| **Total Automated Tests** | | **595 passed** | **100%** |
 
 ---
 
@@ -66,6 +66,8 @@ The test suite explicitly encodes regressions discovered during engineering:
    - `indexer` tests verify that batch events containing `register_watcher`, `remove_watcher`, and re-registration apply strictly in chronological order rather than grouping by event type.
 4. **Cross-Deployment SLA-ID Collision (`indexer/src/db/cutover-collision.test.ts`)**:
    - `slas.sla_id` is the sole primary key, with no column distinguishing which contract deployment an SLA belongs to. Since every freshly initialized `sla_vault` starts `NextSlaId` at 0, these tests prove that reusing one D1 across a v0.1/v0.2 cutover silently drops the newer deployment's SLA row and mixes both deployments' checks under the same `(sla_id, round_id)`. See `apps/docs/developers/v0.2-cutover.md`.
+5. **Watcher `i128`/`vec` ScVal Decoding (`watcher/internal/contract/contract_internal_test.go`)**:
+   - The watcher's generic Soroban value decoder had no case for `i128` (used by `SLAConfig.bond_amount`/`penalty_per_breach`) or `vec` (used by `SLAStatus`'s unit-enum encoding), so every live `get_sla` read failed outright. Found live against the deployed GREEN v0.2 contracts during lifecycle testing; fixed and covered with regression tests against real encoded ScVals, including a negative `i128` value.
 
 ---
 

@@ -24,6 +24,39 @@ Deployed and verified on Stellar Testnet with `soroban-sdk 28.0.0` and `stellar-
 - **Admin & Deployer**: `GBWM5N2S3A3ZWEHNVTLLKSYRYCQB7ALJL4EOVO5ZFX6TSIZ3ZDED2UPB`
 - **Native XLM Stellar Asset Contract (SAC)**: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
 
+The table above is **still the pair that serves public Production** (`slasettle-web.vercel.app`). It has not changed.
+
+---
+
+## GREEN v0.2 Testnet Deployment (isolated — not production)
+
+A separate, isolated v0.2 contract pair, indexer, and D1 have been deployed on the same Stellar Testnet, built under Protocol 29 with `soroban-sdk 29.0.1`, as the blue/green cutover's GREEN side (see [`developers/v0.2-cutover.md`](/developers/v0.2-cutover)). This is **not** a replacement for the table above — blue remains production.
+
+| Contract Name | Contract ID | Deployed WASM SHA-256 Hash |
+| :--- | :--- | :--- |
+| **`watcher_registry`** | `CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY` | `e433b7e36580889b1a2aa94570ed7adee7e9048d4d211a10031ffcfa8fc53171` |
+| **`sla_vault`** | `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2` | `23ea6cdc28a11883fd5979c06fcdea3b3f68a5b2aa9f0bace855de0149d8ac79` |
+
+- **Indexer**: `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`, D1 `slasettle-indexer-v02` (id `17b47ce0-bdc6-46eb-ba72-0513804b7827`), fully separate from blue's D1 and Worker.
+- **Watchers**: `slasettle-v02-watcher-1/2/3`, three **project-controlled Testnet identities** created for this demonstration — not independent or community-operated.
+- **Web**: a Vercel Preview deployment, gated behind Vercel's own deployment-protection (not a public URL).
+
+### Live lifecycle verification (2026-10-26)
+
+A full SLA lifecycle was exercised end-to-end through this green stack — Preview Web with a real connected Freighter wallet, real Testnet transactions throughout, blue verified untouched before and after:
+
+1. **Create** (SLA #0, native XLM bond, quorum 2-of-3, penalty 1 XLM, beneficiary = green admin): tx `3ad48c0f3880b1cb02f56240dbd37bb72a1d75f2e1fb908116b922b7666a9223`.
+2. **Top up** (+1 XLM, bond → 6 XLM): tx `4f89490741a07aa2879fbc9dc8446decf9c0ec1ffc84eea9377d0330b66e36b2`.
+3. **Watcher votes**: all three project-controlled watchers independently probed the committed endpoint, observed it Down (HTTP 404), and submitted one check each in round `29883523` — `down_count = 3`, `up_count = 0`, isolated correctly from a deliberately wrong endpoint hash (tally `0/0`).
+4. **Settlement** triggered through Preview: tx `bf43521f19206ad4afe99d3472fcf6c67d6e4f7365c67a80c603b77bad97a085` — bond 6 → 5 XLM, beneficiary balance +1.0000000 XLM exactly. A duplicate settlement attempt was simulated read-only and correctly rejected (`AlreadySettled`), with no second transaction submitted.
+5. **Cancel** through Preview: tx `0c82c70fdf0fbfcad09af66987212de46bdc7bcf404139d6e497588df60a264c`. A duplicate cancel was simulated read-only and correctly rejected (`SlaNotActive`).
+6. **Withdraw remaining bond** through Preview: tx `bd8dde214400dbc55f8f31f64bffbc44e6a562db34d49de1a285b1ce2b1666e4` — bond 5 → 0 XLM.
+7. The green indexer ingested every step correctly (SLA row, lifecycle events, settlement row, per-watcher check rows) with no raw endpoint URL stored anywhere, only its SHA-256 commitment. The Preview UI's live endpoint verifier confirmed `MATCH` for the exact committed endpoint string and `DOES NOT MATCH` for the same string with a trailing slash added.
+
+This demonstration also found and fixed a real bug: the Go watcher's generic Soroban value decoder had no case for `i128` or `vec` ScVals, so it failed reading `get_sla` entirely (needed for the endpoint-commitment pre-flight check) against a real deployed `SLAConfig`. Fixed in `watcher/internal/contract/contract.go` with new regression tests.
+
+Blue (`slasettle-web.vercel.app`, its Worker, its D1, and its v0.1 contracts) was confirmed healthy and unchanged before, during, and after this entire demonstration.
+
 ---
 
 ## Bytecode Parity & Verification
