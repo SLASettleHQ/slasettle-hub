@@ -28,7 +28,7 @@ pnpm run typecheck
 pnpm run test
 
 # 3. Off-Chain Services
-cd services/indexer && npm ci && npm run build && npm test
+cd indexer && npm ci && npm run build && npm test
 cd ../watcher && go build ./... && go vet ./... && go test ./...
 ```
 
@@ -40,5 +40,5 @@ For full environment prerequisites, see [Local Development Setup](/developers/lo
 
 If a pull request introduces changes to Soroban contract interfaces (method arguments, data structures, event topics, or numeric error codes):
 1. Create a pull request in `SLASettleHQ/slasettle-vault` with the contract modification and passing tests.
-2. Create a corresponding pull request in `SLASettleHQ/slasettle-hub` updating `@slasettle/sdk`, `apps/web`, and `services/indexer`.
+2. Create a corresponding pull request in `SLASettleHQ/slasettle-hub` updating `@slasettle/sdk`, `apps/web`, and `indexer`.
 3. Cross-reference both pull requests in their descriptions.

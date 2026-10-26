@@ -12,8 +12,8 @@ The following repositories and components fall within our security disclosure sc
 2. **`SLASettleHQ/slasettle-hub`**:
    - `@slasettle/sdk` transaction construction and simulation logic.
    - `apps/web` wallet integration and network safety controls.
-   - `services/indexer` REST API, CORS boundaries, and database query handling.
-   - `services/watcher` cryptographic signing and transaction submission loop.
+   - `indexer` REST API, CORS boundaries, and database query handling.
+   - `watcher` cryptographic signing and transaction submission loop.
 
 ---
 

@@ -41,6 +41,6 @@ Every state-modifying function across both smart contracts enforces explicit aut
 
 As part of engineering verification passes:
 - **Rust / Cargo**: `cargo audit` performed on `slasettle-vault`.
-- **Node.js / npm**: `pnpm audit --prod` and `npm audit --omit=dev` performed on `slasettle-hub` workspace and `services/indexer`, confirming 0 known vulnerabilities.
-- **Go**: `govulncheck ./...` executed across `services/watcher`, reporting 0 vulnerabilities with Go 1.25.14.
+- **Node.js / npm**: `pnpm audit --prod` and `npm audit --omit=dev` performed on `slasettle-hub` workspace and `indexer`, confirming 0 known vulnerabilities.
+- **Go**: `govulncheck ./...` executed across `watcher`, reporting 0 vulnerabilities with Go 1.25.14.
 - **Secret Scanning**: Repository-wide regular regex scanning confirms zero leaked keys, mnemonic phrases, or PEM certificates across git history.

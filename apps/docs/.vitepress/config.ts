@@ -68,6 +68,7 @@ export default defineConfig({
           { text: "Indexer API", link: "/developers/indexer-api" },
           { text: "Watcher Daemon", link: "/developers/watcher-daemon" },
           { text: "Deployment Runbook", link: "/developers/deployment" },
+          { text: "v0.2 Cutover Plan", link: "/developers/v0.2-cutover" },
           { text: "Testing & Verification", link: "/developers/testing" },
         ],
       },

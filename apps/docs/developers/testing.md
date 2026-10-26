@@ -4,16 +4,16 @@ SLASettle maintains automated test suites across every layer of the architecture
 
 ## Automated Test Coverage Summary
 
-Across both repositories, **416 automated tests** pass with zero failures:
+Across both repositories, **592 automated tests** pass with zero failures:
 
 | Component | Framework / Runner | Test Count | Pass Rate |
 | :--- | :--- | :--- | :--- |
-| **`slasettle-vault` Contracts** | `cargo test --workspace` | **52 passed** | 100% |
-| **`@slasettle/sdk` Library** | Vitest | **57 passed** | 100% |
-| **`apps/web` Operations Console** | Vitest + React Testing Library | **245 passed** | 100% |
-| **`services/indexer` Service** | Node Test Runner (`node --test`) | **62 passed** | 100% |
-| **`services/watcher` Daemon** | Go `testing` Package | **All suites pass** | 100% |
-| **Total Automated Tests** | | **416 passed** | **100%** |
+| **`slasettle-vault` Contracts** | `cargo test --workspace` | **72 passed** | 100% |
+| **`@slasettle/sdk` Library** | Vitest | **89 passed** | 100% |
+| **`apps/web` Operations Console** | Vitest + React Testing Library | **277 passed** | 100% |
+| **`indexer` Service** | Node Test Runner (`node --test`) | **69 passed** | 100% |
+| **`watcher` Daemon** | Go `testing` Package | **85 passed** | 100% |
+| **Total Automated Tests** | | **592 passed** | **100%** |
 
 ---
 
@@ -38,19 +38,19 @@ pnpm --filter @slasettle/web test
 ```
 *Covers*: Wallet connection state, network mismatch gating, SLA creation validation, top-up modal flows, confirmation dialogs, quorum progress meters, and transaction status banners across 26 test files.
 
-### 4. Event Indexer (`services/indexer`)
+### 4. Event Indexer (`indexer`)
 ```bash
-cd services/indexer
+cd indexer
 npm test
 ```
 *Covers*: Real SQLite/D1 event persistence, chronological event processing, cursor-based pagination, REST endpoint routing, and CORS header enforcement.
 
-### 5. Watcher Daemon (`services/watcher`)
+### 5. Watcher Daemon (`watcher`)
 ```bash
-cd services/watcher
+cd watcher
 go test -v ./...
 ```
-*Covers*: HTTP probing timeouts, status code evaluators, epoch round computation, duplicate check bypass, and contract RPC interaction wrappers.
+*Covers*: HTTP probing timeouts, status code evaluators, local scheduling/pacing, endpoint commitment hashing and validation, bounded network retry, duplicate check bypass, and contract RPC interaction wrappers (including `GetCurrentRound` and `GetSlaEndpointHash`).
 
 ---
 
@@ -63,7 +63,9 @@ The test suite explicitly encodes regressions discovered during engineering:
 2. **Zero-Balance Withdrawal Rejection (`withdraw_remaining_bond`)**:
    - Repeated calls to withdraw on an emptied bond return `Error::InvalidAmount` rather than wasting transaction fees and emitting empty events. Covered in `sla_vault` tests.
 3. **Indexer Chronological Event Processing**:
-   - `services/indexer` tests verify that batch events containing `register_watcher`, `remove_watcher`, and re-registration apply strictly in chronological order rather than grouping by event type.
+   - `indexer` tests verify that batch events containing `register_watcher`, `remove_watcher`, and re-registration apply strictly in chronological order rather than grouping by event type.
+4. **Cross-Deployment SLA-ID Collision (`indexer/src/db/cutover-collision.test.ts`)**:
+   - `slas.sla_id` is the sole primary key, with no column distinguishing which contract deployment an SLA belongs to. Since every freshly initialized `sla_vault` starts `NextSlaId` at 0, these tests prove that reusing one D1 across a v0.1/v0.2 cutover silently drops the newer deployment's SLA row and mixes both deployments' checks under the same `(sla_id, round_id)`. See `apps/docs/developers/v0.2-cutover.md`.
 
 ---
 

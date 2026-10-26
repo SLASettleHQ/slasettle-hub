@@ -19,7 +19,7 @@ These variables are consumed by `@slasettle/sdk` and inlined into the Next.js bu
 
 ---
 
-## Event Indexer (`services/indexer/.env`)
+## Event Indexer (`indexer/.env`)
 
 | Variable | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
@@ -37,7 +37,7 @@ These variables are consumed by `@slasettle/sdk` and inlined into the Next.js bu
 
 ---
 
-## Watcher Node Daemon (`services/watcher/.env`)
+## Watcher Node Daemon (`watcher/.env`)
 
 | Variable | Required | Default | Description |
 | :--- | :--- | :--- | :--- |

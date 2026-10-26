@@ -23,8 +23,8 @@ The SLASettle ecosystem spans two primary repositories:
 2. **[slasettle-hub](https://github.com/SLASettleHQ/slasettle-hub)**: Off-chain infrastructure, client libraries, and interfaces:
    - `@slasettle/sdk`: TypeScript SDK for contract interactions, simulation, and transaction submission.
    - `apps/web`: Next.js 14 operations dashboard and public status portal with Freighter wallet support.
-   - `services/indexer`: Serverless event indexing service deployed on Cloudflare Workers.
-   - `services/watcher`: Autonomous Go daemon executing HTTP health probes and signing on-chain checks.
+   - `indexer`: Serverless event indexing service deployed on Cloudflare Workers.
+   - `watcher`: Autonomous Go daemon executing HTTP health probes and signing on-chain checks.
    - `apps/docs`: VitePress documentation site.
 
 ## Target Personas

@@ -26,7 +26,7 @@ To operate a watcher node reliably:
 
 ## 2. Configuring the Watcher Daemon
 
-The Go watcher daemon is located in `services/watcher`. Configure the daemon using environment variables or a `.env` file:
+The Go watcher daemon is located in `watcher`. Configure the daemon using environment variables or a `.env` file:
 
 ```bash
 # Network & RPC
@@ -52,7 +52,7 @@ PROBE_TIMEOUT_SECONDS=5
 Compile and start the daemon:
 
 ```bash
-cd services/watcher
+cd watcher
 go build -o watcher-node cmd/watcher/main.go
 ./watcher-node
 ```

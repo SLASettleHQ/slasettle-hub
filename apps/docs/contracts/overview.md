@@ -58,8 +58,8 @@ cd slasettle-vault
 stellar contract build
 
 # WASM artifacts output:
-# target/wasm32-unknown-unknown/release/watcher_registry.wasm
-# target/wasm32-unknown-unknown/release/sla_vault.wasm
+# target/wasm32v1-none/release/watcher_registry.wasm
+# target/wasm32v1-none/release/sla_vault.wasm
 ```
 
 Deterministic compilation with `stellar contract build` produces bytecode that matches the deployed Testnet contracts byte-for-byte.

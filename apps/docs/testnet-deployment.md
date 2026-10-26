@@ -3,11 +3,13 @@
 This page records the active Stellar Testnet deployment, contract identities, WASM bytecode hashes, and verified on-chain evidence for SLASettle.
 
 > [!NOTE]
-> All addresses and artifacts described on this page reside on **Stellar Testnet** (Protocol 28). Nothing in this repository is deployed to Stellar Mainnet.
+> All addresses and artifacts described on this page reside on **Stellar Testnet**. Nothing in this repository is deployed to Stellar Mainnet.
+>
+> The contract pair below was built and deployed under **Protocol 28** — that is a fact about the deployment's history, not a claim about the network's current protocol. Stellar Testnet's protocol version advances independently of this repository (it is at Protocol 29 as of 2026-10-26, confirmed live via `getNetwork` against `https://soroban-testnet.stellar.org`). Always re-verify the current network protocol on deployment day rather than assuming it still matches what's recorded here.
 
 ---
 
-## Active Deployed Contracts (Protocol 28)
+## Active Deployed Contracts (built under Protocol 28)
 
 Deployed and verified on Stellar Testnet with `soroban-sdk 28.0.0` and `stellar-cli 28.1.0`:
 

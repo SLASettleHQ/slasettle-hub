@@ -63,8 +63,8 @@ The project is strictly separated across two repositories:
    - Monorepo containing:
      - `@slasettle/sdk`: TypeScript SDK for contract interactions, simulation, and types.
      - `apps/web`: Next.js 14 dashboard and public status portal.
-     - `services/indexer`: Serverless event indexing service deployed on Cloudflare Workers.
-     - `services/watcher`: Autonomous Go daemon performing HTTP probing and signing check transactions.
+     - `indexer`: Serverless event indexing service deployed on Cloudflare Workers.
+     - `watcher`: Autonomous Go daemon performing HTTP probing and signing check transactions.
      - `apps/docs`: VitePress documentation portal.
    - Integrates with the contracts exclusively via RPC endpoints and contract addresses supplied via environment configuration.
 
