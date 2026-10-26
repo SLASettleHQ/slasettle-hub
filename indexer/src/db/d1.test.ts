@@ -12,8 +12,9 @@ import { createMockD1 } from "./mockD1.js";
 
 function createTestD1(): { d1: IndexerD1; raw: Database.Database } {
   const raw = new Database(":memory:");
-  const migrationSql = readFileSync(join(__dirname, "../../migrations/0001_initial_schema.sql"), "utf-8");
-  raw.exec(migrationSql);
+  for (const migration of ["0001_initial_schema.sql", "0002_v0.2_endpoint_lifecycle.sql"]) {
+    raw.exec(readFileSync(join(__dirname, "../../migrations", migration), "utf-8"));
+  }
   const mock = createMockD1(raw);
   return { d1: new IndexerD1(mock), raw };
 }
@@ -33,6 +34,7 @@ test("D1: applyBatch writes checkpoint and round-trips", async () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   const cp = await d1.getCheckpoint();
@@ -52,11 +54,13 @@ test("D1: applying the same batch twice does not duplicate checks (idempotency)"
         round_id: "1",
         watcher: "GAAAA",
         status: "up" as const,
+        endpoint_hash: "aa".repeat(32),
         checked_at: "2026-10-01T00:00:00Z",
       },
     ],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   };
 
   await d1.applyBatch(batch);
@@ -77,6 +81,7 @@ test("D1: watcher removal and re-registration preserve state", async () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   let watchers = await d1.getEligibleWatchers();
@@ -90,6 +95,7 @@ test("D1: watcher removal and re-registration preserve state", async () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   watchers = await d1.getEligibleWatchers();
@@ -102,6 +108,7 @@ test("D1: watcher removal and re-registration preserve state", async () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   watchers = await d1.getEligibleWatchers();
@@ -122,6 +129,7 @@ test("D1: SLA and settlement persistence and pagination", async () => {
         sla_id: "0",
         provider: "GPROVIDER",
         token: "GTOKEN",
+        endpoint_hash: "bb".repeat(32),
         bond_amount_at_creation: "1000000000",
         quorum_threshold: 3,
         beneficiary: "GBENEFICIARY",
@@ -151,6 +159,7 @@ test("D1: SLA and settlement persistence and pagination", async () => {
         ledger_close_time: "2026-10-01T00:06:00Z",
       },
     ],
+    lifecycleEvents: [],
   });
 
   const slas = await d1.getProviderSlas("GPROVIDER");

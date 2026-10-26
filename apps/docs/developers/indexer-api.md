@@ -2,7 +2,7 @@
 
 The SLASettle Indexer service provides a read-optimized REST API that parses on-chain Soroban events into indexed records for fast client consumption.
 
-- **Hosted Production Endpoint**: `https://slasettle-indexer.slasettle-indexer.workers.dev`
+- **Hosted Production Endpoint**: `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`
 - **Hosting Engine**: Cloudflare Workers with Cloudflare D1 SQL storage
 - **Design Boundary**: Read-only. The API contains zero write endpoints and holds no signing keys.
 
@@ -109,6 +109,43 @@ Chronological list of all executed breach penalty settlements for an SLA.
   "next_cursor": null
 }
 ```
+
+---
+
+### 6. SLA Lifecycle History (`GET /v1/slas/:slaId/lifecycle`)
+Chronological list of bond top-up, cancellation, and bond withdrawal events for an SLA. This endpoint is live on the v0.2 GREEN production indexer.
+
+**Parameters**:
+- `slaId`: Numerical SLA identifier (path parameter).
+
+**Response `200 OK`**:
+```json
+{
+  "data": [
+    {
+      "event_type": "bond_topped_up",
+      "amount": "5000000",
+      "tx_hash": "abc123...",
+      "ledger_close_time": "2026-10-07T14:32:00Z"
+    },
+    {
+      "event_type": "sla_cancelled",
+      "amount": null,
+      "tx_hash": "def456...",
+      "ledger_close_time": "2026-10-08T09:00:00Z"
+    }
+  ],
+  "next_cursor": null
+}
+```
+
+`event_type` is one of `bond_topped_up`, `sla_cancelled`, `bond_withdrawn`. `amount` is null for `sla_cancelled`, which carries no amount on-chain.
+
+---
+
+## v0.2 Note: Endpoint Commitments
+
+Under the v0.2 contract interface, `sla_created` and `check_submitted` events carry an `endpoint_hash` — a SHA-256 commitment to the SLA's monitored endpoint (see the SDK's `computeEndpointHash` and `SLASettle-contract-spec.md` section 3 for the exact algorithm). This indexer stores it as lowercase hex and never attempts to reverse it into a URL — a hash is not reversible metadata.
 
 ---
 

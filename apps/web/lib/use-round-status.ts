@@ -39,7 +39,10 @@ function unavailable(reason: unknown): { status: "unavailable"; message: string 
  * only disables what depends on it: the indexer supplies the round and the
  * watcher check-ins, Soroban RPC supplies the tally and settled flag.
  */
-export async function fetchRoundStatus(slaId: bigint): Promise<RoundStatusView> {
+export async function fetchRoundStatus(
+  slaId: bigint,
+  endpointHash: Uint8Array,
+): Promise<RoundStatusView> {
   const [clockResult, currentRoundResult] = await Promise.allSettled([getClock(), getCurrentRound(slaId)]);
 
   // The participation endpoint is computed by the indexer from the same ledger
@@ -82,7 +85,7 @@ export async function fetchRoundStatus(slaId: bigint): Promise<RoundStatusView> 
   }
 
   const [tallyResult, settledResult] = await Promise.allSettled([
-    getRoundTally(slaId, roundId),
+    getRoundTally(slaId, roundId, endpointHash),
     isRoundSettled(slaId, roundId),
   ]);
 
@@ -105,7 +108,12 @@ export async function fetchRoundStatus(slaId: bigint): Promise<RoundStatusView> 
  * Polls the current round's watcher check-ins, live tally, and settlement
  * state — never derives round_id from the device clock.
  */
-export function useRoundStatus(slaId: bigint) {
-  const fetcher = useCallback(() => fetchRoundStatus(slaId), [slaId]);
+export function useRoundStatus(slaId: bigint, endpointHash: Uint8Array | null) {
+  const fetcher = useCallback(() => {
+    if (endpointHash === null) {
+      return Promise.reject(new Error("The SLA endpoint commitment has not loaded yet."));
+    }
+    return fetchRoundStatus(slaId, endpointHash);
+  }, [endpointHash, slaId]);
   return usePolling(fetcher, POLL_INTERVAL_MS);
 }

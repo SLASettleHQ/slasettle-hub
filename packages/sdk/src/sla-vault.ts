@@ -1,7 +1,9 @@
 import { nativeToScVal, type Transaction } from "@stellar/stellar-sdk";
 import { buildInvokeTx, getSdkConfig, simulateReadCall } from "./client.js";
+import { computeEndpointHash } from "./hash.js";
 import {
   MAX_BPS,
+  InvalidSdkInputError,
   assertAddress,
   assertContractId,
   assertPositiveAmount,
@@ -9,6 +11,36 @@ import {
   assertU64,
 } from "./validate.js";
 import { SLA_STATUS_VARIANTS, type SLAConfig, type SLAStatus } from "./types.js";
+
+function expectEndpointHash(raw: unknown, field: string): Uint8Array {
+  if (!(raw instanceof Uint8Array) || raw.length !== 32) {
+    throw new TypeError(
+      `${field} is ${typeof raw}, expected 32 bytes (BytesN<32>). The deployed ` +
+        "sla_vault contract may not match the SDK's expected SLAConfig shape.",
+    );
+  }
+  return raw;
+}
+
+/** Validates and returns the 32-byte endpoint commitment from either option. */
+function resolveEndpointHash(params: { endpointUrl?: string; endpointHash?: Uint8Array }): Uint8Array {
+  const hasUrl = params.endpointUrl !== undefined;
+  const hasHash = params.endpointHash !== undefined;
+  if (hasUrl === hasHash) {
+    throw new InvalidSdkInputError(
+      "endpointUrl/endpointHash",
+      "exactly one of endpointUrl or endpointHash must be provided.",
+    );
+  }
+  if (hasUrl) {
+    return computeEndpointHash(params.endpointUrl as string, "endpointUrl");
+  }
+  const hash = params.endpointHash as Uint8Array;
+  if (hash.length !== 32) {
+    throw new InvalidSdkInputError("endpointHash", "must be exactly 32 bytes.");
+  }
+  return hash;
+}
 
 function requireField(
   raw: Record<string, unknown>,
@@ -65,6 +97,7 @@ function decodeSlaConfig(raw: unknown): SLAConfig {
   return {
     provider: expectType<string>(requireField(record, "provider"), "string", "provider"),
     token: expectType<string>(requireField(record, "token"), "string", "token"),
+    endpointHash: expectEndpointHash(requireField(record, "endpoint_hash"), "endpoint_hash"),
     bondAmount: expectType<bigint>(requireField(record, "bond_amount"), "bigint", "bond_amount"),
     uptimeTargetBps: expectType<number>(requireField(record, "uptime_target_bps"), "number", "uptime_target_bps"),
     quorumThreshold: expectType<number>(requireField(record, "quorum_threshold"), "number", "quorum_threshold"),
@@ -78,10 +111,18 @@ function decodeSlaConfig(raw: unknown): SLAConfig {
   };
 }
 
-/** Builds an unsigned transaction that calls `sla_vault.create_sla`. */
+/**
+ * Builds an unsigned transaction that calls `sla_vault.create_sla`.
+ *
+ * Pass exactly one of `endpointUrl` (hashed locally via `computeEndpointHash`
+ * before building the transaction) or `endpointHash` (the already-computed
+ * 32-byte commitment, e.g. previewed to the user earlier in a form flow).
+ */
 export async function buildCreateSlaTx(params: {
   provider: string;
   token: string;
+  endpointUrl?: string;
+  endpointHash?: Uint8Array;
   bondAmount: bigint;
   uptimeTargetBps: number;
   quorumThreshold: number;
@@ -93,12 +134,14 @@ export async function buildCreateSlaTx(params: {
   assertAddress(params.beneficiary, "beneficiary");
   assertPositiveAmount(params.bondAmount, "bondAmount");
   assertPositiveAmount(params.penaltyPerBreach, "penaltyPerBreach");
-  assertU32(params.uptimeTargetBps, "uptimeTargetBps", 0, MAX_BPS);
+  assertU32(params.uptimeTargetBps, "uptimeTargetBps", 1, MAX_BPS);
   assertU32(params.quorumThreshold, "quorumThreshold", 1);
+  const endpointHash = resolveEndpointHash(params);
   const config = getSdkConfig();
   return buildInvokeTx(params.provider, config.slaVaultContractId, "create_sla", [
     nativeToScVal(params.provider, { type: "address" }),
     nativeToScVal(params.token, { type: "address" }),
+    nativeToScVal(endpointHash, { type: "bytes" }),
     nativeToScVal(params.bondAmount, { type: "i128" }),
     nativeToScVal(params.uptimeTargetBps, { type: "u32" }),
     nativeToScVal(params.quorumThreshold, { type: "u32" }),
@@ -162,6 +205,17 @@ export async function buildCancelSlaTx(params: {
     nativeToScVal(params.caller, { type: "address" }),
     nativeToScVal(params.slaId, { type: "u64" }),
   ]);
+}
+
+/**
+ * Builds an unsigned transaction that calls `sla_vault.extend_contract_ttl`.
+ * Public maintenance entrypoint: no auth required by the contract, but
+ * still needs a funded `caller` account to pay the transaction fee.
+ */
+export async function buildExtendSlaVaultTtlTx(caller: string): Promise<Transaction> {
+  assertAddress(caller, "caller");
+  const config = getSdkConfig();
+  return buildInvokeTx(caller, config.slaVaultContractId, "extend_contract_ttl", []);
 }
 
 /** Builds an unsigned transaction that calls `sla_vault.withdraw_remaining_bond`. */

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "slasettle-indexer",
+  "name": "slasettle-indexer-v02",
   "main": "src/worker/index.ts",
   "compatibility_date": "2024-10-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -10,18 +10,18 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "slasettle-indexer",
-      "database_id": "c45540af-2fb9-4092-a771-c34b0b4a4e69",
+      "database_name": "slasettle-indexer-v02",
+      "database_id": "17b47ce0-bdc6-46eb-ba72-0513804b7827",
       "migrations_dir": "migrations"
     }
   ],
   "vars": {
     "RPC_URL": "https://soroban-testnet.stellar.org",
     "NETWORK_PASSPHRASE": "Test SDF Network ; September 2015",
-    "WATCHER_REGISTRY_CONTRACT_ID": "CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF",
-    "SLA_VAULT_CONTRACT_ID": "CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN",
-    "START_LEDGER": "4963530",
+    "WATCHER_REGISTRY_CONTRACT_ID": "CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY",
+    "SLA_VAULT_CONTRACT_ID": "CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2",
+    "START_LEDGER": "5396411",
     "ROUND_LENGTH_SECONDS": "60",
-    "ALLOWED_ORIGINS": "https://slasettle-web.vercel.app,http://localhost:3000"
+    "ALLOWED_ORIGINS": "http://localhost:3000,https://slasettle-c6zukmevs-hollujays-projects.vercel.app,https://slasettle-web.vercel.app"
   }
 }

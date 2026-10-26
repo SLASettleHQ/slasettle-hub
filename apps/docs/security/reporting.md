@@ -12,8 +12,8 @@ The following repositories and components fall within our security disclosure sc
 2. **`SLASettleHQ/slasettle-hub`**:
    - `@slasettle/sdk` transaction construction and simulation logic.
    - `apps/web` wallet integration and network safety controls.
-   - `services/indexer` REST API, CORS boundaries, and database query handling.
-   - `services/watcher` cryptographic signing and transaction submission loop.
+   - `indexer` REST API, CORS boundaries, and database query handling.
+   - `watcher` cryptographic signing and transaction submission loop.
 
 ---
 
@@ -47,5 +47,5 @@ Please include the following information in your advisory:
 ## Current Security Status & Caveats
 
 - **Testnet Status**: The SLASettle protocol is currently deployed exclusively to Stellar Testnet.
-- **Audit Status**: The codebase has undergone comprehensive automated testing (416 tests) and internal static analysis, but has **not yet completed a formal external third-party security audit**.
+- **Audit Status**: The codebase has undergone comprehensive automated testing (595 tests across Vault, SDK, Web, indexer, and watcher) and internal static analysis, but has **not yet completed a formal external third-party security audit**.
 - **No Active Bug Bounty**: As an open-source testnet research project, monetary bug bounties are not currently offered. Security researchers will be credited in our release notes and changelogs.

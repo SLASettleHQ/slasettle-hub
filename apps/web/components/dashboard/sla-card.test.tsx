@@ -27,6 +27,7 @@ vi.mock("@slasettle/sdk", () => ({
 
 import { buildCancelSlaTx, buildTopUpBondTx, buildWithdrawBondTx } from "@slasettle/sdk";
 import type { ProviderSlaView } from "@/lib/use-provider-slas";
+import { TEST_ENDPOINT_HASH } from "@/test/fixtures";
 import { SlaCard } from "./sla-card";
 
 const CONFIG: SLAConfig = {
@@ -37,6 +38,7 @@ const CONFIG: SLAConfig = {
   quorumThreshold: 3,
   penaltyPerBreach: 50_0000000n,
   beneficiary: "GBENEFICIARY",
+  endpointHash: TEST_ENDPOINT_HASH,
   status: "Active",
 };
 
@@ -70,6 +72,12 @@ describe("SlaCard actions for an Active SLA", () => {
     render(<SlaCard sla={sla()} onChanged={vi.fn()} />);
     expect(screen.getByText("Uptime target (display only)")).toBeInTheDocument();
     expect(screen.getByText("99.90%")).toBeInTheDocument();
+  });
+
+  it("displays the full endpoint commitment without truncating its value", () => {
+    render(<SlaCard sla={sla()} onChanged={vi.fn()} />);
+    expect(screen.getByText("Endpoint commitment")).toBeInTheDocument();
+    expect(screen.getByText(Buffer.from(TEST_ENDPOINT_HASH).toString("hex"))).toHaveClass("break-all");
   });
 
   it("explains cancellation, including that it does not withdraw the bond, before anything is signed", async () => {

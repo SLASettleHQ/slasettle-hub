@@ -1,6 +1,6 @@
 import { rpc } from "@stellar/stellar-sdk";
 import { IndexerD1 } from "../db/d1.js";
-import { getLatestLedgerInfo } from "../api/ledgerInfo.js";
+import { getLatestLedgerInfo, currentRoundId } from "../api/ledgerInfo.js";
 import { encodeCursor, decodeCursor } from "../api/pagination.js";
 import { fetchQuorumThreshold } from "../rpc/liveReads.js";
 import type { WorkerEnv } from "./types.js";
@@ -71,7 +71,7 @@ export async function handleRequest(
   // GET /v1/clock
   if (isGetOrHead && path === "/v1/clock") {
     const ledger = await getLatestLedgerInfo(server);
-    const roundId = Math.floor(ledger.closeTimeMs / 1000 / roundLengthSeconds);
+    const roundId = currentRoundId(ledger, roundLengthSeconds);
     return jsonResponse(
       {
         ledger_sequence: ledger.sequence,
@@ -89,7 +89,7 @@ export async function handleRequest(
   if (isGetOrHead && currentRoundMatch && currentRoundMatch[1]) {
     const slaId = currentRoundMatch[1];
     const ledger = await getLatestLedgerInfo(server);
-    const roundId = Math.floor(ledger.closeTimeMs / 1000 / roundLengthSeconds);
+    const roundId = currentRoundId(ledger, roundLengthSeconds);
 
     const watchers = await d1.getEligibleWatchers();
     const checkedIn = await d1.getCheckedInForRound(slaId, String(roundId));
@@ -144,19 +144,27 @@ export async function handleRequest(
 
     const { rows, hasMore } = await d1.getSettlementsPage(slaId, limit, decodedBefore);
 
+    // Every row in `rows` shares the same slaId (it's a path param), so a
+    // live fetch is needed at most once per request, not once per row — see
+    // the equivalent comment in api/routes.ts for why.
+    let cachedThreshold: number | undefined;
     for (const row of rows) {
       if (row.quorum_threshold === null) {
-        try {
-          const threshold = await fetchQuorumThreshold({
-            server,
-            networkPassphrase: env.NETWORK_PASSPHRASE,
-            slaVaultContractId: env.SLA_VAULT_CONTRACT_ID,
-            slaId,
-          });
-          await d1.setSlaQuorumThreshold(slaId, threshold);
-          row.quorum_threshold = threshold;
-        } catch (err) {
-          console.error("Failed to fetch quorum_threshold:", err);
+        if (cachedThreshold === undefined) {
+          try {
+            cachedThreshold = await fetchQuorumThreshold({
+              server,
+              networkPassphrase: env.NETWORK_PASSPHRASE,
+              slaVaultContractId: env.SLA_VAULT_CONTRACT_ID,
+              slaId,
+            });
+            await d1.setSlaQuorumThreshold(slaId, cachedThreshold);
+          } catch (err) {
+            console.error("Failed to fetch quorum_threshold:", err);
+          }
+        }
+        if (cachedThreshold !== undefined) {
+          row.quorum_threshold = cachedThreshold;
         }
       }
     }
@@ -197,10 +205,32 @@ export async function handleRequest(
         data: rows.map((r) => ({
           sla_id: Number(r.sla_id),
           token: r.token,
+          endpoint_hash: r.endpoint_hash,
           bond_amount_at_creation: r.bond_amount_at_creation,
           beneficiary: r.beneficiary,
           created_at: r.created_at,
           tx_hash: r.tx_hash,
+        })),
+        next_cursor: null,
+      },
+      200,
+      corsHeaders,
+      isHead,
+    );
+  }
+
+  // GET /v1/slas/:slaId/lifecycle
+  const lifecycleMatch = path.match(/^\/v1\/slas\/([^/]+)\/lifecycle$/);
+  if (isGetOrHead && lifecycleMatch && lifecycleMatch[1]) {
+    const slaId = lifecycleMatch[1];
+    const rows = await d1.getLifecycleEvents(slaId);
+    return jsonResponse(
+      {
+        data: rows.map((r) => ({
+          event_type: r.event_type,
+          amount: r.amount,
+          tx_hash: r.tx_hash,
+          ledger_close_time: r.ledger_close_time,
         })),
         next_cursor: null,
       },

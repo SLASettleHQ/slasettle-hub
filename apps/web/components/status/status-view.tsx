@@ -7,6 +7,7 @@ import { useRoundStatus } from "@/lib/use-round-status";
 import { useSettlementHistory } from "@/lib/use-settlement-history";
 import { useSlaConfig } from "@/lib/use-sla-config";
 import { RoundPanel } from "./round-panel";
+import { EndpointVerifier } from "./endpoint-verifier";
 import { SettlementList } from "./settlement-list";
 
 const sectionClass =
@@ -15,7 +16,7 @@ const sectionHeadingClass = "text-xs font-medium uppercase tracking-wide text-[v
 
 export function StatusView({ slaId }: { slaId: bigint }) {
   const slaConfig = useSlaConfig(slaId);
-  const roundStatus = useRoundStatus(slaId);
+  const roundStatus = useRoundStatus(slaId, slaConfig.data?.config.endpointHash ?? null);
   const settlements = useSettlementHistory(slaId);
 
   if (slaConfig.loading) {
@@ -113,6 +114,7 @@ export function StatusView({ slaId }: { slaId: bigint }) {
           contracts do not calculate monthly uptime against it. Settlement is decided per round by watcher
           votes, and every SLA uses the same shared watcher set.
         </p>
+        <EndpointVerifier endpointHash={config.endpointHash} />
       </section>
 
       <section className={sectionClass} aria-labelledby="round-heading">

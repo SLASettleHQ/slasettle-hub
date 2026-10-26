@@ -4,6 +4,7 @@ import type {
   CheckRow,
   SlaRow,
   SettlementRow,
+  LifecycleEventRow,
 } from "./db.js";
 
 export interface SettlementDbRow {
@@ -34,6 +35,7 @@ export class IndexerD1 {
     checks: CheckRow[];
     slas: SlaRow[];
     settlements: SettlementRow[];
+    lifecycleEvents: LifecycleEventRow[];
   }): Promise<void> {
     const stmts: D1PreparedStatement[] = [];
 
@@ -61,16 +63,18 @@ export class IndexerD1 {
     }
 
     const insertCheck = this.db.prepare(
-      `INSERT OR IGNORE INTO checks (event_id, sla_id, round_id, watcher, status, checked_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO checks (event_id, sla_id, round_id, watcher, status, endpoint_hash, checked_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     );
     for (const c of params.checks) {
-      stmts.push(insertCheck.bind(c.event_id, c.sla_id, c.round_id, c.watcher, c.status, c.checked_at));
+      stmts.push(
+        insertCheck.bind(c.event_id, c.sla_id, c.round_id, c.watcher, c.status, c.endpoint_hash, c.checked_at),
+      );
     }
 
     const insertSla = this.db.prepare(
-      `INSERT OR IGNORE INTO slas (sla_id, provider, token, bond_amount_at_creation, quorum_threshold, beneficiary, created_at, tx_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO slas (sla_id, provider, token, endpoint_hash, bond_amount_at_creation, quorum_threshold, beneficiary, created_at, tx_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     for (const s of params.slas) {
       stmts.push(
@@ -78,6 +82,7 @@ export class IndexerD1 {
           s.sla_id,
           s.provider,
           s.token,
+          s.endpoint_hash,
           s.bond_amount_at_creation,
           s.quorum_threshold,
           s.beneficiary,
@@ -85,6 +90,14 @@ export class IndexerD1 {
           s.tx_hash,
         ),
       );
+    }
+
+    const insertLifecycleEvent = this.db.prepare(
+      `INSERT OR IGNORE INTO sla_lifecycle_events (event_id, sla_id, event_type, amount, tx_hash, ledger_close_time)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+    for (const l of params.lifecycleEvents) {
+      stmts.push(insertLifecycleEvent.bind(l.event_id, l.sla_id, l.event_type, l.amount, l.tx_hash, l.ledger_close_time));
     }
 
     const insertSettlement = this.db.prepare(
@@ -194,6 +207,10 @@ export class IndexerD1 {
     Array<{
       sla_id: string;
       token: string;
+      // Nullable on read: a row ingested before the v0.2 migration has no
+      // endpoint_hash to backfill (see migrations/0002). Every row
+      // classify.ts inserts going forward always has one.
+      endpoint_hash: string | null;
       bond_amount_at_creation: string;
       beneficiary: string;
       created_at: string;
@@ -202,17 +219,30 @@ export class IndexerD1 {
   > {
     const res = await this.db
       .prepare(
-        "SELECT sla_id, token, bond_amount_at_creation, beneficiary, created_at, tx_hash FROM slas WHERE provider = ? ORDER BY created_at DESC",
+        "SELECT sla_id, token, endpoint_hash, bond_amount_at_creation, beneficiary, created_at, tx_hash FROM slas WHERE provider = ? ORDER BY created_at DESC",
       )
       .bind(address)
       .all<{
         sla_id: string;
         token: string;
+        endpoint_hash: string | null;
         bond_amount_at_creation: string;
         beneficiary: string;
         created_at: string;
         tx_hash: string;
       }>();
+    return res.results;
+  }
+
+  /** Most recent lifecycle events for an SLA, newest first, capped at 100 — see LifecycleEventRow. */
+  async getLifecycleEvents(slaId: string): Promise<Array<Omit<LifecycleEventRow, "sla_id">>> {
+    const res = await this.db
+      .prepare(
+        `SELECT event_id, event_type, amount, tx_hash, ledger_close_time
+         FROM sla_lifecycle_events WHERE sla_id = ? ORDER BY ledger_close_time DESC LIMIT 100`,
+      )
+      .bind(slaId)
+      .all<Omit<LifecycleEventRow, "sla_id">>();
     return res.results;
   }
 }

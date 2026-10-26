@@ -40,7 +40,7 @@ func newTestClient(t *testing.T, m *mockRPC) (*Client, *keypair.Full, string) {
 		t.Fatalf("strkey.Encode: %v", err)
 	}
 
-	c, err := NewClient(m.URL(), testNetworkPassphrase, contractID, kp.Seed())
+	c, err := NewClient(m.URL(), testNetworkPassphrase, contractID, contractID, kp.Seed())
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
@@ -474,6 +474,183 @@ func TestSubmitCheckMalformedSimulationResponseIsAnError(t *testing.T) {
 	if m.callCount("sendTransaction") != 0 {
 		t.Fatal("must never submit after failing to decode the simulated transaction data")
 	}
+}
+
+// --- GetCurrentRound / GetSlaEndpointHash -----------------------------
+
+func TestGetCurrentRoundDecodesU64(t *testing.T) {
+	m := newMockRPC(t)
+	c, kp, _ := newTestClient(t, m)
+	m.on("getLedgerEntries", okResult(accountLedgerEntry(t, kp.Address(), 1)))
+	sv := mustU64(42)
+	m.on("simulateTransaction", func(t *testing.T, params json.RawMessage) (any, *jsonrpcError) {
+		envelopeB64 := decodeTxParam(t, params)
+		_, op := decodeInvokeHostFunctionOp(t, envelopeB64)
+		if string(op.HostFunction.InvokeContract.FunctionName) != "get_current_round" {
+			t.Fatalf("function = %s, want get_current_round", op.HostFunction.InvokeContract.FunctionName)
+		}
+		return simulateSuccess(t, sv), nil
+	})
+
+	got, err := c.GetCurrentRound(context.Background())
+	if err != nil {
+		t.Fatalf("GetCurrentRound: %v", err)
+	}
+	if got != 42 {
+		t.Fatalf("GetCurrentRound = %d, want 42", got)
+	}
+}
+
+func TestGetSlaEndpointHashReadsFromSlaVaultContract(t *testing.T) {
+	m := newMockRPC(t)
+	kp, err := keypair.Random()
+	if err != nil {
+		t.Fatalf("keypair.Random: %v", err)
+	}
+	registryID := testContractID(t, 0x01)
+	vaultID := testContractID(t, 0x02)
+	c, err := NewClient(m.URL(), testNetworkPassphrase, registryID, vaultID, kp.Seed())
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	m.on("getLedgerEntries", okResult(accountLedgerEntry(t, kp.Address(), 1)))
+
+	var wantHash [32]byte
+	for i := range wantHash {
+		wantHash[i] = byte(i + 1)
+	}
+	structVal := xdr.ScMap{
+		{Key: mustSymbolArg(t, "endpoint_hash"), Val: mustBytesN32(wantHash)},
+	}
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvMap, &structVal)
+	if err != nil {
+		t.Fatalf("NewScVal map: %v", err)
+	}
+
+	m.on("simulateTransaction", func(t *testing.T, params json.RawMessage) (any, *jsonrpcError) {
+		envelopeB64 := decodeTxParam(t, params)
+		_, op := decodeInvokeHostFunctionOp(t, envelopeB64)
+		ic := op.HostFunction.InvokeContract
+		if string(ic.FunctionName) != "get_sla" {
+			t.Fatalf("function = %s, want get_sla", ic.FunctionName)
+		}
+		gotContract, err := ic.ContractAddress.String()
+		if err != nil {
+			t.Fatalf("decoding contract address: %v", err)
+		}
+		if gotContract != vaultID {
+			t.Fatalf("contract address = %s, want sla_vault contract %s, not the registry", gotContract, vaultID)
+		}
+		return simulateSuccess(t, sv), nil
+	})
+
+	got, err := c.GetSlaEndpointHash(context.Background(), 7)
+	if err != nil {
+		t.Fatalf("GetSlaEndpointHash: %v", err)
+	}
+	if got != wantHash {
+		t.Fatalf("GetSlaEndpointHash = %x, want %x", got, wantHash)
+	}
+}
+
+func TestGetSlaEndpointHashErrorsOnMissingField(t *testing.T) {
+	m := newMockRPC(t)
+	c, kp, _ := newTestClient(t, m)
+	m.on("getLedgerEntries", okResult(accountLedgerEntry(t, kp.Address(), 1)))
+	emptyMap := xdr.ScMap{}
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvMap, &emptyMap)
+	if err != nil {
+		t.Fatalf("NewScVal map: %v", err)
+	}
+	m.on("simulateTransaction", okResult(simulateSuccess(t, sv)))
+
+	_, err = c.GetSlaEndpointHash(context.Background(), 1)
+	if err == nil {
+		t.Fatal("expected an error for a result missing endpoint_hash, got nil")
+	}
+}
+
+// --- Bounded retry of transient RPC/transport failures -----------------
+
+func TestHasVotedRetriesTransientSimulationTransportFailureThenSucceeds(t *testing.T) {
+	m := newMockRPC(t)
+	c, kp, _ := newTestClient(t, m)
+	m.on("getLedgerEntries", okResult(accountLedgerEntry(t, kp.Address(), 1)))
+
+	sv, _ := xdr.NewScVal(xdr.ScValTypeScvBool, true)
+	m.onSequence("simulateTransaction",
+		errResult(-32000, "connection reset"),
+		okResult(simulateSuccess(t, sv)),
+	)
+
+	got, err := c.HasVoted(context.Background(), 1, 1)
+	if err != nil {
+		t.Fatalf("HasVoted: %v", err)
+	}
+	if !got {
+		t.Fatal("HasVoted = false, want true")
+	}
+	if callCount := m.callCount("simulateTransaction"); callCount != 2 {
+		t.Fatalf("simulateTransaction called %d times, want 2 (one transient failure, then a retry that succeeds)", callCount)
+	}
+}
+
+func TestHasVotedGivesUpAfterBoundedRetriesOnPersistentTransportFailure(t *testing.T) {
+	m := newMockRPC(t)
+	c, kp, _ := newTestClient(t, m)
+	m.on("getLedgerEntries", okResult(accountLedgerEntry(t, kp.Address(), 1)))
+	m.on("simulateTransaction", errResult(-32000, "rpc backend unavailable"))
+
+	_, err := c.HasVoted(context.Background(), 1, 1)
+	if err == nil {
+		t.Fatal("expected an error after retries are exhausted, got nil")
+	}
+	gotCalls := m.callCount("simulateTransaction")
+	wantCalls := c.retryOpts.MaxAttempts
+	if gotCalls != wantCalls {
+		t.Fatalf("simulateTransaction called %d times, want exactly %d (retry must be bounded, not indefinite)", gotCalls, wantCalls)
+	}
+}
+
+func TestHasVotedDoesNotRetryADeterministicSimulationError(t *testing.T) {
+	m := newMockRPC(t)
+	c, kp, _ := newTestClient(t, m)
+	m.on("getLedgerEntries", okResult(accountLedgerEntry(t, kp.Address(), 1)))
+	// sim.Error set on an otherwise-successful RPC response: a real
+	// contract-level rejection, not a transport failure — must not be
+	// retried.
+	m.on("simulateTransaction", okResult(protocol.SimulateTransactionResponse{
+		Error: "HostError: contract trapped",
+	}))
+
+	_, err := c.HasVoted(context.Background(), 1, 1)
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+	if callCount := m.callCount("simulateTransaction"); callCount != 1 {
+		t.Fatalf("simulateTransaction called %d times, want exactly 1 — a deterministic contract-level error must not be retried", callCount)
+	}
+}
+
+func testContractID(t *testing.T, fill byte) string {
+	t.Helper()
+	var raw [32]byte
+	raw[0] = fill
+	id, err := strkey.Encode(strkey.VersionByteContract, raw[:])
+	if err != nil {
+		t.Fatalf("strkey.Encode: %v", err)
+	}
+	return id
+}
+
+func mustSymbolArg(t *testing.T, s string) xdr.ScVal {
+	t.Helper()
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvSymbol, xdr.ScSymbol(s))
+	if err != nil {
+		t.Fatalf("NewScVal symbol %q: %v", s, err)
+	}
+	return sv
 }
 
 func TestSubmitCheckSourceAccountLoadFailureAbortsBeforeSimulation(t *testing.T) {

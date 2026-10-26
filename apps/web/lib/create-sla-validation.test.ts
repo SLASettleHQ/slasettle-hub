@@ -1,3 +1,4 @@
+import { computeEndpointHash } from "@slasettle/sdk";
 import { Keypair, StrKey } from "@stellar/stellar-sdk";
 import { describe, expect, it } from "vitest";
 import { validateAmounts, validateStaticFields, type CreateSlaFormValues } from "./create-sla-validation";
@@ -6,6 +7,7 @@ const TOKEN = StrKey.encodeContract(Buffer.alloc(32, 3));
 const BENEFICIARY = Keypair.random().publicKey();
 
 const VALID: CreateSlaFormValues = {
+  endpoint: "https://example.com/health",
   token: TOKEN,
   bondAmount: "1000",
   uptimeTargetPercent: "99.90",
@@ -18,15 +20,18 @@ describe("validateStaticFields", () => {
   it("accepts a valid set and converts uptime to basis points without floats", () => {
     expect(validateStaticFields(VALID)).toEqual({
       errors: {},
+      endpoint: VALID.endpoint,
+      endpointHash: computeEndpointHash(VALID.endpoint),
       quorumThreshold: 3,
       uptimeTargetBps: 9990,
     });
+    expect(validateStaticFields({ ...VALID, uptimeTargetPercent: "0.01" }).uptimeTargetBps).toBe(1);
     expect(validateStaticFields({ ...VALID, uptimeTargetPercent: "100" }).uptimeTargetBps).toBe(10000);
-    expect(validateStaticFields({ ...VALID, uptimeTargetPercent: "0.07" }).uptimeTargetBps).toBe(7);
   });
 
   it("reports every empty field", () => {
     const { errors } = validateStaticFields({
+      endpoint: "",
       token: "",
       bondAmount: "",
       uptimeTargetPercent: "",
@@ -34,7 +39,39 @@ describe("validateStaticFields", () => {
       penaltyPerBreach: "",
       beneficiary: "",
     });
-    expect(Object.keys(errors).sort()).toEqual(["beneficiary", "quorumThreshold", "token", "uptimeTargetPercent"]);
+    expect(Object.keys(errors).sort()).toEqual([
+      "beneficiary",
+      "endpoint",
+      "quorumThreshold",
+      "token",
+      "uptimeTargetPercent",
+    ]);
+  });
+
+  it.each([
+    "http:example.com",
+    "http:/example.com",
+    "https:example.com",
+    "http://",
+    "https://",
+    "ftp://example.com",
+    "example.com",
+    "/health",
+  ])("rejects endpoint %s", (endpoint) => {
+    expect(validateStaticFields({ ...VALID, endpoint }).errors.endpoint).toBeDefined();
+  });
+
+  it.each(["https://example.com/health", "http://127.0.0.1:8080/status"])("accepts endpoint %s", (endpoint) => {
+    expect(validateStaticFields({ ...VALID, endpoint }).errors.endpoint).toBeUndefined();
+  });
+
+  it("ASCII-trims the endpoint but preserves URL spelling for the commitment", () => {
+    const padded = validateStaticFields({ ...VALID, endpoint: ` \t${VALID.endpoint}\n ` });
+    expect(padded.endpoint).toBe(VALID.endpoint);
+    expect(padded.endpointHash).toEqual(computeEndpointHash(VALID.endpoint));
+    expect(validateStaticFields({ ...VALID, endpoint: `${VALID.endpoint}/` }).endpointHash).not.toEqual(
+      padded.endpointHash,
+    );
   });
 
   it("rejects a token that is not a contract ID, including an account address", () => {
@@ -56,12 +93,23 @@ describe("validateStaticFields", () => {
   });
 
   it.each([
+    ["0", /greater than 0%/],
+    ["0.00", /greater than 0%/],
     ["100.01", /more than 100%/],
     ["99.999", /at most 2 decimal/],
     ["abc", /Use a number/],
     ["-5", /Use a number/],
   ])("rejects uptime %s", (uptime, message) => {
     expect(validateStaticFields({ ...VALID, uptimeTargetPercent: uptime }).errors.uptimeTargetPercent).toMatch(message);
+  });
+
+  it.each([
+    ["0.01", 1],
+    ["100", 10_000],
+  ])("accepts uptime %s as %d basis points", (uptime, expectedBps) => {
+    const result = validateStaticFields({ ...VALID, uptimeTargetPercent: uptime });
+    expect(result.errors.uptimeTargetPercent).toBeUndefined();
+    expect(result.uptimeTargetBps).toBe(expectedBps);
   });
 
   it("does not silently coerce a blank uptime to zero", () => {

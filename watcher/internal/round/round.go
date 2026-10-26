@@ -1,11 +1,13 @@
 // Package round computes round IDs by an off-chain convention:
-// floor(unix_seconds / roundLengthSeconds). The contracts do not define it:
-// they treat round_id as an opaque u64, never read ledger time, and never
-// validate a round_id against time. Every watcher applies this convention to
-// its own system clock, which is what lets watchers configured with the same
-// round length converge on the same round_id without coordinating. The
-// indexer applies the same formula to the latest ledger's close time instead.
-// No external dependencies; this package is directly testable.
+// floor(unix_seconds / roundLengthSeconds). As of v0.2, watcher_registry is
+// the authoritative source for round_id — submit_check validates it against
+// get_current_round() (current round, or the immediately preceding one) —
+// so internal/contract.Client.GetCurrentRound is what the daemon actually
+// uses to decide which round_id to submit under. This package's role is
+// narrower now: UntilNextRound paces the daemon's sleep/wake cycle against
+// its own wall clock, purely for scheduling, never to decide a submission's
+// round_id itself. No external dependencies; this package is directly
+// testable.
 package round
 
 import "time"

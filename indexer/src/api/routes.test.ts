@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import pino from "pino";
+import { xdr, nativeToScVal } from "@stellar/stellar-sdk";
 import { buildApp } from "./server.js";
 import { IndexerDb } from "../db/db.js";
 import { loadConfig } from "../config.js";
@@ -17,7 +18,10 @@ async function fetchJson(url: string): Promise<any> {
 function testConfig() {
   return loadConfig({
     WATCHER_REGISTRY_CONTRACT_ID: "CREGISTRY",
-    SLA_VAULT_CONTRACT_ID: "CVAULT",
+    // Must be a syntactically valid strkey contract ID, not just any
+    // string — fetchQuorumThreshold constructs a real
+    // @stellar/stellar-sdk Contract from it, which validates the format.
+    SLA_VAULT_CONTRACT_ID: "CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN",
   } as unknown as NodeJS.ProcessEnv);
 }
 
@@ -63,6 +67,7 @@ test("GET /v1/watchers returns registered watchers, excludes removed ones", asyn
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   await withServer(db, async (baseUrl) => {
@@ -87,6 +92,7 @@ test("GET /v1/providers/:address/slas returns only that provider's SLAs, amounts
         sla_id: "1",
         provider: "GPROV1",
         token: "CTOKEN",
+        endpoint_hash: "aa".repeat(32),
         bond_amount_at_creation: "25000000000",
         quorum_threshold: null,
         beneficiary: "GBEN",
@@ -97,6 +103,7 @@ test("GET /v1/providers/:address/slas returns only that provider's SLAs, amounts
         sla_id: "2",
         provider: "GPROV2",
         token: "CTOKEN",
+        endpoint_hash: "bb".repeat(32),
         bond_amount_at_creation: "999999999999999999",
         quorum_threshold: null,
         beneficiary: "GBEN2",
@@ -105,6 +112,7 @@ test("GET /v1/providers/:address/slas returns only that provider's SLAs, amounts
       },
     ],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   await withServer(db, async (baseUrl) => {
@@ -188,14 +196,15 @@ test("GET /v1/slas/:slaId/current-round splits registered watchers into checked 
       { type: "removed", address: "GGONE", at: "2026-01-02T00:00:00Z" },
     ],
     checks: [
-      { event_id: "e1", sla_id: "0", round_id: String(FAKE_ROUND), watcher: "GA", status: "down", checked_at: "2026-09-29T08:38:10Z" },
-      { event_id: "e2", sla_id: "0", round_id: String(FAKE_ROUND), watcher: "GB", status: "up", checked_at: "2026-09-29T08:38:20Z" },
+      { event_id: "e1", sla_id: "0", round_id: String(FAKE_ROUND), watcher: "GA", status: "down", endpoint_hash: "aa".repeat(32), checked_at: "2026-09-29T08:38:10Z" },
+      { event_id: "e2", sla_id: "0", round_id: String(FAKE_ROUND), watcher: "GB", status: "up", endpoint_hash: "aa".repeat(32), checked_at: "2026-09-29T08:38:20Z" },
       // Another round, and another SLA: neither may appear.
-      { event_id: "e3", sla_id: "0", round_id: String(FAKE_ROUND - 1), watcher: "GC", status: "down", checked_at: "2026-09-29T08:37:10Z" },
-      { event_id: "e4", sla_id: "1", round_id: String(FAKE_ROUND), watcher: "GC", status: "down", checked_at: "2026-09-29T08:38:10Z" },
+      { event_id: "e3", sla_id: "0", round_id: String(FAKE_ROUND - 1), watcher: "GC", status: "down", endpoint_hash: "aa".repeat(32), checked_at: "2026-09-29T08:37:10Z" },
+      { event_id: "e4", sla_id: "1", round_id: String(FAKE_ROUND), watcher: "GC", status: "down", endpoint_hash: "aa".repeat(32), checked_at: "2026-09-29T08:38:10Z" },
     ],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
   await withServer(
     db,
@@ -234,13 +243,94 @@ function settlementFixtureDb(count = 1): IndexerDb {
   }
   // Round 1: 3 down + 1 up. A vote for another round and another SLA must not count.
   for (const [n, w, st] of [[1, "GA", "down"], [2, "GB", "down"], [3, "GC", "down"], [4, "GD", "up"]] as const) {
-    checks.push({ event_id: `c${n}`, sla_id: "0", round_id: "1", watcher: w, status: st, checked_at: "2026-09-27T23:40:00Z" });
+    checks.push({ event_id: `c${n}`, sla_id: "0", round_id: "1", watcher: w, status: st, endpoint_hash: "aa".repeat(32), checked_at: "2026-09-27T23:40:00Z" });
   }
-  checks.push({ event_id: "c5", sla_id: "0", round_id: "2", watcher: "GA", status: "down", checked_at: "2026-09-27T23:41:00Z" });
-  checks.push({ event_id: "c6", sla_id: "9", round_id: "1", watcher: "GA", status: "down", checked_at: "2026-09-27T23:40:00Z" });
-  db.applyBatch({ lastLedger: 1, lastCursor: null, watcherEvents: [], checks, slas: [], settlements });
+  checks.push({ event_id: "c5", sla_id: "0", round_id: "2", watcher: "GA", status: "down", endpoint_hash: "aa".repeat(32), checked_at: "2026-09-27T23:41:00Z" });
+  checks.push({ event_id: "c6", sla_id: "9", round_id: "1", watcher: "GA", status: "down", endpoint_hash: "aa".repeat(32), checked_at: "2026-09-27T23:40:00Z" });
+  db.applyBatch({ lastLedger: 1, lastCursor: null, watcherEvents: [], checks, slas: [], settlements, lifecycleEvents: [] });
   return db;
 }
+
+// A #[contracttype] struct decodes as an ScMap of Symbol keys to values —
+// the same shape rpc/liveReads.test.ts uses for the real fetchQuorumThreshold.
+function fakeGetSlaSimulation(quorumThreshold: number): rpc.Api.SimulateTransactionSuccessResponse {
+  const retval = xdr.ScVal.scvMap([
+    new xdr.ScMapEntry({
+      key: xdr.ScVal.scvSymbol("quorum_threshold"),
+      val: nativeToScVal(quorumThreshold, { type: "u32" }),
+    }),
+  ]);
+  return {
+    latestLedger: 1,
+    transactionData: new xdr.SorobanTransactionData({
+      resources: new xdr.SorobanResources({
+        footprint: new xdr.LedgerFootprint({ readOnly: [], readWrite: [] }),
+        instructions: 0,
+        diskReadBytes: 0,
+        writeBytes: 0,
+      }),
+      resourceFee: xdr.Int64.fromString("0"),
+      ext: xdr.ExtensionPoint.v0(),
+    }),
+    minResourceFee: "0",
+    cost: { cpuInsns: "0", memBytes: "0" },
+    result: { auth: [], retval },
+  } as unknown as rpc.Api.SimulateTransactionSuccessResponse;
+}
+
+test("GET /v1/slas/:slaId/settlements fetches quorum_threshold at most once for a page of rows missing it (no N+1)", async () => {
+  const db = new IndexerDb(":memory:");
+  const settlements = [];
+  for (let i = 1; i <= 3; i++) {
+    settlements.push({
+      event_id: `s${i}`,
+      sla_id: "5",
+      round_id: String(i),
+      quorum_threshold: null, // every row starts uncached
+      penalty_amount: "1",
+      beneficiary: "GBEN",
+      tx_hash: `t${i}`,
+      ledger_close_time: `2026-09-27T23:4${i}:00Z`,
+    });
+  }
+  db.applyBatch({
+    lastLedger: 1,
+    lastCursor: null,
+    watcherEvents: [],
+    checks: [],
+    slas: [],
+    settlements,
+    lifecycleEvents: [],
+  });
+
+  let simulateCallCount = 0;
+  const server = {
+    simulateTransaction: async () => {
+      simulateCallCount++;
+      return fakeGetSlaSimulation(4);
+    },
+  } as unknown as rpc.Server;
+
+  await withServer(
+    db,
+    async (baseUrl) => {
+      const { status, body } = await fetchJson(`${baseUrl}/v1/slas/5/settlements`);
+      assert.equal(status, 200);
+      assert.equal(body.data.length, 3);
+      for (const row of body.data) {
+        assert.equal(row.quorum_threshold, 4);
+      }
+    },
+    server,
+  );
+
+  assert.equal(
+    simulateCallCount,
+    1,
+    "fetchQuorumThreshold's simulateTransaction must be called at most once per request, not once per row",
+  );
+  db.close();
+});
 
 test("GET /v1/slas/:slaId/settlements returns the row with aggregated votes, quorum, amount string and explorer URL", async () => {
   const db = settlementFixtureDb(1);
@@ -313,7 +403,7 @@ test("GET /v1/slas/:slaId/settlements limit handling: default, zero, non-numeric
       penalty_amount: "1", beneficiary: "GBEN", tx_hash: `t${i}`, ledger_close_time: "2026-09-27T23:40:00Z",
     });
   }
-  big.applyBatch({ lastLedger: 2, lastCursor: null, watcherEvents: [], checks: [], slas: [], settlements: many });
+  big.applyBatch({ lastLedger: 2, lastCursor: null, watcherEvents: [], checks: [], slas: [], settlements: many, lifecycleEvents: [] });
   await withServer(big, async (baseUrl) => {
     const { body } = await fetchJson(`${baseUrl}/v1/slas/7/settlements?limit=1000`);
     assert.equal(body.data.length, 100);

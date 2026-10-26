@@ -1,13 +1,13 @@
 # System Architecture
 
-SLASettle is structured as an end-to-end decentralized settlement stack spanning Stellar Soroban smart contracts, off-chain monitoring nodes, indexing infrastructure, client libraries, and a web console.
+SLASettle is structured as an end-to-end bonded settlement stack spanning Stellar Soroban smart contracts, off-chain monitoring nodes, indexing infrastructure, client libraries, and a web console.
 
 ## Architecture Diagram
 
 ```text
                                +------------------------------------------+
                                |              Stellar Testnet             |
-                               |               (Protocol 28)              |
+                               |       (Protocol 29 at v0.2 cutover)      |
                                +------------------------------------------+
                                      |                              |
                                      v                              v
@@ -22,8 +22,8 @@ SLASettle is structured as an end-to-end decentralized settlement stack spanning
                                      |                              | get_round_tally(...)
                                      |                              |
                +--------------------------------------+             | trigger_settlement(...)
-               |          Independent Watchers        |             |
-               | (Autonomous Go Node Daemons probing) |             |
+               |       Registered Watcher Quorum      |             |
+               | (Independently runnable Go daemons)  |             |
                +--------------------------------------+             |
                                      |                              |
                                      | Contract Events              |
@@ -38,7 +38,7 @@ SLASettle is structured as an end-to-end decentralized settlement stack spanning
                                      v                              |
                     +--------------------------------+              |
                     |         slasettle-web          |              |
-                    |    (Next.js 14 Console &       |--------------+
+                    |   (Next.js 16.4.2 Console &    |--------------+
                     |     Public Status Portal)      |  Direct RPC Read & Unsigned Tx
                     +--------------------------------+
                                      |
@@ -57,14 +57,14 @@ The project is strictly separated across two repositories:
    - Contains pure Rust smart contracts for the Soroban runtime.
    - Deploys `watcher_registry` and `sla_vault`.
    - Has zero runtime dependencies on web or off-chain packages.
-   - Compiles via `stellar contract build` against `soroban-sdk 28.0.0`.
+   - Compiles via `stellar contract build` against `soroban-sdk 29.0.1`.
 
 2. **`SLASettleHQ/slasettle-hub`**:
    - Monorepo containing:
      - `@slasettle/sdk`: TypeScript SDK for contract interactions, simulation, and types.
-     - `apps/web`: Next.js 14 dashboard and public status portal.
-     - `services/indexer`: Serverless event indexing service deployed on Cloudflare Workers.
-     - `services/watcher`: Autonomous Go daemon performing HTTP probing and signing check transactions.
+     - `apps/web`: Next.js 16.4.2 dashboard and public status portal.
+     - `indexer`: Serverless event indexing service deployed on Cloudflare Workers.
+     - `watcher`: Autonomous Go daemon performing HTTP probing and signing check transactions.
      - `apps/docs`: VitePress documentation portal.
    - Integrates with the contracts exclusively via RPC endpoints and contract addresses supplied via environment configuration.
 

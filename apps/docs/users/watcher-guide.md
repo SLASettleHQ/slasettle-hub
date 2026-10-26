@@ -1,6 +1,6 @@
 # Watcher Operator Guide
 
-Watcher nodes are decentralized sentinels that independently probe service endpoints and submit cryptographic attestations to Stellar Soroban.
+Watcher nodes are registered observers whose daemons can independently probe service endpoints and submit signed votes to Stellar Soroban. The current GREEN Testnet committee uses three project-controlled identities.
 
 ## Node Requirements
 
@@ -18,7 +18,7 @@ To operate a watcher node reliably:
 4. Verify registration on-chain:
    ```bash
    stellar contract invoke \
-     --id CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF \
+     --id CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY \
      --source <ANY_ACCOUNT> \
      --network testnet \
      -- is_watcher --watcher <WATCHER_PUBLIC_KEY>
@@ -26,7 +26,7 @@ To operate a watcher node reliably:
 
 ## 2. Configuring the Watcher Daemon
 
-The Go watcher daemon is located in `services/watcher`. Configure the daemon using environment variables or a `.env` file:
+The Go watcher daemon is located in `watcher`. Configure the daemon using environment variables or a `.env` file:
 
 ```bash
 # Network & RPC
@@ -34,8 +34,8 @@ STELLAR_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
 SOROBAN_RPC_URL="https://soroban-testnet.stellar.org"
 
 # Contract Addresses
-WATCHER_REGISTRY_CONTRACT_ID="CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF"
-SLA_VAULT_CONTRACT_ID="CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN"
+WATCHER_REGISTRY_CONTRACT_ID="CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY"
+SLA_VAULT_CONTRACT_ID="CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2"
 
 # Watcher Identity & Signing Key
 WATCHER_SECRET_KEY="S..."
@@ -52,14 +52,14 @@ PROBE_TIMEOUT_SECONDS=5
 Compile and start the daemon:
 
 ```bash
-cd services/watcher
+cd watcher
 go build -o watcher-node cmd/watcher/main.go
 ./watcher-node
 ```
 
 ### Operational Loop
 Each cycle, the daemon:
-1. Computes `round_id = unix_time / PROBE_INTERVAL_SECONDS`.
+1. Reads the ledger-derived current round from `watcher_registry`.
 2. Queries `has_watcher_voted` on `watcher_registry`. If already voted, it skips to the next cycle.
 3. Performs an HTTP GET request to `TARGET_ENDPOINT` with a 5-second timeout.
 4. If response is HTTP 200 within timeout $\to$ votes `UP` (1).

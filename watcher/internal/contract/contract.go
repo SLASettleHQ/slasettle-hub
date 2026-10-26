@@ -47,9 +47,11 @@ package contract
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
+	"math/big"
 
+	"github.com/SLASettleHQ/slasettle-hub/watcher/internal/endpoint"
+	"github.com/SLASettleHQ/slasettle-hub/watcher/internal/retry"
 	"github.com/stellar/go-stellar-sdk/clients/rpcclient"
 	"github.com/stellar/go-stellar-sdk/keypair"
 	protocol "github.com/stellar/go-stellar-sdk/protocols/rpc"
@@ -69,10 +71,12 @@ type Client struct {
 	rpc               *rpcclient.Client
 	networkPassphrase string
 	registryContract  string
+	slaVaultContract  string
 	watcherKeypair    *keypair.Full
+	retryOpts         retry.Options
 }
 
-func NewClient(rpcURL, networkPassphrase, registryContractID, watcherSecretKey string) (*Client, error) {
+func NewClient(rpcURL, networkPassphrase, registryContractID, slaVaultContractID, watcherSecretKey string) (*Client, error) {
 	kp, err := keypair.ParseFull(watcherSecretKey)
 	if err != nil {
 		return nil, fmt.Errorf("parsing WATCHER_SECRET_KEY: %w", err)
@@ -82,18 +86,19 @@ func NewClient(rpcURL, networkPassphrase, registryContractID, watcherSecretKey s
 		rpc:               rpcclient.NewClient(rpcURL, nil),
 		networkPassphrase: networkPassphrase,
 		registryContract:  registryContractID,
+		slaVaultContract:  slaVaultContractID,
 		watcherKeypair:    kp,
+		retryOpts:         retry.DefaultOptions(),
 	}, nil
 }
 
-// EndpointHash matches the contract's endpoint_hash: BytesN<32> parameter —
-// a plain sha256 of the target URL, so a dispute can later confirm which
-// endpoint this watcher actually checked, cross-referenced against the
-// SLA's config. This daemon does not validate the hash against anything
-// itself; see the contract spec for why that check is deliberately not
-// this daemon's job.
-func EndpointHash(targetURL string) [32]byte {
-	return sha256.Sum256([]byte(targetURL))
+// EndpointHash computes the v0.2 endpoint commitment hash for targetURL —
+// see internal/endpoint for the exact algorithm, which must stay
+// byte-for-byte identical to the TypeScript SDK's and to
+// SLASettle-contract-spec.md section 3. Returns an error if targetURL isn't
+// (once ASCII-trimmed) an absolute http(s) URL.
+func EndpointHash(targetURL string) ([32]byte, error) {
+	return endpoint.ComputeEndpointHash(targetURL)
 }
 
 // HasVoted reads watcher_registry.has_watcher_voted for this watcher's own
@@ -107,7 +112,7 @@ func (c *Client) HasVoted(ctx context.Context, slaID, roundID uint64) (bool, err
 		mustAccountAddress(c.watcherKeypair.Address()),
 	}
 
-	result, err := c.simulateReadOnly(ctx, "has_watcher_voted", args)
+	result, err := c.simulateReadOnly(ctx, c.registryContract, "has_watcher_voted", args)
 	if err != nil {
 		return false, err
 	}
@@ -117,6 +122,52 @@ func (c *Client) HasVoted(ctx context.Context, slaID, roundID uint64) (bool, err
 		return false, fmt.Errorf("has_watcher_voted returned a non-bool result: %#v", result)
 	}
 	return b, nil
+}
+
+// GetCurrentRound reads watcher_registry.get_current_round — the contract's
+// authoritative round, which submit_check validates round_id against. Used
+// in place of a locally-derived round so a submission's round_id always
+// matches what the contract will accept (see internal/round for the
+// sleep-scheduling-only local clock use that remains).
+func (c *Client) GetCurrentRound(ctx context.Context) (uint64, error) {
+	result, err := c.simulateReadOnly(ctx, c.registryContract, "get_current_round", xdr.ScVec{})
+	if err != nil {
+		return 0, err
+	}
+	round, ok := result.(uint64)
+	if !ok {
+		return 0, fmt.Errorf("get_current_round returned a non-u64 result: %#v", result)
+	}
+	return round, nil
+}
+
+// GetSlaEndpointHash reads sla_vault.get_sla for slaID and returns its
+// committed endpoint_hash. Used for the pre-flight check in section 14 of
+// the v0.2 integration: the daemon must never spend a submission on a
+// round whose vote would be partitioned under an endpoint hash that
+// doesn't match what the SLA actually committed to.
+func (c *Client) GetSlaEndpointHash(ctx context.Context, slaID uint64) ([32]byte, error) {
+	var zero [32]byte
+	args := xdr.ScVec{mustU64(slaID)}
+	result, err := c.simulateReadOnly(ctx, c.slaVaultContract, "get_sla", args)
+	if err != nil {
+		return zero, err
+	}
+	record, ok := result.(map[string]interface{})
+	if !ok {
+		return zero, fmt.Errorf("get_sla returned a non-struct result: %#v", result)
+	}
+	raw, ok := record["endpoint_hash"]
+	if !ok {
+		return zero, fmt.Errorf("get_sla result is missing the endpoint_hash field")
+	}
+	b, ok := raw.([]byte)
+	if !ok || len(b) != 32 {
+		return zero, fmt.Errorf("get_sla endpoint_hash is %#v, expected 32 bytes", raw)
+	}
+	var hash [32]byte
+	copy(hash[:], b)
+	return hash, nil
 }
 
 // SubmitCheck builds, signs, and submits submit_check for this watcher's
@@ -173,7 +224,16 @@ func (c *Client) SubmitCheck(ctx context.Context, slaID, roundID uint64, endpoin
 // shape against the real go-stellar-sdk API surface (see the file-level comment).
 
 func (c *Client) getSourceAccount(ctx context.Context) (txnbuild.Account, error) {
-	return c.rpc.LoadAccount(ctx, c.watcherKeypair.Address())
+	var account txnbuild.Account
+	err := retry.Do(ctx, c.retryOpts, func() error {
+		a, err := c.rpc.LoadAccount(ctx, c.watcherKeypair.Address())
+		if err != nil {
+			return err
+		}
+		account = a
+		return nil
+	})
+	return account, err
 }
 
 // simulate runs a read-only or pre-signing simulation of a single
@@ -200,7 +260,15 @@ func (c *Client) simulate(ctx context.Context, op *txnbuild.InvokeHostFunction) 
 		return protocol.SimulateTransactionResponse{}, fmt.Errorf("encoding transaction for simulation: %w", err)
 	}
 
-	sim, err := c.rpc.SimulateTransaction(ctx, protocol.SimulateTransactionRequest{Transaction: txXDR})
+	var sim protocol.SimulateTransactionResponse
+	err = retry.Do(ctx, c.retryOpts, func() error {
+		s, err := c.rpc.SimulateTransaction(ctx, protocol.SimulateTransactionRequest{Transaction: txXDR})
+		if err != nil {
+			return err
+		}
+		sim = s
+		return nil
+	})
 	if err != nil {
 		return protocol.SimulateTransactionResponse{}, err
 	}
@@ -210,9 +278,9 @@ func (c *Client) simulate(ctx context.Context, op *txnbuild.InvokeHostFunction) 
 	return sim, nil
 }
 
-func (c *Client) simulateReadOnly(ctx context.Context, functionName string, args xdr.ScVec) (interface{}, error) {
+func (c *Client) simulateReadOnly(ctx context.Context, contractID, functionName string, args xdr.ScVec) (interface{}, error) {
 	op := &txnbuild.InvokeHostFunction{
-		HostFunction:  buildInvokeContractHostFunction(c.registryContract, functionName, args),
+		HostFunction:  buildInvokeContractHostFunction(contractID, functionName, args),
 		SourceAccount: c.watcherKeypair.Address(),
 	}
 
@@ -267,7 +335,15 @@ func (c *Client) submitAndPoll(ctx context.Context, tx *txnbuild.Transaction) er
 		return fmt.Errorf("encoding signed transaction: %w", err)
 	}
 
-	sendResp, err := c.rpc.SendTransaction(ctx, protocol.SendTransactionRequest{Transaction: txXDR})
+	var sendResp protocol.SendTransactionResponse
+	err = retry.Do(ctx, c.retryOpts, func() error {
+		r, err := c.rpc.SendTransaction(ctx, protocol.SendTransactionRequest{Transaction: txXDR})
+		if err != nil {
+			return err
+		}
+		sendResp = r
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -280,7 +356,15 @@ func (c *Client) submitAndPoll(ctx context.Context, tx *txnbuild.Transaction) er
 		return fmt.Errorf("submit_check rejected before inclusion: %s", sendResp.ErrorResultXDR)
 	}
 
-	result, err := c.rpc.PollTransaction(ctx, sendResp.Hash)
+	var result protocol.GetTransactionResponse
+	err = retry.Do(ctx, c.retryOpts, func() error {
+		r, err := c.rpc.PollTransaction(ctx, sendResp.Hash)
+		if err != nil {
+			return err
+		}
+		result = r
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("polling submit_check %s: %w", sendResp.Hash, err)
 	}
@@ -370,16 +454,61 @@ func mustCheckStatusEnum(status CheckStatus) xdr.ScVal {
 }
 
 // decodeScVal decodes a base64-encoded ScVal XDR string into a native Go
-// value, covering the primitive types this daemon actually reads results
-// for (currently just the bool from has_watcher_voted, plus the other
-// simple scalars for robustness against future read calls).
+// value, covering the types this daemon actually reads results for: the
+// bool from has_watcher_voted, the u64 from get_current_round, the struct
+// (as a map[string]interface{}) and its endpoint_hash ([]byte) field from
+// get_sla, plus other simple scalars for robustness against future read
+// calls.
 func decodeScVal(base64XDR string) (interface{}, error) {
 	var scv xdr.ScVal
 	if err := xdr.SafeUnmarshalBase64(base64XDR, &scv); err != nil {
 		return nil, fmt.Errorf("decoding ScVal XDR: %w", err)
 	}
+	return decodeScValNative(scv)
+}
 
+// decodeScValNative is decodeScVal's recursive core, operating on an
+// already-decoded xdr.ScVal rather than base64 — needed so map entries can
+// be decoded without re-marshaling/unmarshaling each one.
+func decodeScValNative(scv xdr.ScVal) (interface{}, error) {
 	switch scv.Type {
+	case xdr.ScValTypeScvBytes:
+		if scv.Bytes == nil {
+			return nil, fmt.Errorf("scvBytes with no value")
+		}
+		return []byte(*scv.Bytes), nil
+	case xdr.ScValTypeScvMap:
+		if scv.Map == nil {
+			return nil, fmt.Errorf("scvMap with no value")
+		}
+		record := make(map[string]interface{}, len(**scv.Map))
+		for _, entry := range **scv.Map {
+			if entry.Key.Type != xdr.ScValTypeScvSymbol || entry.Key.Sym == nil {
+				return nil, fmt.Errorf("scvMap entry key is %s, expected a Symbol (struct field name)", entry.Key.Type)
+			}
+			val, err := decodeScValNative(entry.Val)
+			if err != nil {
+				return nil, fmt.Errorf("decoding map field %q: %w", *entry.Key.Sym, err)
+			}
+			record[string(*entry.Key.Sym)] = val
+		}
+		return record, nil
+	case xdr.ScValTypeScvVec:
+		if scv.Vec == nil {
+			return nil, fmt.Errorf("scvVec with no value")
+		}
+		// A contracttype enum with no payload (e.g. SLAStatus::Active)
+		// encodes as a one-element vec holding its variant name Symbol;
+		// decoded generically here as a []interface{} like any other vec.
+		elems := make([]interface{}, 0, len(**scv.Vec))
+		for i, entry := range **scv.Vec {
+			val, err := decodeScValNative(entry)
+			if err != nil {
+				return nil, fmt.Errorf("decoding vec element %d: %w", i, err)
+			}
+			elems = append(elems, val)
+		}
+		return elems, nil
 	case xdr.ScValTypeScvVoid:
 		return nil, nil
 	case xdr.ScValTypeScvBool:
@@ -407,6 +536,17 @@ func decodeScVal(base64XDR string) (interface{}, error) {
 			return nil, fmt.Errorf("scvI64 with no value")
 		}
 		return int64(*scv.I64), nil
+	case xdr.ScValTypeScvI128:
+		if scv.I128 == nil {
+			return nil, fmt.Errorf("scvI128 with no value")
+		}
+		// Hi is the signed high 64 bits, Lo the unsigned low 64 bits, per
+		// Soroban's Int128Parts (github.com/stellar/go-stellar-sdk xdr).
+		// big.Int.Lsh/Add give the correct signed 128-bit value directly.
+		hi := big.NewInt(int64(scv.I128.Hi))
+		hi.Lsh(hi, 64)
+		lo := new(big.Int).SetUint64(uint64(scv.I128.Lo))
+		return new(big.Int).Add(hi, lo), nil
 	case xdr.ScValTypeScvSymbol:
 		if scv.Sym == nil {
 			return nil, fmt.Errorf("scvSymbol with no value")

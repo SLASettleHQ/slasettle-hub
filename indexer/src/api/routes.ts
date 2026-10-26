@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { IndexerDb } from "../db/db.js";
 import { fetchQuorumThreshold } from "../rpc/liveReads.js";
-import { getLatestLedgerInfo } from "./ledgerInfo.js";
+import { getLatestLedgerInfo, currentRoundId } from "./ledgerInfo.js";
 import { encodeCursor, decodeCursor } from "./pagination.js";
 import type { Config } from "../config.js";
 import type { rpc } from "@stellar/stellar-sdk";
@@ -42,7 +42,7 @@ export function buildRouter(deps: RouteDeps): Router {
   router.get("/v1/slas/:slaId/current-round", async (req, res) => {
     const slaId = req.params.slaId as string;
     const ledger = await getLatestLedgerInfo(deps.server);
-    const roundId = Math.floor(ledger.closeTimeMs / 1000 / deps.config.ROUND_LENGTH_SECONDS);
+    const roundId = currentRoundId(ledger, deps.config.ROUND_LENGTH_SECONDS);
 
     const watchers = deps.db.raw
       .prepare("SELECT address FROM watchers WHERE removed_at IS NULL")
@@ -118,17 +118,27 @@ function buildRemainingRoutes(router: Router, deps: RouteDeps): Router {
     const page = hasMore ? rows.slice(0, limit) : rows;
 
     // Lazily fill quorum_threshold the first time it's needed — see the
-    // db schema comment for why it can start out null.
+    // db schema comment for why it can start out null. Every row in `page`
+    // shares the same slaId (it's a path param), so a live fetch is needed
+    // at most once per request, not once per row — the previous version
+    // called fetchQuorumThreshold inside the loop, which meant N identical
+    // live RPC calls for N rows still carrying a null quorum_threshold
+    // (true before v0.2, where sla_created didn't emit it at all; v0.2 rows
+    // never hit this path since classify.ts fills it straight from the
+    // event).
+    let cachedThreshold: number | undefined;
     for (const row of page) {
       if (row.quorum_threshold === null) {
-        const threshold = await fetchQuorumThreshold({
-          server: deps.server,
-          networkPassphrase: deps.config.NETWORK_PASSPHRASE,
-          slaVaultContractId: deps.config.SLA_VAULT_CONTRACT_ID,
-          slaId,
-        });
-        deps.db.setSlaQuorumThreshold(slaId, threshold);
-        row.quorum_threshold = threshold;
+        if (cachedThreshold === undefined) {
+          cachedThreshold = await fetchQuorumThreshold({
+            server: deps.server,
+            networkPassphrase: deps.config.NETWORK_PASSPHRASE,
+            slaVaultContractId: deps.config.SLA_VAULT_CONTRACT_ID,
+            slaId,
+          });
+          deps.db.setSlaQuorumThreshold(slaId, cachedThreshold);
+        }
+        row.quorum_threshold = cachedThreshold;
       }
     }
 
@@ -168,16 +178,35 @@ function buildRemainingRoutes(router: Router, deps: RouteDeps): Router {
     res.json({ data, next_cursor: nextCursor });
   });
 
+  // GET /v1/slas/:slaId/lifecycle
+  router.get("/v1/slas/:slaId/lifecycle", (req, res) => {
+    const slaId = req.params.slaId as string;
+    const rows = deps.db.getLifecycleEvents(slaId);
+    res.json({
+      data: rows.map((r) => ({
+        event_type: r.event_type,
+        amount: r.amount,
+        tx_hash: r.tx_hash,
+        ledger_close_time: r.ledger_close_time,
+      })),
+      next_cursor: null,
+    });
+  });
+
   // GET /v1/providers/:address/slas
   router.get("/v1/providers/:address/slas", (req, res) => {
     const address = req.params.address as string;
     const rows = deps.db.raw
       .prepare(
-        "SELECT sla_id, token, bond_amount_at_creation, beneficiary, created_at, tx_hash FROM slas WHERE provider = ? ORDER BY created_at DESC",
+        "SELECT sla_id, token, endpoint_hash, bond_amount_at_creation, beneficiary, created_at, tx_hash FROM slas WHERE provider = ? ORDER BY created_at DESC",
       )
       .all(address) as Array<{
       sla_id: string;
       token: string;
+      // Null for a row ingested before the v0.2 migration (see
+      // migrations/0002) — every row classify.ts inserts going forward has
+      // one.
+      endpoint_hash: string | null;
       bond_amount_at_creation: string;
       beneficiary: string;
       created_at: string;
@@ -188,6 +217,7 @@ function buildRemainingRoutes(router: Router, deps: RouteDeps): Router {
       data: rows.map((r) => ({
         sla_id: Number(r.sla_id),
         token: r.token,
+        endpoint_hash: r.endpoint_hash,
         bond_amount_at_creation: r.bond_amount_at_creation,
         beneficiary: r.beneficiary,
         created_at: r.created_at,
@@ -200,7 +230,7 @@ function buildRemainingRoutes(router: Router, deps: RouteDeps): Router {
   // GET /v1/clock
   router.get("/v1/clock", async (_req, res) => {
     const ledger = await getLatestLedgerInfo(deps.server);
-    const roundId = Math.floor(ledger.closeTimeMs / 1000 / deps.config.ROUND_LENGTH_SECONDS);
+    const roundId = currentRoundId(ledger, deps.config.ROUND_LENGTH_SECONDS);
 
     res.json({
       ledger_sequence: ledger.sequence,

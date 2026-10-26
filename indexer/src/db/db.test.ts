@@ -21,6 +21,7 @@ test("applyBatch writes the checkpoint and it round-trips", () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
   const cp = db.getCheckpoint();
   assert.equal(cp?.last_ledger, 100);
@@ -36,6 +37,7 @@ test("applying the same batch twice does not duplicate checks (idempotency)", ()
     round_id: "1",
     watcher: "GWATCHER",
     status: "down" as const,
+    endpoint_hash: "aa".repeat(32),
     checked_at: "2026-01-01T00:00:00Z",
   };
   const batch = {
@@ -45,6 +47,7 @@ test("applying the same batch twice does not duplicate checks (idempotency)", ()
     checks: [check],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   };
 
   db.applyBatch(batch);
@@ -64,6 +67,7 @@ test("watcher removal after registration sets removed_at without deleting the ro
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
   db.applyBatch({
     lastLedger: 2,
@@ -72,6 +76,7 @@ test("watcher removal after registration sets removed_at without deleting the ro
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   const row = db.raw.prepare("SELECT * FROM watchers WHERE address = ?").get("GWATCHER") as {
@@ -93,6 +98,7 @@ test("re-registering a previously removed watcher clears removed_at", () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
   // Second batch: registered again after having been removed.
   db.applyBatch({
@@ -102,6 +108,7 @@ test("re-registering a previously removed watcher clears removed_at", () => {
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   const row = db.raw.prepare("SELECT * FROM watchers WHERE address = ?").get("GWATCHER") as {
@@ -130,6 +137,7 @@ test("register, remove, and re-register the same watcher within a single batch a
     checks: [],
     slas: [],
     settlements: [],
+    lifecycleEvents: [],
   });
 
   const row = db.raw.prepare("SELECT * FROM watchers WHERE address = ?").get("GWATCHER") as {

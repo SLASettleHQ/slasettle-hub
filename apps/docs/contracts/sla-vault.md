@@ -2,9 +2,9 @@
 
 The `sla_vault` contract escrows token collateral, manages agreement configurations, cross-examines round tallies against `watcher_registry`, and executes automated penalty settlements.
 
-- **Deployed Address**: `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN`
+- **Deployed Address**: `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2`
 - **Source Location**: `contracts/sla_vault/src/lib.rs`
-- **SDK Version**: `soroban-sdk 28.0.0`
+- **SDK Version**: `soroban-sdk 29.0.1`
 
 ## Data Types
 

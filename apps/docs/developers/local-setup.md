@@ -12,7 +12,7 @@ The codebase is built and tested against the following verified toolchain:
 | **Stellar CLI** | `28.1.0` (with `stellar-xdr 28.0.0`) | Host system binary (`stellar`) |
 | **Node.js** | `v20.0.0+` (verified `v24.21.0`) | `.nvmrc` in repository root |
 | **pnpm** | `9+` (verified `12.8.2`) | `packageManager` field in `package.json` |
-| **Go** | `1.22+` (verified `1.25.1`) | `services/watcher/go.mod` |
+| **Go** | `1.22+` (verified `1.25.1`) | `watcher/go.mod` |
 
 ---
 
@@ -60,7 +60,7 @@ pnpm run typecheck
 
 ### Event Indexer Service
 ```bash
-cd services/indexer
+cd indexer
 npm ci
 npm run build
 npm test
@@ -68,7 +68,7 @@ npm test
 
 ### Watcher Node Daemon
 ```bash
-cd services/watcher
+cd watcher
 go build ./...
 go test ./...
 ```
@@ -80,10 +80,10 @@ go test ./...
 To run the full stack locally against Stellar Testnet:
 
 1. **Configure Environment Variables**:
-   Copy `.env.example` to `.env.local` in `apps/web` and `.env` in `services/indexer` with active contract addresses (see [Environment Configuration](/developers/environment)).
+   Copy `.env.example` to `.env.local` in `apps/web` and `.env` in `indexer` with active contract addresses (see [Environment Configuration](/developers/environment)).
 2. **Start Indexer**:
    ```bash
-   cd services/indexer
+   cd indexer
    npm run dev
    ```
 3. **Start Web Console**:

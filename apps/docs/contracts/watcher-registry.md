@@ -2,9 +2,9 @@
 
 The `watcher_registry` contract manages authorized watcher identities, records signed health checks, and computes round-level vote tallies for each monitored agreement.
 
-- **Deployed Address**: `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF`
+- **Deployed Address**: `CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY`
 - **Source Location**: `contracts/watcher_registry/src/lib.rs`
-- **SDK Version**: `soroban-sdk 28.0.0`
+- **SDK Version**: `soroban-sdk 29.0.1`
 
 ## Data Types
 

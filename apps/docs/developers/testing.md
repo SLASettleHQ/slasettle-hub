@@ -4,16 +4,16 @@ SLASettle maintains automated test suites across every layer of the architecture
 
 ## Automated Test Coverage Summary
 
-Across both repositories, **416 automated tests** pass with zero failures:
+Across both repositories, **595 automated tests** pass with zero failures:
 
 | Component | Framework / Runner | Test Count | Pass Rate |
 | :--- | :--- | :--- | :--- |
-| **`slasettle-vault` Contracts** | `cargo test --workspace` | **52 passed** | 100% |
-| **`@slasettle/sdk` Library** | Vitest | **57 passed** | 100% |
-| **`apps/web` Operations Console** | Vitest + React Testing Library | **245 passed** | 100% |
-| **`services/indexer` Service** | Node Test Runner (`node --test`) | **62 passed** | 100% |
-| **`services/watcher` Daemon** | Go `testing` Package | **All suites pass** | 100% |
-| **Total Automated Tests** | | **416 passed** | **100%** |
+| **`slasettle-vault` Contracts** | `cargo test --workspace` | **72 passed** | 100% |
+| **`@slasettle/sdk` Library** | Vitest | **89 passed** | 100% |
+| **`apps/web` Operations Console** | Vitest + React Testing Library | **277 passed** | 100% |
+| **`indexer` Service** | Node Test Runner (`node --test`) | **69 passed** | 100% |
+| **`watcher` Daemon** | Go `testing` Package | **88 passed** | 100% |
+| **Total Automated Tests** | | **595 passed** | **100%** |
 
 ---
 
@@ -38,19 +38,19 @@ pnpm --filter @slasettle/web test
 ```
 *Covers*: Wallet connection state, network mismatch gating, SLA creation validation, top-up modal flows, confirmation dialogs, quorum progress meters, and transaction status banners across 26 test files.
 
-### 4. Event Indexer (`services/indexer`)
+### 4. Event Indexer (`indexer`)
 ```bash
-cd services/indexer
+cd indexer
 npm test
 ```
 *Covers*: Real SQLite/D1 event persistence, chronological event processing, cursor-based pagination, REST endpoint routing, and CORS header enforcement.
 
-### 5. Watcher Daemon (`services/watcher`)
+### 5. Watcher Daemon (`watcher`)
 ```bash
-cd services/watcher
+cd watcher
 go test -v ./...
 ```
-*Covers*: HTTP probing timeouts, status code evaluators, epoch round computation, duplicate check bypass, and contract RPC interaction wrappers.
+*Covers*: HTTP probing timeouts, status code evaluators, local scheduling/pacing, endpoint commitment hashing and validation, bounded network retry, duplicate check bypass, and contract RPC interaction wrappers (including `GetCurrentRound` and `GetSlaEndpointHash`).
 
 ---
 
@@ -63,13 +63,17 @@ The test suite explicitly encodes regressions discovered during engineering:
 2. **Zero-Balance Withdrawal Rejection (`withdraw_remaining_bond`)**:
    - Repeated calls to withdraw on an emptied bond return `Error::InvalidAmount` rather than wasting transaction fees and emitting empty events. Covered in `sla_vault` tests.
 3. **Indexer Chronological Event Processing**:
-   - `services/indexer` tests verify that batch events containing `register_watcher`, `remove_watcher`, and re-registration apply strictly in chronological order rather than grouping by event type.
+   - `indexer` tests verify that batch events containing `register_watcher`, `remove_watcher`, and re-registration apply strictly in chronological order rather than grouping by event type.
+4. **Cross-Deployment SLA-ID Collision (`indexer/src/db/cutover-collision.test.ts`)**:
+   - `slas.sla_id` is the sole primary key, with no column distinguishing which contract deployment an SLA belongs to. Since every freshly initialized `sla_vault` starts `NextSlaId` at 0, these tests prove that reusing one D1 across a v0.1/v0.2 cutover silently drops the newer deployment's SLA row and mixes both deployments' checks under the same `(sla_id, round_id)`. See `apps/docs/developers/v0.2-cutover.md`.
+5. **Watcher `i128`/`vec` ScVal Decoding (`watcher/internal/contract/contract_internal_test.go`)**:
+   - The watcher's generic Soroban value decoder had no case for `i128` (used by `SLAConfig.bond_amount`/`penalty_per_breach`) or `vec` (used by `SLAStatus`'s unit-enum encoding), so every live `get_sla` read failed outright. Found live against the deployed GREEN v0.2 contracts during lifecycle testing; fixed and covered with regression tests against real encoded ScVals, including a negative `i128` value.
 
 ---
 
 ## Live Stellar Testnet Verification
 
 In addition to local unit and integration tests:
-- **Protocol 28 WASM Parity**: Contract WASM bytecode deployed to Testnet matches local release builds byte-for-byte with zero hash drift.
-- **Freighter Browser Verification**: End-to-end wallet interaction (create agreement, top up collateral, cancel agreement, withdraw collateral) was executed and confirmed live on Testnet using Freighter on SLA #2.
+- **Protocol 29 v0.2 WASM Parity**: Contract WASM bytecode deployed to Testnet matches the `soroban-sdk 29.0.1` release builds: registry `e433b7e36580889b1a2aa94570ed7adee7e9048d4d211a10031ffcfa8fc53171`, vault `23ea6cdc28a11883fd5979c06fcdea3b3f68a5b2aa9f0bace855de0149d8ac79`.
+- **Freighter Browser Verification**: The v0.2 lifecycle was executed and confirmed on Testnet using Freighter on GREEN SLA #0.
 - **Permissionless Settlement**: Real on-chain settlements have been executed where external keeper accounts triggered penalty payments directly to beneficiaries upon quorum formation.

@@ -6,9 +6,10 @@ package contract
 // not by comparing against an opaque mock.
 
 import (
-	"crypto/sha256"
+	"math/big"
 	"testing"
 
+	"github.com/SLASettleHQ/slasettle-hub/watcher/internal/endpoint"
 	"github.com/stellar/go-stellar-sdk/keypair"
 	"github.com/stellar/go-stellar-sdk/strkey"
 	"github.com/stellar/go-stellar-sdk/xdr"
@@ -56,10 +57,20 @@ func TestMustBytesN32EncodesExactBytesNoTruncationOrPadding(t *testing.T) {
 	}
 }
 
-func TestEndpointHashIsPlainSHA256(t *testing.T) {
+// The full v0.2 endpoint commitment algorithm (ASCII trim + domain prefix +
+// sha256) is tested in internal/endpoint; this only checks that
+// contract.EndpointHash actually delegates to it rather than, say, a plain
+// sha256 of the raw URL.
+func TestEndpointHashDelegatesToEndpointPackage(t *testing.T) {
 	url := "https://example.com/health"
-	got := EndpointHash(url)
-	want := sha256.Sum256([]byte(url))
+	got, err := EndpointHash(url)
+	if err != nil {
+		t.Fatalf("EndpointHash(%q) returned error: %v", url, err)
+	}
+	want, err := endpoint.ComputeEndpointHash(url)
+	if err != nil {
+		t.Fatalf("endpoint.ComputeEndpointHash(%q) returned error: %v", url, err)
+	}
 	if got != want {
 		t.Fatalf("EndpointHash(%q) = %x, want %x", url, got, want)
 	}
@@ -332,6 +343,56 @@ func TestDecodeScValPrimitives(t *testing.T) {
 		}
 	})
 
+	t.Run("i128 positive within u64 range", func(t *testing.T) {
+		sv, err := xdr.NewScVal(xdr.ScValTypeScvI128, xdr.Int128Parts{Hi: 0, Lo: 60000000})
+		if err != nil {
+			t.Fatalf("NewScVal i128: %v", err)
+		}
+		got, err := decodeScVal(scValBase64(t, sv))
+		if err != nil {
+			t.Fatalf("decodeScVal: %v", err)
+		}
+		v, ok := got.(*big.Int)
+		if !ok || v.Cmp(big.NewInt(60000000)) != 0 {
+			t.Fatalf("got %#v, want *big.Int(60000000)", got)
+		}
+	})
+
+	t.Run("i128 negative", func(t *testing.T) {
+		sv, err := xdr.NewScVal(xdr.ScValTypeScvI128, xdr.Int128Parts{Hi: -1, Lo: 0xFFFFFFFFFFFFFFFF})
+		if err != nil {
+			t.Fatalf("NewScVal i128: %v", err)
+		}
+		got, err := decodeScVal(scValBase64(t, sv))
+		if err != nil {
+			t.Fatalf("decodeScVal: %v", err)
+		}
+		v, ok := got.(*big.Int)
+		if !ok || v.Cmp(big.NewInt(-1)) != 0 {
+			t.Fatalf("got %#v, want *big.Int(-1)", got)
+		}
+	})
+
+	t.Run("vec (unit enum variant, e.g. SLAStatus::Active)", func(t *testing.T) {
+		tagSym, err := xdr.NewScVal(xdr.ScValTypeScvSymbol, xdr.ScSymbol("Active"))
+		if err != nil {
+			t.Fatalf("NewScVal symbol: %v", err)
+		}
+		vec := xdr.ScVec{tagSym}
+		sv, err := xdr.NewScVal(xdr.ScValTypeScvVec, &vec)
+		if err != nil {
+			t.Fatalf("NewScVal vec: %v", err)
+		}
+		got, err := decodeScVal(scValBase64(t, sv))
+		if err != nil {
+			t.Fatalf("decodeScVal: %v", err)
+		}
+		elems, ok := got.([]interface{})
+		if !ok || len(elems) != 1 || elems[0] != "Active" {
+			t.Fatalf("got %#v, want []interface{}{\"Active\"}", got)
+		}
+	})
+
 	t.Run("symbol", func(t *testing.T) {
 		sv, err := xdr.NewScVal(xdr.ScValTypeScvSymbol, xdr.ScSymbol("Up"))
 		if err != nil {
@@ -373,18 +434,67 @@ func TestDecodeScValPrimitives(t *testing.T) {
 }
 
 func TestDecodeScValUnhandledTypeReturnsError(t *testing.T) {
-	// ScvMap is a real, valid ScVal type this daemon has no reader for.
-	// decodeScVal must report that plainly rather than silently returning a
-	// zero value that could be mistaken for real contract state.
-	empty := xdr.ScMap{}
-	sv, err := xdr.NewScVal(xdr.ScValTypeScvMap, &empty)
+	// ScvU128 is a real, valid ScVal type this daemon has no reader for.
+	// decodeScVal must report an unhandled type plainly rather than
+	// silently returning a zero value that could be mistaken for real
+	// contract state.
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvU128, xdr.UInt128Parts{Hi: 0, Lo: 0})
 	if err != nil {
-		t.Fatalf("NewScVal map: %v", err)
+		t.Fatalf("NewScVal u128: %v", err)
 	}
 	_, err = decodeScVal(scValBase64(t, sv))
 	if err == nil {
 		t.Fatal("expected an error for an unhandled ScVal type, got nil")
 	}
+}
+
+func TestDecodeScValMapDecodesStructFields(t *testing.T) {
+	hashBytes := xdr.ScBytes(make([]byte, 32))
+	for i := range hashBytes {
+		hashBytes[i] = byte(i)
+	}
+	entries := xdr.ScMap{
+		{Key: mustSymbolScVal(t, "endpoint_hash"), Val: mustScVal(t, xdr.ScValTypeScvBytes, hashBytes)},
+		{Key: mustSymbolScVal(t, "bond_amount"), Val: mustU64(42)},
+	}
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvMap, &entries)
+	if err != nil {
+		t.Fatalf("NewScVal map: %v", err)
+	}
+
+	got, err := decodeScVal(scValBase64(t, sv))
+	if err != nil {
+		t.Fatalf("decodeScVal: %v", err)
+	}
+	record, ok := got.(map[string]interface{})
+	if !ok {
+		t.Fatalf("got %#v, want map[string]interface{}", got)
+	}
+	hashVal, ok := record["endpoint_hash"].([]byte)
+	if !ok || len(hashVal) != 32 {
+		t.Fatalf("endpoint_hash = %#v, want 32 bytes", record["endpoint_hash"])
+	}
+	if record["bond_amount"] != uint64(42) {
+		t.Fatalf("bond_amount = %#v, want uint64(42)", record["bond_amount"])
+	}
+}
+
+func mustSymbolScVal(t *testing.T, s string) xdr.ScVal {
+	t.Helper()
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvSymbol, xdr.ScSymbol(s))
+	if err != nil {
+		t.Fatalf("NewScVal symbol %q: %v", s, err)
+	}
+	return sv
+}
+
+func mustScVal(t *testing.T, typ xdr.ScValType, v interface{}) xdr.ScVal {
+	t.Helper()
+	sv, err := xdr.NewScVal(typ, v)
+	if err != nil {
+		t.Fatalf("NewScVal: %v", err)
+	}
+	return sv
 }
 
 func TestDecodeScValMalformedXDRReturnsError(t *testing.T) {

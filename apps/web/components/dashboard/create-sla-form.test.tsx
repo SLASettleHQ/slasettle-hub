@@ -1,5 +1,5 @@
 import { Keypair, StrKey } from "@stellar/stellar-sdk";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,13 +13,14 @@ vi.mock("@/lib/wallet", () => ({
   WalletError: class WalletError extends Error {},
 }));
 
-vi.mock("@slasettle/sdk", () => ({
+vi.mock("@slasettle/sdk", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@slasettle/sdk")>()),
   buildCreateSlaTx: vi.fn(),
   getTokenDecimals: vi.fn(),
   getTokenSymbol: vi.fn(),
 }));
 
-import { buildCreateSlaTx, getTokenDecimals, getTokenSymbol } from "@slasettle/sdk";
+import { buildCreateSlaTx, computeEndpointHash, getTokenDecimals, getTokenSymbol } from "@slasettle/sdk";
 import { getActiveWallet, isFreighterAvailable } from "@/lib/wallet";
 import { WalletProvider } from "@/components/wallet/wallet-provider";
 import { CreateSlaForm } from "./create-sla-form";
@@ -28,6 +29,7 @@ import { CreateSlaForm } from "./create-sla-form";
 const PROVIDER_ADDRESS = Keypair.random().publicKey();
 const BENEFICIARY_ADDRESS = Keypair.random().publicKey();
 const TOKEN_ADDRESS = StrKey.encodeContract(Buffer.alloc(32, 9));
+const ENDPOINT = "https://example.com/health";
 
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_NETWORK_PASSPHRASE", "Test SDF Network ; September 2015");
@@ -65,7 +67,8 @@ describe("CreateSlaForm", () => {
     const submit = await screen.findByRole("button", { name: "Create SLA" });
     await user.click(submit);
 
-    expect(await screen.findByText("Enter the token contract ID.")).toBeInTheDocument();
+    expect(await screen.findByText("Enter the service endpoint.")).toBeInTheDocument();
+    expect(screen.getByText("Enter the token contract ID.")).toBeInTheDocument();
     expect(screen.getByText("Enter the beneficiary address.")).toBeInTheDocument();
     expect(screen.getByText("Enter the number of Down votes required.")).toBeInTheDocument();
     expect(screen.getByText("Enter an uptime target, for example 99.90.")).toBeInTheDocument();
@@ -77,6 +80,7 @@ describe("CreateSlaForm", () => {
     const user = userEvent.setup();
     renderForm();
 
+    await user.type(await screen.findByLabelText("Service endpoint"), ENDPOINT);
     await user.type(await screen.findByPlaceholderText("C..."), TOKEN_ADDRESS);
     await user.type(screen.getByPlaceholderText("G..."), BENEFICIARY_ADDRESS);
     await user.type(screen.getByPlaceholderText("3"), "0");
@@ -86,7 +90,7 @@ describe("CreateSlaForm", () => {
     expect(buildCreateSlaTx).not.toHaveBeenCalled();
   });
 
-  it("converts decimal amounts using the live token decimals and submits", async () => {
+  it("previews the SDK-derived commitment and signs only after a complete review", async () => {
     vi.mocked(getTokenDecimals).mockResolvedValue(7);
     vi.mocked(getTokenSymbol).mockResolvedValue("USDC");
     vi.mocked(buildCreateSlaTx).mockResolvedValue({} as never);
@@ -94,6 +98,7 @@ describe("CreateSlaForm", () => {
     const user = userEvent.setup();
     renderForm();
 
+    await user.type(await screen.findByLabelText("Service endpoint"), ENDPOINT);
     await user.type(await screen.findByPlaceholderText("C..."), TOKEN_ADDRESS);
     await user.type(screen.getByPlaceholderText("G..."), BENEFICIARY_ADDRESS);
     await user.type(screen.getByPlaceholderText("1000.00"), "1000.50");
@@ -102,16 +107,26 @@ describe("CreateSlaForm", () => {
     await user.type(screen.getByPlaceholderText("99.90"), "99.9");
     await user.click(screen.getByRole("button", { name: "Create SLA" }));
 
+    expect(await screen.findByRole("group", { name: "Review SLA before signing" })).toBeInTheDocument();
+    expect(buildCreateSlaTx).not.toHaveBeenCalled();
+    expect(screen.getByText(PROVIDER_ADDRESS)).toBeInTheDocument();
+    expect(screen.getByText("99.90%")).toBeInTheDocument();
+    expect(screen.getAllByText(Buffer.from(computeEndpointHash(ENDPOINT)).toString("hex"))).toHaveLength(2);
+
+    await user.click(screen.getByRole("button", { name: "Sign and create SLA" }));
     await waitFor(() => expect(buildCreateSlaTx).toHaveBeenCalledTimes(1));
-    expect(buildCreateSlaTx).toHaveBeenCalledWith({
+    const expected = {
       provider: PROVIDER_ADDRESS,
       token: TOKEN_ADDRESS,
+      endpointHash: computeEndpointHash(ENDPOINT),
       bondAmount: 1_000_5000000n,
       uptimeTargetBps: 9990,
       quorumThreshold: 3,
       penaltyPerBreach: 10_2500000n,
       beneficiary: BENEFICIARY_ADDRESS,
-    });
+    };
+    expect(buildCreateSlaTx).toHaveBeenCalledWith(expected);
+    expect(buildCreateSlaTx).not.toHaveBeenCalledWith(expect.objectContaining({ endpoint: ENDPOINT }));
   });
 
   it("rejects a penalty larger than the bond amount before building a transaction", async () => {
@@ -121,6 +136,7 @@ describe("CreateSlaForm", () => {
     const user = userEvent.setup();
     renderForm();
 
+    await user.type(await screen.findByLabelText("Service endpoint"), ENDPOINT);
     await user.type(await screen.findByPlaceholderText("C..."), TOKEN_ADDRESS);
     await user.type(screen.getByPlaceholderText("G..."), BENEFICIARY_ADDRESS);
     await user.type(screen.getByPlaceholderText("1000.00"), "10");
@@ -135,6 +151,7 @@ describe("CreateSlaForm", () => {
 
   async function fillValid(user: ReturnType<typeof userEvent.setup>, overrides: Partial<Record<string, string>> = {}) {
     const entries: Record<string, string> = {
+      "https://example.com/health": ENDPOINT,
       "C...": TOKEN_ADDRESS,
       "G...": BENEFICIARY_ADDRESS,
       "1000.00": "100",
@@ -148,6 +165,52 @@ describe("CreateSlaForm", () => {
       if (value) await user.type(input, value);
     }
   }
+
+  it("renders a visibly labelled endpoint input", async () => {
+    renderForm();
+    expect(await screen.findByLabelText("Service endpoint")).toHaveAttribute("type", "url");
+  });
+
+  it.each([
+    ["/health", "Use an absolute HTTP or HTTPS URL."],
+    ["example.com/status", "Use an absolute HTTP or HTTPS URL."],
+    ["ftp://example.com/status", "Use an absolute HTTP or HTTPS URL."],
+  ])("rejects invalid endpoint %s", async (endpoint, message) => {
+    const user = userEvent.setup();
+    renderForm();
+    await fillValid(user, { "https://example.com/health": endpoint });
+    await user.click(screen.getByRole("button", { name: "Create SLA" }));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(getTokenDecimals).not.toHaveBeenCalled();
+  });
+
+  it.each(["https://example.com/health", "http://127.0.0.1:8080/status"])(
+    "accepts an absolute HTTP(S) endpoint: %s",
+    async (endpoint) => {
+      vi.mocked(getTokenDecimals).mockResolvedValue(7);
+      vi.mocked(getTokenSymbol).mockResolvedValue("USDC");
+      const user = userEvent.setup();
+      renderForm();
+      await fillValid(user, { "https://example.com/health": endpoint });
+      await user.click(screen.getByRole("button", { name: "Create SLA" }));
+      expect(await screen.findByRole("group", { name: "Review SLA before signing" })).toBeInTheDocument();
+    },
+  );
+
+  it("ASCII-trims the commitment input without normalizing URL details", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    const endpoint = await screen.findByLabelText("Service endpoint");
+    fireEvent.change(endpoint, { target: { value: ` \t${ENDPOINT}\n ` } });
+    const trimmedHex = Buffer.from(computeEndpointHash(ENDPOINT)).toString("hex");
+    expect(await screen.findByText(trimmedHex)).toBeInTheDocument();
+
+    await user.clear(endpoint);
+    await user.type(endpoint, `${ENDPOINT}/`);
+    const slashHex = Buffer.from(computeEndpointHash(`${ENDPOINT}/`)).toString("hex");
+    expect(await screen.findByText(slashHex)).toBeInTheDocument();
+    expect(slashHex).not.toBe(trimmedHex);
+  });
 
   it("shows address-format errors next to the fields and builds nothing", async () => {
     const user = userEvent.setup();
@@ -233,6 +296,7 @@ describe("CreateSlaForm", () => {
     expect(button).toBeDisabled();
     expect(getTokenDecimals).toHaveBeenCalledTimes(1);
     resolveDecimals(7);
-    await waitFor(() => expect(buildCreateSlaTx).toHaveBeenCalledTimes(1));
+    await screen.findByRole("group", { name: "Review SLA before signing" });
+    expect(buildCreateSlaTx).not.toHaveBeenCalled();
   });
 });

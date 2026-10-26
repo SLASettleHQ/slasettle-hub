@@ -10,7 +10,7 @@ Every SLA created on SLASettle features a dedicated, public status page accessib
 The public status page is intentionally non-custodial and read-optimized:
 - **Zero Authentication Required**: Any user or customer can inspect real-time uptime metrics and bond health without installing browser extensions or connecting a wallet.
 - **Dual-Data Architecture**:
-  1. Real-time round health and historical payouts are loaded from the high-speed indexer API (`https://slasettle-indexer.slasettle-indexer.workers.dev`).
+  1. Real-time round health and historical payouts are loaded from the production indexer API (`https://slasettle-indexer-v02.slasettle-indexer.workers.dev`).
   2. Active bond balances, contract parameters, and current status are queried directly from Stellar Soroban RPC via `@slasettle/sdk`.
   3. If the indexer is temporarily unreachable, the interface gracefully degrades to direct on-chain RPC reads.
 

@@ -33,7 +33,7 @@ Click **Connect Wallet** in the top right corner. Authorize the connection in Fr
 Every round, registered watcher nodes probe the endpoint and submit checks to the `watcher_registry` contract.
 
 - View the public status page at `/sla/[id]`.
-- The interface queries both the on-chain contracts and the hosted indexer at `https://slasettle-indexer.slasettle-indexer.workers.dev`.
+- The interface queries both the on-chain contracts and the hosted indexer at `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`.
 - Inspect:
   - Current round tallies (`votes_up` vs `votes_down`).
   - Active bond balance.

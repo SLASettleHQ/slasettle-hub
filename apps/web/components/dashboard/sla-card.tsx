@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useState } from "react";
+import { EndpointCommitmentValue } from "@/components/endpoint-commitment-value";
 import { TokenAmount } from "@/components/token-amount";
 import { TransactionStatus } from "@/components/transaction-status";
 import { formatBps, truncateAddress } from "@/lib/format";
@@ -68,6 +69,13 @@ export function SlaCard({ sla, onChanged }: { sla: ProviderSlaView; onChanged: (
           </dd>
         </div>
       </dl>
+
+      <div className="mt-3 min-w-0 text-xs">
+        <p className="text-[var(--color-fg-muted)]">Endpoint commitment</p>
+        <div className="mt-1">
+          <EndpointCommitmentValue endpointHash={config.endpointHash} />
+        </div>
+      </div>
 
       <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-4">
         {config.status === "Active" ? (

@@ -7,25 +7,32 @@ and serves them over the endpoints documented in `apps/docs/api.md`.
 
 Node 24.21.0 (matching the repository's `.nvmrc`) was used for the successful
 install (`npm install`), TypeScript build (`tsc`), and test suite execution
-(`npm test` / `node --test`). **0 type errors, 62/62 tests passing** (expanded
-from the original 24/24 test run), as of 2026-10-06.
+(`npm test` / `node --test`). **0 type errors** — run `npm test` for the
+current pass count rather than trusting a number in this file, which drifts
+every time tests are added.
 
-All eight event kinds have been confirmed against real emitted Testnet events:
-`watcher_registered`, `watcher_removed`, `check_submitted`, `sla_created`,
-`settlement_paid`, `bond_topped_up`, `sla_cancelled`, and `bond_withdrawn`.
+This describes the **v0.2 contract interface**: the hosted production
+service below is still ingesting v0.1 events against the deployed v0.1
+contracts. v0.2 adds `endpoint_hash` to `check_submitted`/`sla_created`,
+`uptime_target_bps`/`quorum_threshold`/`penalty_per_breach` to
+`sla_created`, and persists `bond_topped_up`/`sla_cancelled`/
+`bond_withdrawn` (previously decoded correctly but discarded) to a new
+`sla_lifecycle_events` table. All eight event kinds' v0.1 shapes were
+confirmed against real emitted Testnet events; the v0.2 additions have not
+yet had an equivalent live-Testnet confirmation, since v0.2 isn't deployed.
 The wire format of every kind is documented at the top of `src/rpc/decode.ts`.
 
 ## Hosted Production Service (Cloudflare Workers + D1)
 
 The production indexer is deployed as a public service on Cloudflare's Free Tier ($0 operational cost):
 
-- Public Service URL: `https://slasettle-indexer.slasettle-indexer.workers.dev`
+- Public Service URL: `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`
 - Database: Cloudflare D1 (`slasettle-indexer`, SQLite dialect)
 - Ingestion Trigger: Cloudflare Worker Cron Trigger (`* * * * *`, every minute)
-- Network: Stellar Testnet (Protocol 28)
+- Network: Stellar Testnet (Protocol 29 at v0.2 cutover verification)
 - Target Contracts:
-  - `watcher_registry`: `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF`
-  - `sla_vault`: `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN`
+  - `watcher_registry`: `CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY`
+  - `sla_vault`: `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2`
 
 ### Production Architecture
 

@@ -2,22 +2,24 @@
 
 The SLASettle Watcher Daemon is an autonomous Go service designed to monitor external service endpoints and submit cryptographic health checks to Stellar Soroban.
 
-- **Source Location**: `services/watcher`
+- **Source Location**: `watcher`
 - **Language**: Go 1.22+ (verified on Go 1.25.1)
 - **Scope**: Single-process daemon scoped to monitor a designated agreement (`SLA_ID`).
 
 ## Package Structure
 
 ```text
-services/watcher/
+watcher/
 ├── cmd/
 │   └── watcher/
 │       └── main.go       # Daemon entrypoint and lifecycle loop
 ├── internal/
 │   ├── config/           # Environment variable ingestion and validation
-│   ├── contract/         # Soroban RPC client and transaction signer
+│   ├── contract/         # Soroban RPC client, transaction signer, GetCurrentRound/GetSlaEndpointHash reads
+│   ├── endpoint/         # Endpoint commitment hashing and validation (matches the TS SDK byte-for-byte)
 │   ├── health/           # HTTP probing client and response evaluators
-│   └── round/            # Epoch round computation and synchronization
+│   ├── retry/            # Bounded retry for transient network errors
+│   └── round/            # Local sleep/wake pacing only — never the submitted round_id
 ├── go.mod
 └── go.sum
 ```
@@ -26,43 +28,59 @@ services/watcher/
 
 ## Operational Execution Loop
 
-The daemon operates in an continuous ticker loop:
+The daemon runs each round, then sleeps until the next round boundary (via `round.UntilNextRound`, used only for local scheduling/pacing — never to decide a submission's `round_id`):
 
 ```go
-ticker := time.NewTicker(time.Duration(cfg.ProbeIntervalSeconds) * time.Second)
-defer ticker.Stop()
+for {
+    // 1. The contract, not the local clock, is authoritative for round_id.
+    roundID, err := client.GetCurrentRound(ctx)
+    if err != nil {
+        continue // retried next cycle
+    }
 
-for range ticker.C {
-    roundID := round.CalculateCurrentRound(time.Now(), cfg.RoundLengthSeconds)
-
-    // 1. Skip if already submitted
-    voted, err := contractClient.HasWatcherVoted(ctx, cfg.SlaID, roundID, watcherAddr)
+    // 2. Skip if this watcher already voted this round.
+    voted, err := client.HasVoted(ctx, cfg.SLAID, roundID)
     if err != nil || voted {
         continue
     }
 
-    // 2. Execute health check
-    status := health.Probe(cfg.TargetURL, cfg.ProbeTimeoutSeconds, cfg.ExpectedStatusMax)
-
-    // 3. Compute endpoint hash (SHA-256)
-    endpointHash := sha256.Sum256([]byte(cfg.TargetURL))
-
-    // 4. Submit signed check transaction
-    txHash, err := contractClient.SubmitCheck(ctx, watcherKey, cfg.SlaID, roundID, endpointHash, status)
-    if err != nil {
-        log.Printf("Failed to submit check for round %d: %v", roundID, err)
-    } else {
-        log.Printf("Submitted check for round %d: tx %s", roundID, txHash)
+    // 3. Pre-flight: this watcher's locally configured endpoint must match
+    //    the SLA's on-chain commitment before probing or submitting anything.
+    committedHash, err := client.GetSlaEndpointHash(ctx, cfg.SLAID)
+    if err != nil || committedHash != endpointHash {
+        continue // mismatch or read failure: skip this round entirely
     }
+
+    // 4. Execute the health check against this watcher's own TARGET_URL.
+    result := checker.Check(ctx, cfg.TargetURL)
+    status := statusFrom(result)
+
+    // 5. Submit the signed check transaction, voting under the commitment
+    //    computed once at startup (see "Endpoint Commitment" below) —
+    //    never a freshly re-hashed or re-derived value.
+    client.SubmitCheck(ctx, cfg.SLAID, roundID, endpointHash, status)
+
+    sleepFor := round.UntilNextRound(time.Now(), cfg.RoundLengthSeconds)
+    time.Sleep(sleepFor)
 }
 ```
+
+### Endpoint Commitment
+
+The daemon computes its endpoint commitment once at startup from `TARGET_URL`:
+
+```text
+endpoint_hash = SHA-256("slasettle:endpoint:v1:" + ASCII_TRIM(TARGET_URL))
+```
+
+This is **not** a plain `SHA-256(TARGET_URL)` — the fixed domain-separation prefix `slasettle:endpoint:v1:` is always part of the preimage, matching the TypeScript SDK and Web implementations exactly (see `apps/docs/protocol/watcher-model.md`).
 
 ---
 
 ## Compilation & Execution
 
 ```bash
-cd services/watcher
+cd watcher
 
 # Run unit test suites
 go test ./...
@@ -71,7 +89,7 @@ go test ./...
 go build -o watcher-daemon ./cmd/watcher
 
 # Run with environment variables
-export WATCHER_REGISTRY_CONTRACT_ID="CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF"
+export WATCHER_REGISTRY_CONTRACT_ID="CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY"
 export WATCHER_SECRET_KEY="S..."
 export TARGET_URL="https://api.example.com/health"
 export SLA_ID=2

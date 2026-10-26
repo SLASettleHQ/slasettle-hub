@@ -15,6 +15,7 @@ func lookupFrom(m map[string]string) func(string) (string, bool) {
 func TestLoadWithAllRequiredValuesSucceeds(t *testing.T) {
 	cfg, err := Load(lookupFrom(map[string]string{
 		"WATCHER_REGISTRY_CONTRACT_ID": "CREGISTRY",
+		"SLA_VAULT_CONTRACT_ID":        "CVAULT",
 		"WATCHER_SECRET_KEY":           "SSECRET",
 		"TARGET_URL":                   "https://example.com/health",
 		"SLA_ID":                       "7",
@@ -35,7 +36,7 @@ func TestLoadReportsAllMissingRequiredValuesAtOnce(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error for missing required config")
 	}
-	for _, want := range []string{"WATCHER_REGISTRY_CONTRACT_ID", "WATCHER_SECRET_KEY", "TARGET_URL", "SLA_ID"} {
+	for _, want := range []string{"WATCHER_REGISTRY_CONTRACT_ID", "SLA_VAULT_CONTRACT_ID", "WATCHER_SECRET_KEY", "TARGET_URL", "SLA_ID"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("expected error to mention %s, got: %v", want, err)
 		}
@@ -45,6 +46,7 @@ func TestLoadReportsAllMissingRequiredValuesAtOnce(t *testing.T) {
 func TestLoadRejectsNonNumericSLAID(t *testing.T) {
 	_, err := Load(lookupFrom(map[string]string{
 		"WATCHER_REGISTRY_CONTRACT_ID": "CREGISTRY",
+		"SLA_VAULT_CONTRACT_ID":        "CVAULT",
 		"WATCHER_SECRET_KEY":           "SSECRET",
 		"TARGET_URL":                   "https://example.com/health",
 		"SLA_ID":                       "not-a-number",
@@ -57,6 +59,7 @@ func TestLoadRejectsNonNumericSLAID(t *testing.T) {
 func TestLoadRejectsZeroOrNegativeRoundLength(t *testing.T) {
 	base := map[string]string{
 		"WATCHER_REGISTRY_CONTRACT_ID": "CREGISTRY",
+		"SLA_VAULT_CONTRACT_ID":        "CVAULT",
 		"WATCHER_SECRET_KEY":           "SSECRET",
 		"TARGET_URL":                   "https://example.com/health",
 		"SLA_ID":                       "1",
@@ -78,6 +81,7 @@ func TestLoadRejectsZeroOrNegativeRoundLength(t *testing.T) {
 func TestLoadUsesDefaultsWhenOptionalValuesOmitted(t *testing.T) {
 	cfg, err := Load(lookupFrom(map[string]string{
 		"WATCHER_REGISTRY_CONTRACT_ID": "CREGISTRY",
+		"SLA_VAULT_CONTRACT_ID":        "CVAULT",
 		"WATCHER_SECRET_KEY":           "SSECRET",
 		"TARGET_URL":                   "https://example.com/health",
 		"SLA_ID":                       "1",

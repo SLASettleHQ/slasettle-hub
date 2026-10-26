@@ -33,11 +33,12 @@ Soroban uses state archival to manage ledger storage growth:
 
 ### Verified Capabilities
 - **WASM Bytecode Parity**: Local release builds from `slasettle-vault` match deployed Testnet WASMs byte-for-byte with zero hash drift.
-- **Live Browser & Freighter Operations**: On 2026-10-07 (Phase 7), live browser verification using the Freighter wallet extension was executed against the current Protocol 28 Testnet deployment (`sla_vault`: `CDBFPYHJ...`), confirming end-to-end creation, bond top-up, cancellation, and collateral withdrawal on SLA #2.
+- **Live Browser & Freighter Operations**: On 2026-10-26, the v0.2 GREEN lifecycle was verified through the Web and Freighter on SLA #0: create, top up, watcher quorum, settlement, cancel, and withdrawal. A signing delay was observed during the run but was not established as a repository defect.
 - **Permissionless Settlement**: Real on-chain settlements have been executed and verified where an external keeper account triggered payout to a beneficiary upon quorum formation.
-- **Automated Test Coverage**: 416 automated tests pass across the workspace (57 SDK, 245 web console, 62 indexer, 52 contract unit and integration tests).
+- **Automated Test Coverage**: 595 automated tests pass: 72 Vault, 89 SDK, 277 Web, 69 indexer, and 88 watcher.
 
 ### Operational Caveats
 - **Testnet Only**: SLASettle is deployed on Stellar Testnet and has not been deployed to Stellar Mainnet.
 - **Unaudited**: While extensive automated testing and static analysis have been conducted, the codebase has not undergone a formal third-party security audit.
-- **Watcher Daemon Hosting**: While the indexer and web dashboard are continuously hosted on production cloud infrastructure, watcher daemons are intended to be run by independent operators and are not hosted as a continuous monolithic service by the maintainer.
+- **Watcher Committee**: Watcher daemons can be run independently, but the current GREEN Testnet committee consists of three project-controlled identities. Endpoint commitment does not prove truthful HTTP observation.
+- **Settlement Trigger**: Settlement is permissionless but not automatically scheduled. The contract supports historical-round settlement; the current Web UI targets the current round.
