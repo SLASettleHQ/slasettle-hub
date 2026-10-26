@@ -48,6 +48,7 @@ package contract
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	"github.com/SLASettleHQ/slasettle-hub/watcher/internal/endpoint"
 	"github.com/SLASettleHQ/slasettle-hub/watcher/internal/retry"
@@ -492,6 +493,22 @@ func decodeScValNative(scv xdr.ScVal) (interface{}, error) {
 			record[string(*entry.Key.Sym)] = val
 		}
 		return record, nil
+	case xdr.ScValTypeScvVec:
+		if scv.Vec == nil {
+			return nil, fmt.Errorf("scvVec with no value")
+		}
+		// A contracttype enum with no payload (e.g. SLAStatus::Active)
+		// encodes as a one-element vec holding its variant name Symbol;
+		// decoded generically here as a []interface{} like any other vec.
+		elems := make([]interface{}, 0, len(**scv.Vec))
+		for i, entry := range **scv.Vec {
+			val, err := decodeScValNative(entry)
+			if err != nil {
+				return nil, fmt.Errorf("decoding vec element %d: %w", i, err)
+			}
+			elems = append(elems, val)
+		}
+		return elems, nil
 	case xdr.ScValTypeScvVoid:
 		return nil, nil
 	case xdr.ScValTypeScvBool:
@@ -519,6 +536,17 @@ func decodeScValNative(scv xdr.ScVal) (interface{}, error) {
 			return nil, fmt.Errorf("scvI64 with no value")
 		}
 		return int64(*scv.I64), nil
+	case xdr.ScValTypeScvI128:
+		if scv.I128 == nil {
+			return nil, fmt.Errorf("scvI128 with no value")
+		}
+		// Hi is the signed high 64 bits, Lo the unsigned low 64 bits, per
+		// Soroban's Int128Parts (github.com/stellar/go-stellar-sdk xdr).
+		// big.Int.Lsh/Add give the correct signed 128-bit value directly.
+		hi := big.NewInt(int64(scv.I128.Hi))
+		hi.Lsh(hi, 64)
+		lo := new(big.Int).SetUint64(uint64(scv.I128.Lo))
+		return new(big.Int).Add(hi, lo), nil
 	case xdr.ScValTypeScvSymbol:
 		if scv.Sym == nil {
 			return nil, fmt.Errorf("scvSymbol with no value")

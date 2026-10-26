@@ -6,6 +6,7 @@ package contract
 // not by comparing against an opaque mock.
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/SLASettleHQ/slasettle-hub/watcher/internal/endpoint"
@@ -342,6 +343,56 @@ func TestDecodeScValPrimitives(t *testing.T) {
 		}
 	})
 
+	t.Run("i128 positive within u64 range", func(t *testing.T) {
+		sv, err := xdr.NewScVal(xdr.ScValTypeScvI128, xdr.Int128Parts{Hi: 0, Lo: 60000000})
+		if err != nil {
+			t.Fatalf("NewScVal i128: %v", err)
+		}
+		got, err := decodeScVal(scValBase64(t, sv))
+		if err != nil {
+			t.Fatalf("decodeScVal: %v", err)
+		}
+		v, ok := got.(*big.Int)
+		if !ok || v.Cmp(big.NewInt(60000000)) != 0 {
+			t.Fatalf("got %#v, want *big.Int(60000000)", got)
+		}
+	})
+
+	t.Run("i128 negative", func(t *testing.T) {
+		sv, err := xdr.NewScVal(xdr.ScValTypeScvI128, xdr.Int128Parts{Hi: -1, Lo: 0xFFFFFFFFFFFFFFFF})
+		if err != nil {
+			t.Fatalf("NewScVal i128: %v", err)
+		}
+		got, err := decodeScVal(scValBase64(t, sv))
+		if err != nil {
+			t.Fatalf("decodeScVal: %v", err)
+		}
+		v, ok := got.(*big.Int)
+		if !ok || v.Cmp(big.NewInt(-1)) != 0 {
+			t.Fatalf("got %#v, want *big.Int(-1)", got)
+		}
+	})
+
+	t.Run("vec (unit enum variant, e.g. SLAStatus::Active)", func(t *testing.T) {
+		tagSym, err := xdr.NewScVal(xdr.ScValTypeScvSymbol, xdr.ScSymbol("Active"))
+		if err != nil {
+			t.Fatalf("NewScVal symbol: %v", err)
+		}
+		vec := xdr.ScVec{tagSym}
+		sv, err := xdr.NewScVal(xdr.ScValTypeScvVec, &vec)
+		if err != nil {
+			t.Fatalf("NewScVal vec: %v", err)
+		}
+		got, err := decodeScVal(scValBase64(t, sv))
+		if err != nil {
+			t.Fatalf("decodeScVal: %v", err)
+		}
+		elems, ok := got.([]interface{})
+		if !ok || len(elems) != 1 || elems[0] != "Active" {
+			t.Fatalf("got %#v, want []interface{}{\"Active\"}", got)
+		}
+	})
+
 	t.Run("symbol", func(t *testing.T) {
 		sv, err := xdr.NewScVal(xdr.ScValTypeScvSymbol, xdr.ScSymbol("Up"))
 		if err != nil {
@@ -383,15 +434,13 @@ func TestDecodeScValPrimitives(t *testing.T) {
 }
 
 func TestDecodeScValUnhandledTypeReturnsError(t *testing.T) {
-	// ScvVec is a real, valid ScVal type this daemon has no general reader
-	// for (CheckStatus's specific vec[symbol] shape is decoded separately,
-	// not through this generic path). decodeScVal must report an unhandled
-	// type plainly rather than silently returning a zero value that could
-	// be mistaken for real contract state.
-	empty := xdr.ScVec{}
-	sv, err := xdr.NewScVal(xdr.ScValTypeScvVec, &empty)
+	// ScvU128 is a real, valid ScVal type this daemon has no reader for.
+	// decodeScVal must report an unhandled type plainly rather than
+	// silently returning a zero value that could be mistaken for real
+	// contract state.
+	sv, err := xdr.NewScVal(xdr.ScValTypeScvU128, xdr.UInt128Parts{Hi: 0, Lo: 0})
 	if err != nil {
-		t.Fatalf("NewScVal vec: %v", err)
+		t.Fatalf("NewScVal u128: %v", err)
 	}
 	_, err = decodeScVal(scValBase64(t, sv))
 	if err == nil {
