@@ -24,7 +24,7 @@ In the **Create SLA** panel, specify your agreement parameters:
 - **Initial Bond Amount**: The total collateral locked into escrow (e.g., `100 XLM`).
 - **Penalty Per Breach**: The fixed payout transferred to the beneficiary for every single round in which downtime is attested (e.g., `10 XLM`).
   - *Constraint*: Must be greater than 0 and less than or equal to the bond amount.
-- **Quorum Threshold**: The minimum number of `DOWN` votes required from registered watchers before a payout can execute (e.g., `3` out of 5 watchers).
+- **Quorum Threshold**: The minimum number of `DOWN` votes required from registered watchers before a payout can execute. It must not exceed the registered watcher count (the current GREEN Testnet deployment has 3 registered watchers, so thresholds above 3 would never be reachable there).
 - **Uptime Target (bps)**: Desired availability target in basis points (e.g., `9990` for 99.9%).
 
 Click **Create Agreement**. Review the decoded Soroban transaction parameters in Freighter and confirm. Once confirmed, your new SLA appears with status `Active`.

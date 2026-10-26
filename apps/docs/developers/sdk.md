@@ -47,7 +47,7 @@ const tx = await buildCreateSlaTx({
   token: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
   bondAmount: 100_000_000n,       // 10 XLM in stroops (bigint)
   uptimeTargetBps: 9990,          // 99.9%
-  quorumThreshold: 3,             // 3 of 5 watchers
+  quorumThreshold: 3,             // example value — not tied to any specific watcher count
   penaltyPerBreach: 10_000_000n,  // 1 XLM per breach
   beneficiary: "G...",
 });

@@ -16,7 +16,7 @@ Before relying on an infrastructure provider's SLA guarantee, inspect the agreem
 1. **Beneficiary Address**: Ensure the configured `beneficiary` address matches your Stellar account.
 2. **Escrow Balance**: Verify the `bond_balance` holds sufficient collateral to cover anticipated downtime penalties.
 3. **Penalty Per Breach**: Confirm the compensation amount matches your commercial contract.
-4. **Quorum Threshold**: Verify the quorum requirement (e.g. 3 of 5 watchers) represents a robust majority of the active committee.
+4. **Quorum Threshold**: Verify the quorum requirement represents a robust majority of the active registered watcher committee (3 watchers, quorum 2, on the current GREEN Testnet deployment).
 5. **Contract Addresses**: Confirm the SLA is created on the official verified `sla_vault` contract.
 
 ## 2. Real-Time Availability Monitoring

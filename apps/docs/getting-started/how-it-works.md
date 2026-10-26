@@ -1,6 +1,6 @@
 # How It Works
 
-SLASettle replaces manual claim adjudication and disputed logs with autonomous smart contract settlement on Stellar Soroban.
+SLASettle replaces manual claim adjudication and disputed logs with deterministic, permissionless smart contract settlement on Stellar Soroban — settlement is not automatically scheduled; any party must submit the `trigger_settlement` transaction once quorum is reached.
 
 ## End-to-End System Flow
 
@@ -14,7 +14,7 @@ SLASettle replaces manual claim adjudication and disputed logs with autonomous s
                                                               v
 +------------------+     HTTP Health Probe       +-------------------------+
 |  Watcher Nodes   | --------------------------> |    watcher_registry     |
-| (Independent Set)|     submit_check(..., vote) +-------------------------+
+| (Registered Set)  |     submit_check(..., vote) +-------------------------+
 +------------------+
          |
          | Downtime Detected & Quorum Reached (votes_down >= quorum_threshold)
