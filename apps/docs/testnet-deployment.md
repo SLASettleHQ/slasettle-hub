@@ -5,18 +5,18 @@ This page records the active Stellar Testnet deployment, contract identities, WA
 > [!NOTE]
 > All addresses and artifacts described on this page reside on **Stellar Testnet**. Nothing in this repository is deployed to Stellar Mainnet.
 >
-> The contract pair below was built and deployed under **Protocol 28** — that is a fact about the deployment's history, not a claim about the network's current protocol. Stellar Testnet's protocol version advances independently of this repository (it is at Protocol 29 as of 2026-10-26, confirmed live via `getNetwork` against `https://soroban-testnet.stellar.org`). Always re-verify the current network protocol on deployment day rather than assuming it still matches what's recorded here.
+> The current v0.2 pair was built with `soroban-sdk 29.0.1` and deployed while Stellar Testnet was on Protocol 29. Historical Protocol 27/28 records below remain unchanged as dated deployment evidence.
 
 ---
 
-## Active Deployed Contracts (built under Protocol 28)
+## Current v0.2 GREEN deployment
 
-Deployed and verified on Stellar Testnet with `soroban-sdk 28.0.0` and `stellar-cli 28.1.0`:
+Deployed and verified on Stellar Testnet under Protocol 29 with `soroban-sdk 29.0.1`:
 
 | Contract Name | Contract ID | Deployed WASM SHA-256 Hash |
 | :--- | :--- | :--- |
-| **`watcher_registry`** | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | `5478788ea6c6ae46ddb85c399015139d3b883b7c253dd9abe50e096bf0bcdfb5` |
-| **`sla_vault`** | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | `e177a76f3888575c3c9666689ab905e25a1b3001fb4d85045d05ee43fa298bcd` |
+| **`watcher_registry`** | `CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY` | `e433b7e36580889b1a2aa94570ed7adee7e9048d4d211a10031ffcfa8fc53171` |
+| **`sla_vault`** | `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2` | `23ea6cdc28a11883fd5979c06fcdea3b3f68a5b2aa9f0bace855de0149d8ac79` |
 
 - **Network**: Stellar Testnet
 - **Network Passphrase**: `Test SDF Network ; September 2015`
@@ -24,13 +24,13 @@ Deployed and verified on Stellar Testnet with `soroban-sdk 28.0.0` and `stellar-
 - **Admin & Deployer**: `GBWM5N2S3A3ZWEHNVTLLKSYRYCQB7ALJL4EOVO5ZFX6TSIZ3ZDED2UPB`
 - **Native XLM Stellar Asset Contract (SAC)**: `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`
 
-The table above is **still the pair that serves public Production** (`slasettle-web.vercel.app`). It has not changed.
+The pair above serves public production at `slasettle-web.vercel.app` through the GREEN v0.2 indexer. Current verification uses three project-controlled Testnet watcher identities.
 
 ---
 
-## GREEN v0.2 Testnet Deployment (isolated — not production)
+## v0.2 deployment and lifecycle evidence
 
-A separate, isolated v0.2 contract pair, indexer, and D1 have been deployed on the same Stellar Testnet, built under Protocol 29 with `soroban-sdk 29.0.1`, as the blue/green cutover's GREEN side (see [`developers/v0.2-cutover.md`](/developers/v0.2-cutover)). This is **not** a replacement for the table above — blue remains production.
+A separate v0.2 D1 and Worker were created for the blue/green cutover (see [`developers/v0.2-cutover.md`](/developers/v0.2-cutover)). They are now current public production; BLUE remains intact for rollback.
 
 | Contract Name | Contract ID | Deployed WASM SHA-256 Hash |
 | :--- | :--- | :--- |
@@ -39,7 +39,7 @@ A separate, isolated v0.2 contract pair, indexer, and D1 have been deployed on t
 
 - **Indexer**: `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`, D1 `slasettle-indexer-v02` (id `17b47ce0-bdc6-46eb-ba72-0513804b7827`), fully separate from blue's D1 and Worker.
 - **Watchers**: `slasettle-v02-watcher-1/2/3`, three **project-controlled Testnet identities** created for this demonstration — not independent or community-operated.
-- **Web**: a Vercel Preview deployment, gated behind Vercel's own deployment-protection (not a public URL).
+- **Web**: production deployment `dpl_2PUYihsd4aaqJ9nCNofEoqEg11Jq`; rollback deployment `dpl_3GiQGWRH4t59vp55cSkZD5obLQUF` remains Ready.
 
 ### Live lifecycle verification (2026-10-26)
 
@@ -55,7 +55,7 @@ A full SLA lifecycle was exercised end-to-end through this green stack — Previ
 
 This demonstration also found and fixed a real bug: the Go watcher's generic Soroban value decoder had no case for `i128` or `vec` ScVals, so it failed reading `get_sla` entirely (needed for the endpoint-commitment pre-flight check) against a real deployed `SLAConfig`. Fixed in `watcher/internal/contract/contract.go` with new regression tests.
 
-Blue (`slasettle-web.vercel.app`, its Worker, its D1, and its v0.1 contracts) was confirmed healthy and unchanged before, during, and after this entire demonstration.
+The BLUE Worker, D1, v0.1 contracts, and rollback Web deployment were confirmed healthy and unchanged before, during, and after this demonstration and cutover.
 
 ---
 
@@ -94,11 +94,22 @@ A complete, live browser verification pass using the Freighter wallet extension 
 | :--- | :--- | :--- |
 | **Web Console** | Vercel | [https://slasettle-web.vercel.app](https://slasettle-web.vercel.app) |
 | **Documentation** | Vercel | [https://slasettle-docs.vercel.app](https://slasettle-docs.vercel.app) |
-| **Event Indexer** | Cloudflare Workers + D1 | [https://slasettle-indexer.slasettle-indexer.workers.dev](https://slasettle-indexer.slasettle-indexer.workers.dev) |
+| **Event Indexer** | Cloudflare Workers + D1 | [https://slasettle-indexer-v02.slasettle-indexer.workers.dev](https://slasettle-indexer-v02.slasettle-indexer.workers.dev) |
 
 ---
 
-## Historical Deployments (Superseded)
+## Legacy / rollback deployment
+
+The Protocol 28 BLUE pair remains deployed for rollback and historical evidence:
+
+| Contract Name | Contract ID | Deployed WASM SHA-256 Hash |
+| :--- | :--- | :--- |
+| **`watcher_registry`** | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | `5478788ea6c6ae46ddb85c399015139d3b883b7c253dd9abe50e096bf0bcdfb5` |
+| **`sla_vault`** | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | `e177a76f3888575c3c9666689ab905e25a1b3001fb4d85045d05ee43fa298bcd` |
+
+The BLUE indexer remains at `https://slasettle-indexer.slasettle-indexer.workers.dev`; D1 id `c45540af-2fb9-4092-a771-c34b0b4a4e69`. Its transaction evidence is preserved below and in the dated evidence files.
+
+### Earlier historical deployments
 
 ### 2026-09-27 Deployment Pair
 - `watcher_registry`: `CBKAQETJU3PLB54LJRSA7ZH2ZG4TBQHHDSWZ23R4VVTV7WBIX3QZBUZ6`

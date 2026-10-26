@@ -2,7 +2,7 @@
 
 The SLASettle Indexer service provides a read-optimized REST API that parses on-chain Soroban events into indexed records for fast client consumption.
 
-- **Hosted Production Endpoint**: `https://slasettle-indexer.slasettle-indexer.workers.dev`
+- **Hosted Production Endpoint**: `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`
 - **Hosting Engine**: Cloudflare Workers with Cloudflare D1 SQL storage
 - **Design Boundary**: Read-only. The API contains zero write endpoints and holds no signing keys.
 
@@ -113,7 +113,7 @@ Chronological list of all executed breach penalty settlements for an SLA.
 ---
 
 ### 6. SLA Lifecycle History (`GET /v1/slas/:slaId/lifecycle`)
-Chronological list of bond top-up, cancellation, and bond withdrawal events for an SLA — **v0.2 contract interface**, not yet live against the deployed v0.1 contracts.
+Chronological list of bond top-up, cancellation, and bond withdrawal events for an SLA. This endpoint is live on the v0.2 GREEN production indexer.
 
 **Parameters**:
 - `slaId`: Numerical SLA identifier (path parameter).

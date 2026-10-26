@@ -10,9 +10,9 @@ These variables are consumed by `@slasettle/sdk` and inlined into the Next.js bu
 | :--- | :--- | :--- | :--- |
 | `NEXT_PUBLIC_SOROBAN_RPC_URL` | Yes | `https://soroban-testnet.stellar.org` | Stellar RPC endpoint for contract simulations and submission. |
 | `NEXT_PUBLIC_NETWORK_PASSPHRASE` | Yes | `Test SDF Network ; September 2015` | Stellar network passphrase for transaction envelope signing. |
-| `NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID` | Yes | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | Address of deployed `sla_vault` smart contract. |
-| `NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID` | Yes | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | Address of deployed `watcher_registry` smart contract. |
-| `NEXT_PUBLIC_INDEXER_API_URL` | Yes | `https://slasettle-indexer.slasettle-indexer.workers.dev` | Endpoint of the event indexer service (or `http://localhost:8787`). |
+| `NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID` | Yes | `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2` | Current GREEN Testnet `sla_vault`. |
+| `NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID` | Yes | `CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY` | Current GREEN Testnet `watcher_registry`. |
+| `NEXT_PUBLIC_INDEXER_API_URL` | Yes | `https://slasettle-indexer-v02.slasettle-indexer.workers.dev` | Current GREEN event indexer (or `http://localhost:8787`). |
 
 > [!NOTE]
 > `@slasettle/sdk` invokes `getSdkConfig()` at runtime. If any required variable is omitted, it throws a explicit `MissingSdkConfigError` rather than guessing a fallback.

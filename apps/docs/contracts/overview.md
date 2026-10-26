@@ -1,6 +1,6 @@
 # Contract Overview
 
-The SLASettle smart contract layer is implemented in Rust using the Soroban SDK (`soroban-sdk 28.0.0`) targeting Stellar Protocol 28. It is organized into two distinct, loosely coupled contracts hosted in the `SLASettleHQ/slasettle-vault` repository.
+The SLASettle smart contract layer is implemented in Rust using `soroban-sdk 29.0.1`. The current v0.2 contracts were deployed and cut over while Stellar Testnet was on Protocol 29. It is organized into two distinct, loosely coupled contracts hosted in the `SLASettleHQ/slasettle-vault` repository.
 
 ## Contract Architecture & Coupling
 
@@ -39,8 +39,8 @@ The SLASettle smart contract layer is implemented in Rust using the Soroban SDK 
 
 | Contract Name | Address | Functionality |
 | :--- | :--- | :--- |
-| **`sla_vault`** | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` | Collateral escrow, agreement configuration, and penalty settlement. |
-| **`watcher_registry`** | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` | Node registration, check attestation, and vote tallying. |
+| **`sla_vault`** | `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2` | Collateral escrow, agreement configuration, and penalty settlement. |
+| **`watcher_registry`** | `CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY` | Node registration, check attestation, and vote tallying. |
 
 - **Network**: Stellar Testnet
 - **Network Passphrase**: `Test SDF Network ; September 2015`

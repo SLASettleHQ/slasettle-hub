@@ -44,3 +44,11 @@ As part of engineering verification passes:
 - **Node.js / npm**: `pnpm audit --prod` and `npm audit --omit=dev` performed on `slasettle-hub` workspace and `indexer`, confirming 0 known vulnerabilities.
 - **Go**: `govulncheck ./...` executed across `watcher`, reporting 0 vulnerabilities with Go 1.25.14.
 - **Secret Scanning**: Repository-wide regular regex scanning confirms zero leaked keys, mnemonic phrases, or PEM certificates across git history.
+
+## Current Testnet trust boundary
+
+- The GREEN committee consists of three project-controlled Testnet watcher identities; it is not evidence of independent or community-operated observers.
+- Watcher daemons can be operated independently, but registry membership is administrator-controlled and shared globally by all SLAs on the deployment.
+- Endpoint commitment binds votes to an endpoint commitment and prevents cross-endpoint tally mixing. It does not cryptographically prove that a watcher performed, or truthfully reported, an HTTP observation.
+- Settlement is permissionless once quorum is present, but it is not automatically scheduled.
+- This Testnet-only system has not undergone an independent third-party security audit.

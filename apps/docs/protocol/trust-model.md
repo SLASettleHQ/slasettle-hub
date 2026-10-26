@@ -28,7 +28,7 @@ $$\text{Quorum} = \left\lfloor \frac{N}{2} \right\rfloor + 1$$
 ### Byzantine Fault Tolerance
 With a 5-watcher committee:
 - Up to 2 watchers can experience transient connectivity failures or behave maliciously without preventing consensus or triggering false breach settlements.
-- At least 3 independent watchers must observe and attest `DOWN` within the round window before any penalty can be transferred.
+- A configured threshold of registered watchers must attest `DOWN` for the endpoint commitment before a penalty can be transferred. The current GREEN Testnet deployment uses three project-controlled watcher identities with a threshold of two; this does not prove independent observation.
 
 ## Cryptographic Attestation
 

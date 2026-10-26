@@ -74,6 +74,6 @@ The test suite explicitly encodes regressions discovered during engineering:
 ## Live Stellar Testnet Verification
 
 In addition to local unit and integration tests:
-- **Protocol 28 WASM Parity**: Contract WASM bytecode deployed to Testnet matches local release builds byte-for-byte with zero hash drift.
-- **Freighter Browser Verification**: End-to-end wallet interaction (create agreement, top up collateral, cancel agreement, withdraw collateral) was executed and confirmed live on Testnet using Freighter on SLA #2.
+- **Protocol 29 v0.2 WASM Parity**: Contract WASM bytecode deployed to Testnet matches the `soroban-sdk 29.0.1` release builds: registry `e433b7e36580889b1a2aa94570ed7adee7e9048d4d211a10031ffcfa8fc53171`, vault `23ea6cdc28a11883fd5979c06fcdea3b3f68a5b2aa9f0bace855de0149d8ac79`.
+- **Freighter Browser Verification**: The v0.2 lifecycle was executed and confirmed on Testnet using Freighter on GREEN SLA #0.
 - **Permissionless Settlement**: Real on-chain settlements have been executed where external keeper accounts triggered penalty payments directly to beneficiaries upon quorum formation.

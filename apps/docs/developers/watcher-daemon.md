@@ -89,7 +89,7 @@ go test ./...
 go build -o watcher-daemon ./cmd/watcher
 
 # Run with environment variables
-export WATCHER_REGISTRY_CONTRACT_ID="CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF"
+export WATCHER_REGISTRY_CONTRACT_ID="CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY"
 export WATCHER_SECRET_KEY="S..."
 export TARGET_URL="https://api.example.com/health"
 export SLA_ID=2

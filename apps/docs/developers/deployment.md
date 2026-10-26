@@ -6,11 +6,11 @@ This guide details the procedure for compiling, deploying, configuring, and veri
 
 | Component | Target Platform | Hosted URL / Endpoint |
 | :--- | :--- | :--- |
-| **`watcher_registry`** | Stellar Testnet (Soroban) | `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF` |
-| **`sla_vault`** | Stellar Testnet (Soroban) | `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN` |
+| **`watcher_registry`** | Stellar Testnet (Soroban) | `CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY` |
+| **`sla_vault`** | Stellar Testnet (Soroban) | `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2` |
 | **`slasettle-web`** | Vercel Edge / Node | [https://slasettle-web.vercel.app](https://slasettle-web.vercel.app) |
 | **`slasettle-docs`** | Vercel Static | [https://slasettle-docs.vercel.app](https://slasettle-docs.vercel.app) |
-| **`slasettle-indexer`**| Cloudflare Workers + D1 | [https://slasettle-indexer.slasettle-indexer.workers.dev](https://slasettle-indexer.slasettle-indexer.workers.dev) |
+| **`slasettle-indexer-v02`**| Cloudflare Workers + D1 | [https://slasettle-indexer-v02.slasettle-indexer.workers.dev](https://slasettle-indexer-v02.slasettle-indexer.workers.dev) |
 | **Watcher Nodes** | Autonomous Bare-Metal / Cloud | Distributed node daemons |
 
 ---

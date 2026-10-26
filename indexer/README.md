@@ -26,13 +26,13 @@ The wire format of every kind is documented at the top of `src/rpc/decode.ts`.
 
 The production indexer is deployed as a public service on Cloudflare's Free Tier ($0 operational cost):
 
-- Public Service URL: `https://slasettle-indexer.slasettle-indexer.workers.dev`
+- Public Service URL: `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`
 - Database: Cloudflare D1 (`slasettle-indexer`, SQLite dialect)
 - Ingestion Trigger: Cloudflare Worker Cron Trigger (`* * * * *`, every minute)
-- Network: Stellar Testnet (Protocol 28)
+- Network: Stellar Testnet (Protocol 29 at v0.2 cutover verification)
 - Target Contracts:
-  - `watcher_registry`: `CDRNXUPCZTVZXKPWNBQZAYI6HYFNBDHRO2KNNJSMDVTEHFOM7LCMOYMF`
-  - `sla_vault`: `CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN`
+  - `watcher_registry`: `CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY`
+  - `sla_vault`: `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2`
 
 ### Production Architecture
 

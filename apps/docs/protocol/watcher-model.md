@@ -1,6 +1,6 @@
 # Watcher Topology & Node Model
 
-Watcher nodes are the decentralized observers of the SLASettle protocol. They bridge off-chain service health to the on-chain consensus state in `watcher_registry`.
+Watcher nodes bridge off-chain service-health votes to the registered quorum state in `watcher_registry`. Watcher daemons can be operated independently, but the current GREEN Testnet verification uses three project-controlled watcher identities and does not demonstrate independent third-party operation.
 
 ## Node Lifecycle & Authorization
 
@@ -106,3 +106,5 @@ For production reliability, watcher nodes should be deployed with geographical a
 - Distributed across multiple cloud providers (AWS, GCP, Azure) and independent bare-metal servers.
 - Spanning multiple geographical regions (North America, Europe, Asia-Pacific) to mitigate regional routing or transit provider outages.
 - Running autonomous monitoring loops with local SQLite/in-memory state persistence to prevent duplicate transaction submissions upon daemon restarts.
+
+These are deployment recommendations, not claims about the current Testnet committee. Endpoint commitment binds a vote to an endpoint commitment and isolates tallies; it does not prove that a watcher made an honest HTTP observation.
