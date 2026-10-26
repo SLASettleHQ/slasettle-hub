@@ -1,5 +1,7 @@
 # Evidence index
 
+**Current production record (2026-10-26).** The v0.2 GREEN production identity, promotion, smoke checks, lifecycle references, and preserved BLUE rollback state are recorded in [`v0.2-production-cutover-2026-10-26.md`](v0.2-production-cutover-2026-10-26.md). Earlier rows below are dated historical evidence and retain the state observed at that time.
+
 Phase 26. One row per externally important claim about SLASettle, with where
 the proof is and how strong it is. It is built from the evidence records and
 current source, re-read on 2026-09-29, not from memory.
