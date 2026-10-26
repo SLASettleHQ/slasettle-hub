@@ -6,16 +6,18 @@ Use these records in order for the current state. Older Phase 7–12 and
 2026-09 records below remain dated historical evidence; they are not the
 authoritative description of v0.2.
 
-1. [Current v0.2 submission readiness](submission-readiness-v0.2-2026-10-26.md)
-2. [Problem validation](../research/problem-validation.md)
-3. [Ecosystem recon](../research/ecosystem-recon.md)
-4. [v0.2 claim traceability](claim-traceability-v0.2-2026-10-26.md)
-5. [Skeptical external review](external-review-v0.2-2026-10-26.md)
-6. [v0.2 production cutover](v0.2-production-cutover-2026-10-26.md)
-7. [Live v0.2 lifecycle](../apps/docs/testnet-deployment.md#live-lifecycle-verification-2026-10-26)
-8. [Vault v0.2 deployment evidence](https://github.com/SLASettleHQ/slasettle-vault/blob/main/evidence/testnet-v0.2-2026-10-26.md)
-9. [Security model](../SECURITY.md) and [protocol limitations](../apps/docs/protocol/limitations.md)
-10. [Hub v0.2.0 release](https://github.com/SLASettleHQ/slasettle-hub/releases/tag/v0.2.0) and [Vault v0.2.0 release](https://github.com/SLASettleHQ/slasettle-vault/releases/tag/v0.2.0)
+1. [Canonical submission pack](../submission/submission-pack.md) — start here.
+2. [Architecture / how it works](../apps/docs/protocol/architecture.md) and [trust model](../apps/docs/protocol/trust-model.md)
+3. [v0.2 production cutover](v0.2-production-cutover-2026-10-26.md) — current live GREEN deployment evidence
+4. [Live v0.2 lifecycle transaction evidence](../apps/docs/testnet-deployment.md#live-lifecycle-verification-2026-10-26)
+5. [Contract/WASM evidence](../apps/docs/contracts/overview.md) — deployed addresses and hashes
+6. [Test/CI evidence](../apps/docs/developers/testing.md) — current 595-test baseline
+7. [Security model](../SECURITY.md) and [protocol limitations](../apps/docs/protocol/limitations.md)
+8. [Competitor / ecosystem research](../research/ecosystem-recon.md) and [problem validation](../research/problem-validation.md) — also summarized in the submission pack's comparator table
+9. [Hub v0.2.0 release](https://github.com/SLASettleHQ/slasettle-hub/releases/tag/v0.2.0) and [Vault v0.2.0 release](https://github.com/SLASettleHQ/slasettle-vault/releases/tag/v0.2.0)
+10. Historical evidence archive (below this section) — dated, superseded, kept for continuity, not current state.
+
+Supporting current-state records not in the numbered path above: [v0.2 submission readiness](submission-readiness-v0.2-2026-10-26.md), [v0.2 claim traceability](claim-traceability-v0.2-2026-10-26.md), [skeptical external review](external-review-v0.2-2026-10-26.md), [Vault v0.2 deployment evidence](https://github.com/SLASettleHQ/slasettle-vault/blob/main/evidence/testnet-v0.2-2026-10-26.md).
 
 **Current production record (2026-10-26).** The v0.2 GREEN production
 identity, promotion, smoke checks, lifecycle references, and preserved BLUE
