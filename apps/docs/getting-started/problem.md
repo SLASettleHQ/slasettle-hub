@@ -28,7 +28,7 @@ SLASettle replaces bilateral trust and post-incident arbitration with automated 
 | Traditional SLA | SLASettle Protocol |
 | :--- | :--- |
 | **Commitment** | Paper contract or terms of service | Cryptographic token bond locked in `sla_vault` |
-| **Telemetry** | Self-reported by service provider | Independent committee of registered watcher nodes |
+| **Telemetry** | Self-reported by service provider | Registered watcher committee (design); currently three project-controlled Testnet identities, not independently operated — see the [trust model](/protocol/trust-model) |
 | **Dispute Resolution** | Customer support claim tickets and review | Cryptographic consensus via on-chain vote quorum |
 | **Compensation** | Future service credits (subject to review) | Direct token transfer from vault to beneficiary |
 | **Execution** | Discretionary, manual payment | Permissionless, verifiable smart contract settlement |

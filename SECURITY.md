@@ -19,14 +19,12 @@ not this one.
 
 ## Reporting a vulnerability
 
-This repository does not currently have GitHub's private vulnerability
-reporting feature enabled, and no dedicated security contact address
-exists. If you find a vulnerability, open a GitHub issue with the minimum
-detail needed to establish that a real issue exists (do not include a
-full exploit in a public issue) and ask for a private channel to share
-the rest. This is a real gap for a project at this stage, not a
-deliberate choice, and it should be closed before any production
-deployment.
+This repository has GitHub's private vulnerability reporting feature
+enabled. Use the **"Report a vulnerability"** button under the repository's
+Security tab (or go directly to
+[github.com/SLASettleHQ/slasettle-hub/security/advisories/new](https://github.com/SLASettleHQ/slasettle-hub/security/advisories/new))
+to open a private advisory visible only to the maintainer. Do not open a
+public issue for a suspected vulnerability.
 
 ## Watcher: private key and signing boundary
 
@@ -46,7 +44,7 @@ current sequence number live before every submission, rather than caching
 or manually incrementing one, which avoids a class of sequence-drift
 replay bugs.
 
-`go build`, `go vet`, and `go test` (48/48) all pass. `govulncheck`
+`go build`, `go vet`, and `go test` (88/88) all pass. `govulncheck`
 against this module found vulnerabilities only in the Go standard library
 (net/url, crypto/tls, crypto/x509, net/http, encoding/asn1, encoding/pem),
 none in `go-stellar-sdk` or any other third-party dependency actually
@@ -99,7 +97,10 @@ build, sign or submit when the wallet is on a different network or the app
 has no configured network, `signTransaction` in `lib/wallet.ts` re-checks the
 wallet's live network before asking Freighter to sign, and each write action
 disables its button and says why. This is covered by unit tests with a mocked
-wallet. It has not yet been exercised in a real browser with Freighter.
+wallet, and has since been exercised live: a real Freighter extension, on
+Testnet, performed `create_sla`, `top_up_bond`, `trigger_settlement`,
+`cancel_sla`, and `withdraw_remaining_bond` against the deployed GREEN v0.2
+contracts (see `evidence/v0.2-production-cutover-2026-10-26.md`).
 
 Exactly one `dangerouslySetInnerHTML` use exists in the entire frontend
 (`app/layout.tsx`, the dark-mode flash-prevention script), and its content
@@ -127,11 +128,12 @@ repository as of this date.
 
 ## Known limitations
 
-- The frontend's network-mismatch block (hub #13) is covered by unit tests
-  with a mocked wallet only. It has not been exercised in a real browser with
-  Freighter.
 - No CI-level dependency or secret scanner runs on a schedule; the checks
   described above were manual and one-time.
+- No independent third-party security audit has been performed.
+- The current GREEN Testnet watcher committee (3 identities, quorum 2-of-3) is
+  project-controlled, not independently operated — see
+  `apps/docs/protocol/trust-model.md`.
 
 ## Resolved since the original review
 
@@ -163,7 +165,7 @@ repository as of this date.
 
 ## Supported versions
 
-Testnet only. Public releases `v0.1.0` and `v0.1.1` are Testnet releases. They
-are unaudited and are not production deployments. There is no mainnet deployment
-and no mainnet support. This document will be updated once a mainnet target
-exists.
+Testnet only. Public releases `v0.1.0`, `v0.1.1`, and `v0.2.0` are Testnet
+releases. They are unaudited and are not production deployments. There is no
+mainnet deployment and no mainnet support. This document will be updated once
+a mainnet target exists.

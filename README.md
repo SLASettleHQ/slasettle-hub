@@ -38,6 +38,8 @@ Smart contracts provide custody and settlement guarantees, but operators and cus
 - Watcher nodes need lightweight, robust daemon software to run checks and submit transactions reliably without handling custodian funds.
 - Web clients require efficient event caching and round aggregation rather than repeatedly polling complex raw RPC logs.
 
+SLASettle is not claimed as the only or first Stellar SLA project — [`submission/submission-pack.md`](submission/submission-pack.md#12-competitor--comparator-differentiation) has a source-backed comparison against ApexChainx and Trustless Work.
+
 ## Live Testnet status
 
 | Service | Host | Status | Details |
