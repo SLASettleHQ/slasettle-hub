@@ -26,7 +26,7 @@ This page provides an honest, comprehensive account of design trade-offs, operat
 
 Soroban uses state archival to manage ledger storage growth:
 - **Persistent Storage TTLs**: In the contracts, entries for `SLAConfig`, `BondBalance`, `Check`, and `RoundTally` extend persistent storage TTLs upon write operations.
-- **Instance Storage**: Instance storage entries (`Admin`, `Paused`, `NextSlaId`, `WatcherCount`) require periodic maintenance or manual extension via `stellar contract extend` if long periods elapse without administrative interaction.
+- **Instance Storage**: Both contracts extend instance TTL on selected successful state-changing calls and expose a public `extend_contract_ttl` maintenance entrypoint. Long periods without those calls can still require active TTL monitoring and an explicit maintenance invocation; this is not a fully autonomous archival or recovery service.
 - **Client Handling**: The SDK and web frontend assume active ledger state. If an SLA record were to expire into archived storage due to prolonged inactivity, it must be restored on-chain before interacting with it.
 
 ## Verification & Deployment Status
