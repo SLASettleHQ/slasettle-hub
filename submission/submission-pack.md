@@ -47,7 +47,7 @@ SLASettle binds uptime commitments directly to collateralized smart contracts:
 - **Deterministic Quorum Settlement:** If the quorum of down-votes is satisfied, breach penalties are paid programmatically to the beneficiary.
 - **Clear Lifecycle Controls:** Providers can top up active bonds, cancel agreements cleanly, or withdraw remaining collateral once agreements conclude.
 
-This is **not** presented as trustless monitoring, automatic monthly SLA enforcement, cryptographic proof of HTTP truth, or a production/Mainnet-ready, audited, or first/only system in this space — see Section 11 (Current Trust Model) and Section 14 (Differentiation) for precise claims.
+This is **not** presented as trustless monitoring, automatic monthly SLA enforcement, cryptographic proof of HTTP truth, or a production/Mainnet-ready, audited, or first/only system in this space — see Section 11 (Current Trust Model) and Section 12 (Differentiation) for precise claims.
 
 ---
 
