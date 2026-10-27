@@ -282,7 +282,7 @@ SLASettle's narrower claim: an endpoint-bound, per-round, registered-watcher-att
 1. **No Commit-Reveal Scheme:** Watcher check submissions are public on the ledger. A watcher voting late in a round could observe earlier submissions before voting. Tracked in roadmap issue `slasettle-vault#4`.
 2. **Shared Watcher Set:** The admin registers a single global watcher set that observes all active SLAs, rather than allowing custom watcher sets per agreement.
 3. **Descriptive Uptime Target:** `uptime_target_bps` is stored on-chain for contractual documentation and interface display, but settlement logic checks discrete round-level breach quorums rather than multi-round cumulative availability.
-4. **Manual Instance TTL Management:** Current contract logic does not automatically invoke `extend_ttl` on instance storage during execution. Production operation requires operational TTL monitoring.
+4. **Active TTL Maintenance:** The contracts extend instance TTL on selected successful state-changing calls and expose a public `extend_contract_ttl` maintenance entrypoint. Periods of inactivity can still require active TTL monitoring and explicit maintenance; this is not a fully autonomous archival or recovery service.
 5. **Project-controlled watcher committee:** The current GREEN deployment's three watcher identities are project-controlled Testnet identities, not an independently operated fleet.
 6. **Residual dev-tool dependency advisories:** A VitePress/Vite chain (docs build only) and a Wrangler/Miniflare chain (indexer dev tooling only) remain, each requiring a breaking upgrade not forced into v0.2. See `apps/docs/developers/deployment.md` and indexer CI history.
 
