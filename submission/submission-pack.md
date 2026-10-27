@@ -314,7 +314,7 @@ SLASettle's narrower claim: an endpoint-bound, per-round, registered-watcher-att
 3. **Independently operated watcher fleet:** Move from project-controlled demonstration identities toward geographically/infrastructurally diverse, independently operated watchers — a desired property, not yet demonstrated.
 4. **Automated Settlement Keepers:** Open-source keeper daemons that automatically submit `trigger_settlement` once quorum is reached.
 5. **Cumulative Uptime Windows:** Transition from discrete round penalties toward cumulative monthly SLA breach calculations.
-6. **Multi-Asset Escrow:** Explicit support for USDC and other Stellar assets beyond native XLM.
+6. **Additional Stellar Asset Verification:** Verify and document end-to-end support for additional Stellar assets such as USDC, including token-contract compatibility, decimals, frontend selection, error handling, and live Testnet evidence. The contract already accepts a token address, but a complete non-XLM asset lifecycle has not yet been independently established.
 7. **Mainnet Operationalization:** Independent security audit, decentralized keeper networks, and production TTL automation.
 
 ---
