@@ -138,8 +138,9 @@ signing path), the indexer's CORS configuration, and the frontend's
 wallet-signing flow (`lib/wallet.ts`) are security-sensitive. Changes here
 should explain in the commit message exactly what boundary they affect
 and include a test that would have failed before the fix. See
-`SECURITY.md` for how to report a vulnerability; there is no private
-reporting channel, stated plainly rather than invented.
+`SECURITY.md` for private vulnerability reporting. GitHub's private
+vulnerability reporting is enabled for this repository; use the Security
+tab or the private advisory link there, not a public issue.
 
 ## Documentation expectations
 

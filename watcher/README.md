@@ -6,13 +6,14 @@ own watcher address, once the contract admin has registered it via
 `SLASettle-contract-spec.md`). Once per round it checks a target endpoint
 and submits its vote, bound to the SLA's committed endpoint hash.
 
-This describes the **v0.2 contract interface** — not yet the currently
-deployed Testnet contracts, which are still v0.1.
+This describes the **v0.2 contract interface** used by the current GREEN
+Testnet deployment. Deployed identities and lifecycle evidence are recorded
+in the [Hub v0.2 cutover runbook](../apps/docs/developers/v0.2-cutover.md).
 
 ## Verified status
 
-The whole module builds, vets, and tests cleanly against the real
-`go-stellar-sdk` v0.7.3 types. `go.mod` declares `go 1.25` as the minimum.
+The module is built, vetted, and tested against `go-stellar-sdk` v0.8.0.
+`go.mod` declares Go 1.25.0 and pins the Go 1.25.14 toolchain.
 
 `go build ./...` and `go vet ./...` succeed with no errors. `go test ./...`
 passes locally — run it for the current count rather than trusting a number
@@ -28,15 +29,11 @@ transient-not-found-then-success, and rejected-before-inclusion.
 
 That paragraph describes local unit-test coverage only, against a mocked
 RPC transport. Separately, on 2026-09-29, this daemon was built and run as
-a real process against live Testnet RPC and the live, verified v0.1
-`watcher_registry` contract, using a disposable watcher account. Across
-four consecutive real rounds it correctly checked a real HTTP endpoint,
-built, signed, and submitted a real `submit_check` transaction each round,
-and each submission was independently confirmed on-chain. See
-`../evidence/phase-23-verification-2026-09-29.md` in the hub repository
-for the full record — note that run predates the v0.2 endpoint-hash and
-authoritative-round changes described below, which have not yet had an
-equivalent live-Testnet run.
+a real process against the then-current v0.1 Testnet registry using a
+disposable watcher account. That dated run predates v0.2 and is historical
+evidence, not verification of the current interface. The v0.2 GREEN
+lifecycle, including endpoint-bound watcher submissions, is recorded in
+the [2026-10-26 Hub cutover runbook](../apps/docs/developers/v0.2-cutover.md).
 
 ## Building
 
@@ -108,8 +105,8 @@ anything (the daemon never calls `sla_vault` as a write).
    copies with different `SLA_ID` values.
 3. **A mismatched endpoint commitment cannot be repaired for that round.**
    If this daemon's `TARGET_URL` doesn't match the SLA's on-chain
-   `endpoint_hash` — e.g. the provider changed the SLA's committed endpoint
-   after this daemon was configured — the pre-flight check blocks
+   `endpoint_hash`, for example when `SLA_ID` or `TARGET_URL` is configured
+   for a different SLA, the pre-flight check blocks
    submission for the current round, but if some other process already
    consumed this watcher's one vote for `(sla_id, round_id)` under the
    wrong hash, there's no way to vote again for that round.
