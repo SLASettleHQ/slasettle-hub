@@ -71,7 +71,7 @@ apps/docs         VitePress documentation site covering architecture,
 
 ## Features
 
-- **On-Chain SLA Creation**: Providers configure beneficiaries, descriptive uptime targets, round duration, and collateral.
+- **On-Chain SLA Creation**: Providers configure a committed service endpoint, beneficiary, descriptive uptime target, quorum, penalty, and collateral. Observation rounds are fixed at 60 seconds by the contract.
 - **Direct RPC Contract Reads**: The web application reads authoritative bond balances and SLA metadata directly from Soroban RPC via `@slasettle/sdk`.
 - **Indexer-Backed Round Analytics**: Cloudflare D1 stores historical round votes, tallies, and past settlement events for instant dashboard inspection.
 - **Non-Custodial Wallet Integration**: Integrates Freighter wallet for user-signed transactions; private keys never leave the user's browser.

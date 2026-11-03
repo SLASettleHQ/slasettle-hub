@@ -81,7 +81,7 @@ The project is strictly separated across two repositories:
 
 3. **Client Frontend State (Ephemeral View Model)**:
    - The web console does not persist private user state or custom databases.
-   - Uses React Query and direct RPC reads to guarantee zero client-side state divergence.
+   - Uses direct Soroban RPC reads for current contract state and React Query for client-side caching and polling. Cached client data and indexer projections can be stale; a successful ledger-backed RPC read is authoritative for current contract state.
    - Does not assume transaction success from submission receipt; polls Soroban RPC until transaction execution is finalized.
 
 ## Wallet Security Boundary

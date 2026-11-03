@@ -1,16 +1,16 @@
 # How It Works
 
-SLASettle replaces manual claim adjudication and disputed logs with deterministic, permissionless smart contract settlement on Stellar Soroban — settlement is not automatically scheduled; any party must submit the `trigger_settlement` transaction once quorum is reached.
+SLASettle provides deterministic, permissionless smart contract settlement on Stellar Soroban. Settlement is not automatically scheduled; a party must submit `trigger_settlement` after quorum is reached.
 
 ## End-to-End System Flow
 
 ```text
 +------------------+         Locks Bond          +-------------------------+
 | Service Provider | --------------------------> |        sla_vault        |
-+------------------+     create_sla(..., bond)   +-------------------------+
++------------------+ create_sla(..., endpoint_hash, bond) +---------------+
                                                               ^
                                                               | Cross-contract read:
-                                                              | get_round_tally(sla_id, round_id)
+                                                              | get_round_tally(sla_id, round_id, endpoint_hash)
                                                               v
 +------------------+     HTTP Health Probe       +-------------------------+
 |  Watcher Nodes   | --------------------------> |    watcher_registry     |
@@ -35,20 +35,21 @@ SLASettle replaces manual claim adjudication and disputed logs with deterministi
 
 ### 1. `watcher_registry` (Soroban Smart Contract)
 - **Role**: Maintains watcher authorization and collects per-round health attestations.
-- **State**: Tracks registered watcher addresses and raw tallies (`votes_up`, `votes_down`) for each `(sla_id, round_id)` pair.
+- **State**: Tracks registered watcher addresses, checks, and raw tallies (`votes_up`, `votes_down`) for each `(sla_id, round_id, endpoint_hash)` tuple.
 - **Responsibilities**:
   - Validates caller authorization: Only registered watchers can submit checks.
-  - Enforces duplicate prevention: Exactly one check per watcher per round.
+  - Enforces duplicate prevention: One check per watcher per SLA round, regardless of the endpoint hash submitted.
+  - Accepts only the ledger-derived current round or the immediately preceding round. Rounds have a fixed 60-second schedule.
   - Implements contract pause controls for emergency operations.
 - **Design Boundary**: The registry has no knowledge of quorum requirements, token transfers, or penalty amounts; it is strictly an attestation and vote tallying engine.
 
 ### 2. `sla_vault` (Soroban Smart Contract)
 - **Role**: Manages SLA configurations, escrows token collateral, and executes payouts.
-- **State**: Stores SLA parameters (`provider`, `token`, `bond_amount`, `uptime_target_bps`, `quorum_threshold`, `penalty_per_breach`, `beneficiary`, `status`), current bond balances, and settlement records per round.
+- **State**: Stores the provider, token, endpoint commitment, bond, descriptive uptime target, quorum, fixed per-round penalty, beneficiary, status, bond balance, and settled-round records.
 - **Responsibilities**:
   - Escrows tokens upon SLA creation via Stellar Asset Contract (SAC) transfers.
   - Accepts bond top-ups from the provider.
-  - Performs cross-contract reads to `watcher_registry.get_round_tally`.
+  - Reads `watcher_registry.get_watcher_count` when validating SLA creation and `get_round_tally(sla_id, round_id, endpoint_hash)` when settling.
   - Determines if `votes_down >= quorum_threshold`.
   - Executes immediate token transfers to the beneficiary when quorum is satisfied.
   - Enforces strict two-step cancellation (`cancel_sla` followed by `withdraw_remaining_bond`).
@@ -96,3 +97,5 @@ pub fn trigger_settlement(
   3. `votes_down` retrieved from the registry must be greater than or equal to `quorum_threshold`.
   4. The bond balance must be greater than zero.
 - If all conditions pass, `min(penalty_per_breach, remaining_bond)` is transferred directly from the vault to the beneficiary.
+
+The Web application requires a service endpoint and commits its 32-byte endpoint hash when creating an SLA. The raw URL is not stored on-chain. Endpoint commitments isolate tally counts but do not prove honest HTTP observations. The `uptime_target_bps` field is descriptive; it does not calculate monthly aggregate uptime. Contract rounds are fixed at 60 seconds.

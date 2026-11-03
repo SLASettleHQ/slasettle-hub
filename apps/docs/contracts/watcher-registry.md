@@ -11,18 +11,17 @@ The `watcher_registry` contract manages authorized watcher identities, records s
 ### `CheckStatus`
 ```rust
 #[contracttype]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u32)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CheckStatus {
-    Up = 1,
-    Down = 2,
+    Up,
+    Down,
 }
 ```
 
 ### `RoundTally`
 ```rust
 #[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Default, Debug, Eq, PartialEq)]
 pub struct RoundTally {
     pub votes_up: u32,
     pub votes_down: u32,
@@ -37,8 +36,8 @@ pub struct RoundTally {
   - `DataKey::Paused`: Circuit breaker flag (`bool`).
 - **Persistent Storage**:
   - `DataKey::Watcher(Address)`: Authorization boolean (`bool`).
-  - `DataKey::Check(u64, u64, Address)`: Recorded vote per `(sla_id, round_id, watcher)` (`CheckStatus`).
-  - `DataKey::Tally(u64, u64)`: Aggregate round tallies (`RoundTally`).
+  - `DataKey::Check(u64, u64, Address)`: `CheckRecord { endpoint_hash, status }`, keyed by `(sla_id, round_id, watcher)`.
+  - `DataKey::Tally(u64, u64, BytesN<32>)`: Aggregate `RoundTally`, keyed by `(sla_id, round_id, endpoint_hash)`.
 
 ## Public Functions
 
@@ -101,6 +100,20 @@ pub fn unpause(env: Env, caller: Address) -> Result<(), Error>
 - **Description**: Sets the emergency circuit breaker. Pausing halts `submit_check` invocations while leaving read views and administrative registration intact.
 - **Errors**: `NotAuthorized` if caller is not administrator.
 
+### `get_current_round`
+```rust
+pub fn get_current_round(env: Env) -> u64
+```
+- **Authorization**: None (Public read).
+- **Description**: Returns `ledger.timestamp() / 60`. Observation rounds have a fixed 60-second schedule.
+
+### `extend_contract_ttl`
+```rust
+pub fn extend_contract_ttl(env: Env)
+```
+- **Authorization**: None (Public maintenance entrypoint).
+- **Description**: Extends the contract instance and code TTL. It does not blanket-extend persistent watcher, check, or tally entries.
+
 ---
 
 ### `submit_check`
@@ -115,23 +128,30 @@ pub fn submit_check(
 ) -> Result<(), Error>
 ```
 - **Authorization**: `watcher.require_auth()`.
-- **Description**: Submits an attestation for `sla_id` during `round_id`. Increments `votes_up` or `votes_down` on the round's tally.
-- **Single Vote Rule**: A watcher can submit only once per `(sla_id, round_id)`. Subsequent attempts reject with `DuplicateCheck`.
-- **Endpoint Hash**: The `endpoint_hash` argument is accepted as part of transaction invocation history, making the target URL verifiable from historical transaction envelopes without storing redundant bytes in on-chain state.
-- **Events**: Emits `CheckSubmitted { sla_id, round_id, watcher, status }`.
+- **Description**: Submits an attestation for `sla_id`, `round_id`, and a 32-byte `endpoint_hash`. Increments the tally for exactly that endpoint commitment.
+- **Round Freshness**: Accepts only the current ledger-derived round or the immediately preceding round. Other round IDs return `InvalidRound` (code 6). The fixed round length is 60 seconds.
+- **Single Vote Rule**: The uniqueness key is `(sla_id, round_id, watcher)`, independent of endpoint hash. A vote for a mismatched endpoint commitment consumes the watcher's one submission for that SLA and round, but affects only that hash's tally.
+- **Endpoint Commitment Limit**: The hash binds the tally to a commitment; it does not prove that a watcher made a real HTTP request or reported honestly.
+- **Events**: Emits `CheckSubmitted`; `sla_id` and `watcher` are topic fields. The data fields are `round_id`, `endpoint_hash`, and `status`.
 - **Errors**:
   - `ContractPaused`: If the registry is currently paused.
   - `NotAWatcher`: If the caller is not an authorized watcher.
   - `DuplicateCheck`: If the watcher has already submitted for this round.
+  - `InvalidRound`: If the round is neither current nor immediately previous.
 
 ---
 
 ### `get_round_tally`
 ```rust
-pub fn get_round_tally(env: Env, sla_id: u64, round_id: u64) -> RoundTally
+pub fn get_round_tally(
+    env: Env,
+    sla_id: u64,
+    round_id: u64,
+    endpoint_hash: BytesN<32>,
+) -> RoundTally
 ```
 - **Authorization**: None (Public read).
-- **Description**: Returns `RoundTally { votes_up, votes_down }` for the specified round. Returns `{ votes_up: 0, votes_down: 0 }` if no checks have been submitted.
+- **Description**: Returns the `RoundTally` for `(sla_id, round_id, endpoint_hash)`. Tallies for distinct endpoint commitments are isolated. Returns a zero tally if no checks have been submitted for that tuple.
 
 ---
 

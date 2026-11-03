@@ -19,6 +19,7 @@ Click **Connect Wallet** in the top right corner. Authorize the connection in Fr
 
 1. From the dashboard, navigate to **Create SLA**.
 2. Provide the following parameters:
+   - **Service Endpoint**: Enter the exact HTTP or HTTPS health-check URL. The Web application validates it and commits its endpoint hash in the SLA. Keep the exact URL spelling for watcher configuration.
    - **Beneficiary Address**: Enter the Stellar account (`G...`) that will receive payouts if an outage occurs.
    - **Collateral Token**: Enter the Stellar Asset Contract address (for native XLM on Testnet, use `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` or leave default).
    - **Bond Amount**: Collateral amount in stroops or display tokens (e.g., `100 XLM`).
@@ -30,9 +31,9 @@ Click **Connect Wallet** in the top right corner. Authorize the connection in Fr
 
 ## 3. Verify Health Checks in the Status Portal
 
-Every round, registered watcher nodes probe the endpoint and submit checks to the `watcher_registry` contract.
+Registered watcher nodes probe the endpoint on the contract's fixed 60-second round schedule and submit checks to the `watcher_registry` contract.
 
-- View the public status page at `/sla/[id]`.
+- View the public status page at `/status/[slaId]` (for example, `/status/0`).
 - The interface queries both the on-chain contracts and the hosted indexer at `https://slasettle-indexer-v02.slasettle-indexer.workers.dev`.
 - Inspect:
   - Current round tallies (`votes_up` vs `votes_down`).
