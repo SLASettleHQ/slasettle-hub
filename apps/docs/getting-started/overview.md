@@ -43,7 +43,7 @@ The SLASettle ecosystem spans two primary repositories:
 - **WASM Verification**: Local release builds match deployed Testnet WASM bytecode byte-for-byte with zero hash drift.
 - **Wallet & Contract Operations**: Full lifecycle operations (create SLA, top up bond, cancel SLA, withdraw remaining bond) have been executed and verified live on Stellar Testnet using the Freighter browser extension on SLA #2.
 - **Hosting Topology**:
-  - Production Console: [slasettle-web.vercel.app](https://slasettle-web.vercel.app)
+  - Public Testnet Console: [slasettle-web.vercel.app](https://slasettle-web.vercel.app)
   - Hosted Indexer: [slasettle-indexer-v02.slasettle-indexer.workers.dev](https://slasettle-indexer-v02.slasettle-indexer.workers.dev)
   - Documentation: [slasettle-docs.vercel.app](https://slasettle-docs.vercel.app)
 - **Security Audit Status**: Unaudited. All 595 automated tests pass across Vault, SDK, Web, indexer, and watcher, but no independent third-party security audit has been completed. This deployment is Testnet only.

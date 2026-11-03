@@ -1,6 +1,6 @@
 # SLA Vault Contract
 
-The `sla_vault` contract escrows token collateral, manages agreement configurations, cross-examines round tallies against `watcher_registry`, and executes automated penalty settlements.
+The `sla_vault` contract escrows token collateral, manages agreement configurations, and checks round tallies against `watcher_registry`. Penalty settlement is permissionless and caller-triggered through `trigger_settlement` after quorum is met; the contract does not schedule settlements automatically.
 
 - **Deployed Address**: `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2`
 - **Source Location**: `contracts/sla_vault/src/lib.rs`
