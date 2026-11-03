@@ -19,7 +19,7 @@ This document outlines the threat modeling assessment for the SLASettle protocol
 | :--- | :--- | :--- |
 | **Premature Collateral Draining** | Provider attempts to withdraw collateral while an SLA is actively breached or under monitoring. | `withdraw_remaining_bond` requires the agreement to be `Cancelled`. Providers cannot withdraw from an `Active` SLA. |
 | **Unauthorized Top-Up Hijacking** | An attacker attempts to manipulate or redirect an SLA's bond. | `top_up_bond` strictly validates `caller == SLAConfig.provider`. |
-| **Zero-Quorum Exploit** | Provider configures an SLA with `quorum_threshold = 0` to trigger arbitrary behavior. | `create_sla` enforces `quorum_threshold > 0` (`Error::InvalidAmount`). |
+| **Zero-Quorum Exploit** | Provider configures an SLA with `quorum_threshold = 0` to bypass watcher evidence. | `create_sla` rejects zero, zero registered watchers, and thresholds above watcher count with `Error::InvalidQuorum` (code 11). |
 | **Excessive Penalty Creation** | Provider creates an agreement where `penalty_per_breach > bond_amount`. | `create_sla` rejects configurations where penalty exceeds bond. |
 
 ---

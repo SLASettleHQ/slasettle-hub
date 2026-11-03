@@ -19,6 +19,7 @@ This guide walks service providers through deploying, funding, managing, and dec
 
 In the **Create SLA** panel, specify your agreement parameters:
 
+- **Service Endpoint**: The exact HTTP or HTTPS URL the watchers should check. This field is required. The app computes its commitment and stores only the hash on-chain; configure watcher software with the matching URL.
 - **Beneficiary Address**: The public Stellar address (`G...`) of the customer or partner who receives compensation in case of downtime.
 - **Collateral Token**: The Stellar Asset Contract address. Defaults to native XLM (`CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC`).
 - **Initial Bond Amount**: The total collateral locked into escrow (e.g., `100 XLM`).
@@ -26,6 +27,8 @@ In the **Create SLA** panel, specify your agreement parameters:
   - *Constraint*: Must be greater than 0 and less than or equal to the bond amount.
 - **Quorum Threshold**: The minimum number of `DOWN` votes required from registered watchers before a payout can execute. It must not exceed the registered watcher count (the current GREEN Testnet deployment has 3 registered watchers, so thresholds above 3 would never be reachable there).
 - **Uptime Target (bps)**: Desired availability target in basis points (e.g., `9990` for 99.9%).
+
+In v0.2 the uptime target is descriptive metadata, not an aggregate monthly uptime calculation. Contract rounds use a fixed 60-second schedule.
 
 Click **Create Agreement**. Review the decoded Soroban transaction parameters in Freighter and confirm. Once confirmed, your new SLA appears with status `Active`.
 

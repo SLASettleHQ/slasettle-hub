@@ -16,7 +16,7 @@ Rounds define discrete observation windows during which watchers probe target se
 - **Round Identification**: Rounds are indexed by a monotonically increasing 64-bit integer (`round_id`).
 - **Authoritative Round Source**: The watcher daemon calls `watcher_registry.get_current_round()` before every submission and uses that value as `round_id`. The contract derives this from the ledger's own close-time timestamp, not any off-chain clock — `submit_check` validates `round_id` against that same authoritative value (with a grace window accepting the current or immediately previous round), so reading it directly means the daemon's round always matches what the contract will accept, including right at a round boundary.
 - **Local Clock Role**: The daemon's local wall clock is used only for scheduling/pacing between rounds (deciding when to wake up and probe next). It never determines which `round_id` gets submitted.
-- **Standard Round Duration**: Testnet configurations typically use a 60-second or 300-second round window.
+- **Round Duration**: The contract fixes observation rounds at 60 seconds, derived from the ledger timestamp. There is no independently configurable round duration.
 
 ## Health Probing Pipeline
 

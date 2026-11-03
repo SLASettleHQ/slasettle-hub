@@ -1,88 +1,56 @@
 # Events & Errors
 
-A comprehensive reference for all contract events emitted to the Stellar ledger and numeric error codes returned by Soroban contract executions.
+This reference follows the event structs and `#[contracterror]` enums in the current v0.2 Vault source. Event topic fields below are exactly the fields marked `#[topic]`; payload fields are the other declared struct fields. The table does not invent a raw XDR serialization. Use the generated contract spec and a Stellar SDK when encoding or decoding ledger events.
 
-## Events Reference
+## Events
 
-Events emitted by SLASettle follow standard Soroban event structures:
-- **Topic 0**: Symbol representing the snake_case event name.
-- **Additional Topics**: Indexed identifiers for efficient ledger filtering.
-- **Data Payload**: Struct or value containing event details.
+### `watcher_registry`
 
-### `watcher_registry` Events
+| Event struct | Topic fields | Data fields |
+| --- | --- | --- |
+| `WatcherRegistered` | `watcher: Address` | None |
+| `WatcherRemoved` | `watcher: Address` | None |
+| `CheckSubmitted` | `sla_id: u64`, `watcher: Address` | `round_id: u64`, `endpoint_hash: BytesN<32>`, `status: CheckStatus` |
 
-| Event Name | Topics | Data Payload | Emitted When |
-| :--- | :--- | :--- | :--- |
-| `watcher_registered` | `[Symbol("watcher_registered"), watcher: Address]` | `()` | Admin authorizes a new watcher address. |
-| `watcher_removed` | `[Symbol("watcher_removed"), watcher: Address]` | `()` | Admin removes an authorized watcher. |
-| `check_submitted` | `[Symbol("check_submitted"), sla_id: u64, watcher: Address]` | `CheckSubmittedData { round_id: u64, status: CheckStatus }` | Watcher submits a health attestation. |
+### `sla_vault`
 
-### `sla_vault` Events
+| Event struct | Topic fields | Data fields |
+| --- | --- | --- |
+| `SlaCreated` | `sla_id: u64`, `provider: Address` | `token: Address`, `endpoint_hash: BytesN<32>`, `bond_amount: i128`, `uptime_target_bps: u32`, `quorum_threshold: u32`, `penalty_per_breach: i128`, `beneficiary: Address` |
+| `BondToppedUp` | `sla_id: u64` | `amount: i128` |
+| `SettlementPaid` | `sla_id: u64`, `round_id: u64` | `payout: i128`, `beneficiary: Address` |
+| `SlaCancelled` | `sla_id: u64` | None |
+| `BondWithdrawn` | `sla_id: u64` | `amount: i128` |
 
-| Event Name | Topics | Data Payload | Emitted When |
-| :--- | :--- | :--- | :--- |
-| `sla_created` | `[Symbol("sla_created"), sla_id: u64, provider: Address]` | `SlaCreatedData { token: Address, bond_amount: i128, beneficiary: Address }` | Service provider creates agreement and escrows bond. |
-| `bond_topped_up` | `[Symbol("bond_topped_up"), sla_id: u64]` | `BondToppedUpData { amount: i128 }` | Provider deposits additional collateral into bond. |
-| `settlement_paid` | `[Symbol("settlement_paid"), sla_id: u64, round_id: u64]` | `SettlementPaidData { payout: i128, beneficiary: Address }` | Quorum is met and penalty transfer is completed. |
-| `sla_cancelled` | `[Symbol("sla_cancelled"), sla_id: u64]` | `()` | Provider transitions agreement status to Cancelled. |
-| `bond_withdrawn` | `[Symbol("bond_withdrawn"), sla_id: u64]` | `BondWithdrawnData { amount: i128 }` | Provider withdraws remaining collateral after cancellation. |
+`CheckSubmitted.endpoint_hash` identifies the endpoint commitment used for the tally. `SlaCreated.endpoint_hash` records the SLA's commitment. Neither event proves that an HTTP observation was honest.
 
----
+## Contract Errors
 
-## Contract Errors Reference
+Soroban contract error values below match the explicit `#[repr(u32)]` values in the current contract source. Transaction authorization failures raised by the host may appear separately from these contract errors.
 
-Soroban contract errors are represented as integer codes conforming to the `#[contracterror]` specification.
+### `watcher_registry`
 
-### `watcher_registry` Error Codes
+| Code | Variant | Meaning |
+| ---: | --- | --- |
+| 1 | `NotAuthorized` | Caller does not match the configured administrator. |
+| 2 | `AlreadyInitialized` | `initialize` was called after initialization. |
+| 3 | `NotAWatcher` | The submitting address is not registered. |
+| 4 | `DuplicateCheck` | The watcher already submitted for `(sla_id, round_id)`, regardless of endpoint hash. |
+| 5 | `ContractPaused` | Check submission is paused. |
+| 6 | `InvalidRound` | The round is neither the current round nor the immediately previous round. |
 
-```rust
-#[contracterror]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum Error {
-    NotAuthorized = 1,
-    AlreadyInitialized = 2,
-    NotAWatcher = 3,
-    DuplicateCheck = 4,
-    ContractPaused = 5,
-}
-```
+### `sla_vault`
 
-| Code | Identifier | Description | Remediation |
-| :--- | :--- | :--- | :--- |
-| `1` | `NotAuthorized` | Caller does not match the configured admin address. | Confirm transaction is signed by the contract administrator. |
-| `2` | `AlreadyInitialized` | Attempted to call `initialize` on an already configured contract. | Initialization can only occur once; no further action required. |
-| `3` | `NotAWatcher` | Caller invoking `submit_check` is not in the authorized watcher set. | Ensure address is registered via `register_watcher` by admin. |
-| `4` | `DuplicateCheck` | Watcher has already submitted a check for `(sla_id, round_id)`. | Do not re-submit. Check `has_watcher_voted` prior to broadcast. |
-| `5` | `ContractPaused` | Operations are halted via administrative pause. | Wait for administrator to invoke `unpause`. |
-
-### `sla_vault` Error Codes
-
-```rust
-#[contracterror]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum Error {
-    NotAuthorized = 1,
-    AlreadyInitialized = 2,
-    SlaNotActive = 3,
-    AlreadySettled = 4,
-    QuorumNotMet = 5,
-    BondExhausted = 6,
-    InvalidAmount = 7,
-    ContractPaused = 8,
-    SlaNotFound = 9,
-}
-```
-
-| Code | Identifier | Description | Remediation |
-| :--- | :--- | :--- | :--- |
-| `1` | `NotAuthorized` | Caller is not authorized for the requested action (e.g. non-provider top-up or non-admin pause). | Ensure caller matches provider address stored in `SLAConfig`. |
-| `2` | `AlreadyInitialized` | Attempted to re-initialize an active vault. | Initialization can only occur once. |
-| `3` | `SlaNotActive` | Agreement is cancelled or in an invalid state for the operation. | For `trigger_settlement`, SLA must be Active. For `withdraw_remaining_bond`, SLA must be Cancelled. |
-| `4` | `AlreadySettled` | Settlement for `(sla_id, round_id)` has already executed. | Rounds can only settle once. Check `is_round_settled` before calling. |
-| `5` | `QuorumNotMet` | Number of `DOWN` votes in `watcher_registry` is below `quorum_threshold`. | Wait for more watchers to submit checks, or round does not warrant settlement. |
-| `6` | `BondExhausted` | Escrow balance is 0. Penalty cannot be paid. | Provider must call `top_up_bond` to replenish collateral. |
-| `7` | `InvalidAmount` | Parameter validation failure: zero/negative amount, penalty exceeding bond, or zero withdrawal. | Check numerical inputs. Ensure amounts are > 0 and penalty <= bond. |
-| `8` | `ContractPaused` | Vault agreement creation is paused by administrator. | Existing agreements and settlements continue, but new SLAs cannot be created. |
-| `9` | `SlaNotFound` | Requested `sla_id` does not exist in persistent storage. | Verify SLA identifier. |
+| Code | Variant | Meaning |
+| ---: | --- | --- |
+| 1 | `NotAuthorized` | Caller does not match the provider or administrator required by the operation. |
+| 2 | `AlreadyInitialized` | `initialize` was called after initialization. |
+| 3 | `SlaNotActive` | Operation requires a different SLA lifecycle state. |
+| 4 | `AlreadySettled` | `(sla_id, round_id)` has already settled. |
+| 5 | `QuorumNotMet` | Endpoint-bound `votes_down` is below the configured threshold. |
+| 6 | `BondExhausted` | No positive bond balance remains to pay a settlement. |
+| 7 | `InvalidAmount` | A bond, penalty, top-up, or withdrawal amount violates its positive-value or bond-bound checks. |
+| 8 | `ContractPaused` | New SLA creation is paused. |
+| 9 | `SlaNotFound` | The requested SLA does not exist in persistent storage. |
+| 10 | `InvalidUptimeTarget` | `uptime_target_bps` is outside `1..=10_000`. |
+| 11 | `InvalidQuorum` | Threshold is zero, exceeds the registered watcher count, or the registry has no watchers. |
