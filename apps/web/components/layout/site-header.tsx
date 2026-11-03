@@ -7,7 +7,7 @@ import { DesktopNav, MobileNav } from "./primary-nav";
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-base)]/90 backdrop-blur supports-[backdrop-filter]:bg-[var(--color-bg-base)]/75">
-      <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
+      <div className="relative mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 sm:h-14 sm:flex-nowrap sm:gap-4 sm:px-6 sm:py-0">
         <div className="flex items-center gap-4 sm:gap-6">
           <Link
             href="/"
@@ -25,7 +25,7 @@ export function SiteHeader() {
           <DesktopNav />
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
           <div className="hidden sm:block">
             <NetworkIndicator />
           </div>
