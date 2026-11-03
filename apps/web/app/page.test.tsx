@@ -40,11 +40,15 @@ describe("Landing page", () => {
     expect(screen.getByText(/any wallet can trigger settlement/i)).toBeInTheDocument();
   });
 
-  it("states the v1 limitations", () => {
-    render(<Home />);
-    expect(screen.getByText(/does not calculate monthly uptime|do not calculate monthly uptime/i)).toBeInTheDocument();
-    expect(screen.getByText(/one watcher set/i)).toBeInTheDocument();
-    expect(screen.getByText(/cannot\s+choose watchers/i)).toBeInTheDocument();
+  it("describes current contract behavior without outdated version wording", () => {
+    const { container } = render(<Home />);
+    const text = container.textContent ?? "";
+
+    expect(text).not.toMatch(/\bv1\b/i);
+    expect(text).toMatch(/quorum is checked per round/i);
+    expect(text).toMatch(/uptime target is descriptive metadata/i);
+    expect(text).toMatch(/watcher registry is shared by all slas/i);
+    expect(text).toMatch(/any wallet can trigger settlement for a round after its down votes reach quorum/i);
   });
 
   it("links to the provider dashboard and the public status lookup", () => {
