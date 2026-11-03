@@ -110,9 +110,9 @@ export function StatusView({ slaId }: { slaId: bigint }) {
           </div>
         </dl>
         <p className="mt-4 text-xs text-[var(--color-fg-muted)]">
-          Uptime target: {formatBps(config.uptimeTargetBps)}. In v1 this is display information only. The
-          contracts do not calculate monthly uptime against it. Settlement is decided per round by watcher
-          votes, and every SLA uses the same shared watcher set.
+          Uptime target: {formatBps(config.uptimeTargetBps)}. It is descriptive metadata; the contracts do not
+          calculate monthly uptime against it. Settlement eligibility is checked per round using votes from
+          the shared watcher registry and this SLA&apos;s Down-vote quorum.
         </p>
         <EndpointVerifier endpointHash={config.endpointHash} />
       </section>
