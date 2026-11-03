@@ -46,7 +46,7 @@ export function ProtocolFlow() {
       </p>
       <ol className="mt-10 grid gap-3 lg:grid-cols-6 lg:gap-0">
         {STEPS.map((step, index) => (
-          <li key={step.label} className="relative flex lg:flex-col">
+          <li key={step.label} className="relative flex flex-col min-[360px]:flex-row lg:flex-col">
             {index < STEPS.length - 1 && (
               <span
                 aria-hidden
