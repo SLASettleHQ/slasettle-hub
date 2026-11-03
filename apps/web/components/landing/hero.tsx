@@ -39,38 +39,38 @@ export function Hero() {
 
       <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-5 shadow-[var(--shadow-raised)]">
         <p className="font-mono text-xs uppercase tracking-widest text-[var(--color-fg-muted)]">
-          What v1 actually enforces
+          What the contracts enforce
         </p>
         <ul className="mt-4 space-y-3 text-sm text-[var(--color-fg-secondary)]">
           <li className="flex gap-2">
             <span aria-hidden className="text-[var(--color-fg-muted)]">
               &rsaquo;
             </span><span>
-            Settlement is decided <strong className="text-[var(--color-fg-primary)]">per round</strong>,
-            not as a monthly uptime average.</span>
+            Quorum is checked <strong className="text-[var(--color-fg-primary)]">per round</strong>. Down
+            votes are compared with the SLA&apos;s threshold; the contracts do not calculate a monthly uptime
+            average.</span>
           </li>
           <li className="flex gap-2">
             <span aria-hidden className="text-[var(--color-fg-muted)]">
               &rsaquo;
             </span><span>
             The configured uptime target is{" "}
-            <strong className="text-[var(--color-fg-primary)]">display-only</strong> in v1. The
-            contracts do not calculate monthly uptime against it.</span>
+            <strong className="text-[var(--color-fg-primary)]">descriptive metadata</strong>. The contracts
+            do not calculate monthly uptime against it.</span>
           </li>
           <li className="flex gap-2">
             <span aria-hidden className="text-[var(--color-fg-muted)]">
               &rsaquo;
             </span><span>
-            All SLAs currently share{" "}
-            <strong className="text-[var(--color-fg-primary)]">one watcher set</strong>. A provider cannot
-            choose watchers for an SLA.</span>
+            The watcher registry is shared by all SLAs. A provider cannot select a separate watcher set for
+            an SLA.</span>
           </li>
           <li className="flex gap-2">
             <span aria-hidden className="text-[var(--color-fg-muted)]">
               &rsaquo;
             </span><span>
-            <strong className="text-[var(--color-fg-primary)]">Anyone</strong> can call settlement
-            once quorum is reached. It is not limited to the provider.</span>
+            <strong className="text-[var(--color-fg-primary)]">Any wallet</strong> can trigger settlement for
+            a round after its Down votes reach quorum. The caller does not have to be the provider.</span>
           </li>
         </ul>
       </div>
