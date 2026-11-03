@@ -6,7 +6,7 @@ Watcher nodes are registered observers whose daemons can independently probe ser
 
 To operate a watcher node reliably:
 - **Compute**: 1 vCPU, 1 GB RAM (minimal footprint).
-- **Runtime**: Go 1.22+ or Docker.
+- **Runtime**: Go 1.25.0 or later in the supported Go 1.25 toolchain series, or Docker. The module pins the Go 1.25.14 toolchain.
 - **Network**: Stable, unmetered egress connectivity to public internet and Stellar RPC.
 - **Stellar Account**: A dedicated keypair with a modest XLM balance on Testnet to pay transaction fees.
 
@@ -26,36 +26,35 @@ To operate a watcher node reliably:
 
 ## 2. Configuring the Watcher Daemon
 
-The Go watcher daemon is located in `watcher`. Configure the daemon using environment variables or a `.env` file:
+The Go watcher daemon is located in `watcher`. It reads process environment variables and does not automatically load `.env` files. Export the values in the shell or supervisor that launches it. If you store them in `.env`, source the file with export enabled before starting the daemon (for example, `set -a; . ./.env; set +a`). Quote `NETWORK_PASSPHRASE` because it contains spaces and a semicolon.
 
 ```bash
 # Network & RPC
-STELLAR_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
-SOROBAN_RPC_URL="https://soroban-testnet.stellar.org"
+export NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
+export RPC_URL="https://soroban-testnet.stellar.org"
 
 # Contract Addresses
-WATCHER_REGISTRY_CONTRACT_ID="CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY"
-SLA_VAULT_CONTRACT_ID="CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2"
+export WATCHER_REGISTRY_CONTRACT_ID="CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY"
+export SLA_VAULT_CONTRACT_ID="CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2"
 
 # Watcher Identity & Signing Key
-WATCHER_SECRET_KEY="S..."
+export WATCHER_SECRET_KEY="S..."
 
 # Monitored Agreement Configuration
-SLA_ID=2
-TARGET_URL="https://api.example.com/health"
-ROUND_LENGTH_SECONDS=60
-HTTP_TIMEOUT_SECONDS=10
-HTTP_EXPECT_MAX_STATUS=400
+export SLA_ID=2
+export TARGET_URL="https://api.example.com/health"
+export ROUND_LENGTH_SECONDS=60
+export HTTP_TIMEOUT_SECONDS=10
+export HTTP_EXPECT_MAX_STATUS=400
 ```
 
 ## 3. Running the Daemon
 
-Compile and start the daemon:
+From the repository root, run the package in the current `watcher/cmd/watcher` entrypoint:
 
 ```bash
 cd watcher
-go build -o watcher-node cmd/watcher/main.go
-./watcher-node
+go run ./cmd/watcher
 ```
 
 ### Operational Loop
