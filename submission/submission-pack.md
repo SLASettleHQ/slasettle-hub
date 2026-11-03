@@ -345,4 +345,3 @@ SLASettle's narrower claim: an endpoint-bound, per-round, registered-watcher-att
 - [x] Comparator differentiation present and source-backed (Section 12).
 - [x] Historical BLUE/v0.1 evidence preserved and clearly labeled historical/rollback.
 - [x] Private vulnerability reporting enabled on both code repositories.
-- [x] Zero AI / co-author attribution in commit history and documentation.
