@@ -56,4 +56,4 @@ Displays essential contractual commitments:
 
 ### 7. Trigger Settlement Action
 - If a breach is confirmed in the current round, any observer can connect a Freighter wallet and click **Trigger Settlement**.
-- The interface automatically constructs the transaction and submits it to the Stellar ledger, instantly paying the penalty to the beneficiary.
+- The caller signs and submits the transaction through the interface. Settlement is caller-triggered, not automatically scheduled; after successful execution, the contract transfers the penalty to the beneficiary.

@@ -1,6 +1,6 @@
 module github.com/SLASettleHQ/slasettle-hub/watcher
 
-// go-stellar-sdk v0.7.3 declares go 1.25 in its own go.mod, so 1.25 is the
+// go-stellar-sdk v0.8.0 declares go 1.25.0 in its own go.mod, so 1.25 is the
 // minimum here. The toolchain line makes a local go command use the patched
 // 1.25.14 release (downloading it if needed) instead of an older 1.25.x with
 // known standard library vulnerabilities; CI's setup-go already resolves the

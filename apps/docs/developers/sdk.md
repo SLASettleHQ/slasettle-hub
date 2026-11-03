@@ -5,13 +5,29 @@ The `@slasettle/sdk` package provides high-level TypeScript interfaces for inter
 - **Package Location**: `packages/sdk`
 - **Security Boundary**: Zero private keys. The SDK produces **unsigned** transactions intended to be signed by browser wallets (e.g. Freighter) or custodial signing services.
 
-## Installation
+## Monorepo setup and consumption
 
-Within the monorepo or an external application:
+`packages/sdk` is marked private and is not published to npm. It is available to workspace packages in this repository; external applications cannot install it with `pnpm add @slasettle/sdk`.
+
+From the repository root, install the workspace dependencies and build and typecheck the SDK:
 
 ```bash
-pnpm add @slasettle/sdk @stellar/stellar-sdk
+pnpm install --frozen-lockfile
+pnpm --filter @slasettle/sdk build
+pnpm --filter @slasettle/sdk typecheck
 ```
+
+The build emits `dist/index.js` and `dist/index.d.ts`, which are the package's configured JavaScript and TypeScript entrypoints. Workspace consumers such as `apps/web` declare the local package with the `workspace:` protocol:
+
+```json
+{
+  "dependencies": {
+    "@slasettle/sdk": "workspace:*"
+  }
+}
+```
+
+After building the SDK, import its public API from `@slasettle/sdk` inside a workspace package. The examples below use exports from `packages/sdk/src/index.ts`.
 
 ---
 
@@ -40,17 +56,27 @@ Write methods return fully simulated and prepared, unsigned `Transaction` object
 
 ### 1. `buildCreateSlaTx`
 ```ts
-import { buildCreateSlaTx } from "@slasettle/sdk";
+import { buildCreateSlaTx, computeEndpointHash } from "@slasettle/sdk";
 
-const tx = await buildCreateSlaTx({
-  provider: "G...",
-  token: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
-  bondAmount: 100_000_000n,       // 10 XLM in stroops (bigint)
-  uptimeTargetBps: 9990,          // 99.9%
-  quorumThreshold: 3,             // example value — not tied to any specific watcher count
-  penaltyPerBreach: 10_000_000n,  // 1 XLM per breach
-  beneficiary: "G...",
-});
+const endpointUrl = "https://api.example.com/health";
+const endpointHash = computeEndpointHash(endpointUrl);
+
+// Supply real public addresses from the connected Testnet wallet and intended beneficiary.
+async function buildExampleCreateTransaction(provider: string, beneficiary: string) {
+  return buildCreateSlaTx({
+    provider,
+    token: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+    endpointHash,                   // Alternatively provide endpointUrl, but not both.
+    bondAmount: 100_000_000n,       // 10 XLM in stroops (bigint)
+    uptimeTargetBps: 9990,          // Descriptive target; not aggregate settlement logic.
+    quorumThreshold: 2,             // Must be <= the registered watcher count.
+    penaltyPerBreach: 10_000_000n,  // 1 XLM per breached round
+    beneficiary,
+  });
+}
+
+// The SDK hashes the same normalized URL commitment used by the watcher tooling.
+console.log(endpointHash.length); // 32 bytes
 ```
 
 ### 2. `buildTopUpBondTx`
@@ -119,17 +145,29 @@ const settled = await isRoundSettled(2n, 1042n);
 
 ### `watcher_registry` State Reads
 ```ts
-import { getRoundTally, hasWatcherVoted, isWatcher, getWatcherCount } from "@slasettle/sdk";
+import {
+  getCurrentRound,
+  getRoundTally,
+  getSla,
+  hasWatcherVoted,
+  isWatcher,
+  getWatcherCount,
+} from "@slasettle/sdk";
 
-// Retrieve vote tallies for an active round
-const tally = await getRoundTally(2n, 1042n);
+// Read the SLA's committed endpoint, then query that endpoint's current-round tally.
+const slaId = 0n;
+const sla = await getSla(slaId);
+const roundId = await getCurrentRound();
+const tally = await getRoundTally(slaId, roundId, sla.endpointHash);
 console.log(`Votes Up: ${tally.votesUp}, Votes Down: ${tally.votesDown}`);
 
-// Check if a watcher node has attested
-const voted = await hasWatcherVoted(2n, 1042n, "G...");
+// Supply a real watcher public address from your configuration.
+async function inspectWatcher(watcherAddress: string) {
+  const voted = await hasWatcherVoted(slaId, roundId, watcherAddress);
+  const authorized = await isWatcher(watcherAddress);
+  return { voted, authorized };
+}
 
-// Check watcher authorization status
-const authorized = await isWatcher("G...");
 const count = await getWatcherCount();
 ```
 

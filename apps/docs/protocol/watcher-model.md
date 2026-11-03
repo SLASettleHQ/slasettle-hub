@@ -14,9 +14,9 @@ In the current protocol implementation:
 Rounds define discrete observation windows during which watchers probe target services and submit votes.
 
 - **Round Identification**: Rounds are indexed by a monotonically increasing 64-bit integer (`round_id`).
-- **Authoritative Round Source**: The watcher daemon calls `watcher_registry.get_current_round()` before every submission and uses that value as `round_id`. The contract derives this from the ledger's own close-time timestamp, not any off-chain clock — `submit_check` validates `round_id` against that same authoritative value (with a grace window accepting the current or immediately previous round), so reading it directly means the daemon's round always matches what the contract will accept, including right at a round boundary.
+- **Authoritative Round Source**: The watcher daemon calls `watcher_registry.get_current_round()` before submission and uses that value as `round_id`. The contract derives the round from ledger time and accepts the current round or the immediately previous round. A read is not a guarantee of acceptance: if the transaction is delayed until its round is older than that grace window, `submit_check` rejects it with `InvalidRound`.
 - **Local Clock Role**: The daemon's local wall clock is used only for scheduling/pacing between rounds (deciding when to wake up and probe next). It never determines which `round_id` gets submitted.
-- **Standard Round Duration**: Testnet configurations typically use a 60-second or 300-second round window.
+- **Round Duration**: The contract fixes observation rounds at 60 seconds, derived from the ledger timestamp. There is no independently configurable round duration.
 
 ## Health Probing Pipeline
 
@@ -42,14 +42,16 @@ The Go watcher daemon (`watcher/`) executes an autonomous pipeline each round:
         |    under a mismatched commitment would burn that round's vote on
         |    a tally the SLA will never settle against.
         v (If it matches)
-[Execute HTTP Health Probe]
+[Execute HTTP GET Health Probe]
         |  - Target URL comes from this watcher's own TARGET_URL configuration
-        |  - Configurable timeout (default: 5000ms)
-        |  - Validate HTTP 2xx status code
+        |  - `HTTP_TIMEOUT_SECONDS` (default: 10 seconds)
+        |  - `HTTP_EXPECT_MAX_STATUS` threshold (default: 400)
         v
-[Determine Attestation Status]
-        |  - If 2xx and response within timeout -> CheckStatus::Up
-        |  - If timeout, connection error, or non-2xx -> CheckStatus::Down
+[Classify Response]
+        |  - Status code below the configured threshold -> CheckStatus::Up
+        |  - Status code at or above the threshold -> CheckStatus::Down
+        |  - Timeout or other request error -> CheckStatus::Down
+        |  - Response body and latency are not evaluated
         v
 [Sign & Submit Transaction]
         |  - submit_check(watcher, sla_id, round_id, endpoint_hash, status)

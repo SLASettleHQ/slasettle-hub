@@ -37,19 +37,22 @@ These variables are consumed by `@slasettle/sdk` and inlined into the Next.js bu
 
 ---
 
-## Watcher Node Daemon (`watcher/.env`)
+## Watcher Node Daemon (process environment; template: `watcher/.env.example`)
 
 | Variable | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `WATCHER_REGISTRY_CONTRACT_ID` | Yes | None | Deployed `watcher_registry` address. |
+| `SLA_VAULT_CONTRACT_ID` | Yes | None | Deployed `sla_vault` address; used to read the SLA's committed endpoint hash. |
 | `WATCHER_SECRET_KEY` | Yes | None | Stellar private secret key (`S...`) used to sign check submissions. |
 | `TARGET_URL` | Yes | None | HTTP endpoint URL monitored by this watcher instance. |
 | `SLA_ID` | Yes | None | Numerical SLA index monitored by this watcher. |
 | `RPC_URL` | No | `https://soroban-testnet.stellar.org` | Soroban RPC endpoint. |
 | `NETWORK_PASSPHRASE` | No | `Test SDF Network ; September 2015` | Network passphrase. |
 | `ROUND_LENGTH_SECONDS` | No | `60` | Duration of monitoring round in seconds. |
-| `HTTP_TIMEOUT_SECONDS` | No | `5` | Request timeout for HTTP probing. |
-| `HTTP_EXPECT_MAX_STATUS` | No | `299` | Maximum acceptable HTTP status code considered `UP`. |
+| `HTTP_TIMEOUT_SECONDS` | No | `10` | Request timeout for HTTP GET probing, in seconds. |
+| `HTTP_EXPECT_MAX_STATUS` | No | `400` | Status threshold: responses below it are `UP`; responses at or above it are `DOWN`. Timeouts and other request failures are also `DOWN`. |
+
+The daemon reads the process environment and does not load `.env` files itself. Export values in the environment of the process that starts it.
 
 > [!CAUTION]
 > The `WATCHER_SECRET_KEY` variable holds real signing credentials. Never commit `.env` files containing secret keys.

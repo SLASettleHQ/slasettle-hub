@@ -59,7 +59,7 @@ go test -v ./...
 The test suite explicitly encodes regressions discovered during engineering:
 
 1. **Zero Quorum Rejection (`create_sla`)**:
-   - `create_sla` enforces `quorum_threshold > 0`. Because `votes_down < quorum_threshold` is evaluated with unsigned integers, a threshold of 0 would allow settlement with zero votes. Covered in `sla_vault` tests.
+   - `create_sla` enforces `0 < quorum_threshold <= watcher_count`. Because `votes_down < quorum_threshold` is evaluated with unsigned integers, a threshold of 0 would allow settlement with zero votes. Invalid values return `Error::InvalidQuorum` (code 11); the Vault tests cover the bounds.
 2. **Zero-Balance Withdrawal Rejection (`withdraw_remaining_bond`)**:
    - Repeated calls to withdraw on an emptied bond return `Error::InvalidAmount` rather than wasting transaction fees and emitting empty events. Covered in `sla_vault` tests.
 3. **Indexer Chronological Event Processing**:

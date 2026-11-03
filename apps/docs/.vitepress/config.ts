@@ -65,6 +65,7 @@ export default defineConfig({
           { text: "Local Setup", link: "/developers/local-setup" },
           { text: "Environment Configuration", link: "/developers/environment" },
           { text: "SDK Reference", link: "/developers/sdk" },
+          { text: "Cross-Repository Compatibility", link: "/developers/compatibility" },
           { text: "Indexer API", link: "/developers/indexer-api" },
           { text: "Watcher Daemon", link: "/developers/watcher-daemon" },
           { text: "Deployment Runbook", link: "/developers/deployment" },
