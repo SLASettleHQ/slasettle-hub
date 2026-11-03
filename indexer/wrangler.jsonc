@@ -22,6 +22,6 @@
     "SLA_VAULT_CONTRACT_ID": "CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2",
     "START_LEDGER": "5396411",
     "ROUND_LENGTH_SECONDS": "60",
-    "ALLOWED_ORIGINS": "http://localhost:3000,https://slasettle-c6zukmevs-hollujays-projects.vercel.app,https://slasettle-bnb5w53o4-hollujays-projects.vercel.app,https://slasettle-web.vercel.app"
+    "ALLOWED_ORIGINS": "http://localhost:3000,https://slasettle-c6zukmevs-hollujays-projects.vercel.app,https://slasettle-web-git-main-hollujays-projects.vercel.app,https://slasettle-web.vercel.app"
   }
 }

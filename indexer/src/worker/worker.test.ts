@@ -28,7 +28,7 @@ function createTestEnv(): { env: WorkerEnv; d1: IndexerD1; rawDb: Database.Datab
     SLA_VAULT_CONTRACT_ID: "CVAULT",
     ROUND_LENGTH_SECONDS: "60",
     ALLOWED_ORIGINS:
-      "https://slasettle-web.vercel.app,http://localhost:3000,https://slasettle-bnb5w53o4-hollujays-projects.vercel.app",
+      "https://slasettle-web.vercel.app,http://localhost:3000,https://slasettle-c6zukmevs-hollujays-projects.vercel.app,https://slasettle-web-git-main-hollujays-projects.vercel.app",
   };
 
   return { env, d1, rawDb };
@@ -88,17 +88,30 @@ test("Worker: CORS headers allow configured origin and reject other origins", as
   );
   assert.equal(resLocal.headers.get("Access-Control-Allow-Origin"), "http://localhost:3000");
 
-  // The audited GREEN preview must be able to read the GREEN indexer.
+  // Previously authorized preview remains allowed.
+  const resExistingPreview = await worker.fetch(
+    new Request("http://localhost/v1/health", {
+      headers: { Origin: "https://slasettle-c6zukmevs-hollujays-projects.vercel.app" },
+    }),
+    env,
+    {} as any,
+  );
+  assert.equal(
+    resExistingPreview.headers.get("Access-Control-Allow-Origin"),
+    "https://slasettle-c6zukmevs-hollujays-projects.vercel.app",
+  );
+
+  // The stable GREEN main preview must be able to read the GREEN indexer.
   const resPreview = await worker.fetch(
     new Request("http://localhost/v1/health", {
-      headers: { Origin: "https://slasettle-bnb5w53o4-hollujays-projects.vercel.app" },
+      headers: { Origin: "https://slasettle-web-git-main-hollujays-projects.vercel.app" },
     }),
     env,
     {} as any,
   );
   assert.equal(
     resPreview.headers.get("Access-Control-Allow-Origin"),
-    "https://slasettle-bnb5w53o4-hollujays-projects.vercel.app",
+    "https://slasettle-web-git-main-hollujays-projects.vercel.app",
   );
 
   // Disallowed origin
