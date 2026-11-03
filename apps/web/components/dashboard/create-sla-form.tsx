@@ -158,13 +158,13 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
 
       <div className="mt-3 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-bg-raised)] p-3 text-xs text-[var(--color-fg-secondary)]">
         <p>
-          <strong className="text-[var(--color-fg-primary)]">Uptime target is display information in v1.</strong>{" "}
+          <strong className="text-[var(--color-fg-primary)]">Uptime target is descriptive metadata.</strong>{" "}
           The contracts do not calculate monthly uptime against it. Settlement is decided per round, when
           enough watchers vote Down, whatever this number is.
         </p>
         <p className="mt-1.5">
           <strong className="text-[var(--color-fg-primary)]">The watcher set is shared.</strong> Every SLA on
-          this deployment uses the same registered watchers. You cannot choose your own in v1.
+          this deployment uses the same registered watchers. You cannot choose a separate watcher set for this SLA.
         </p>
       </div>
 
@@ -286,7 +286,7 @@ export function CreateSlaForm({ onCreated }: { onCreated?: () => void }) {
 
         <FormField
           label="Uptime target (%)"
-          help="Shown on the status page only. It does not drive settlement in v1."
+          help="Descriptive metadata only. It does not drive settlement."
           error={fieldErrors.uptimeTargetPercent}
         >
           {(props) => (
