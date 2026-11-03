@@ -1,6 +1,6 @@
 # Beneficiary Guide
 
-This guide explains how customers, infrastructure consumers, and enterprise beneficiaries verify on-chain SLA agreements, monitor uptime, and collect automated penalty payouts.
+This guide explains how customers, infrastructure consumers, and enterprise beneficiaries verify on-chain SLA agreements, monitor uptime, and receive penalty payouts after a caller triggers settlement.
 
 ## Role of the Beneficiary
 
@@ -34,5 +34,5 @@ When downtime occurs and registered watchers vote `DOWN`:
 1. As soon as `DOWN` votes meet or exceed `quorum_threshold`, the **Trigger Settlement** button activates on the status page.
 2. Connect your Freighter wallet (or any funded Stellar account).
 3. Click **Trigger Settlement** and confirm the transaction.
-4. **Instant Transfer**: The smart contract transfers `min(penalty_per_breach, remaining_bond)` directly to your beneficiary wallet.
-5. **Permissionless Execution**: Anyone can call this function. Even if you are offline, automated bots or keepers can execute the settlement on your behalf, and funds will still land directly in your wallet.
+4. **Direct Transfer**: Once the settlement transaction succeeds, the smart contract transfers `min(penalty_per_breach, remaining_bond)` directly to your beneficiary wallet.
+5. **Permissionless, Caller-Triggered Execution**: Anyone can call this function after quorum is met, but settlement is not scheduled automatically. A bot or keeper may submit the call on your behalf if it is configured to do so; the contract sends any payout to the registered beneficiary.

@@ -1,6 +1,6 @@
 # SLA Vault Contract
 
-The `sla_vault` contract escrows token collateral, manages agreement configurations, cross-examines round tallies against `watcher_registry`, and executes automated penalty settlements.
+The `sla_vault` contract escrows token collateral, manages agreement configurations, and checks round tallies against `watcher_registry`. Penalty settlement is permissionless and caller-triggered through `trigger_settlement` after quorum is met; the contract does not schedule settlements automatically.
 
 - **Deployed Address**: `CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2`
 - **Source Location**: `contracts/sla_vault/src/lib.rs`
@@ -11,10 +11,10 @@ The `sla_vault` contract escrows token collateral, manages agreement configurati
 ### `SLAStatus`
 ```rust
 #[contracttype]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum SLAStatus {
-    Active = 1,
-    Cancelled = 2,
+    Active,
+    Cancelled,
 }
 ```
 
@@ -25,6 +25,7 @@ pub enum SLAStatus {
 pub struct SLAConfig {
     pub provider: Address,
     pub token: Address,
+    pub endpoint_hash: BytesN<32>,
     pub bond_amount: i128,
     pub uptime_target_bps: u32,
     pub quorum_threshold: u32,
@@ -64,6 +65,7 @@ pub fn create_sla(
     env: Env,
     provider: Address,
     token: Address,
+    endpoint_hash: BytesN<32>,
     bond_amount: i128,
     uptime_target_bps: u32,
     quorum_threshold: u32,
@@ -77,9 +79,11 @@ pub fn create_sla(
   - `bond_amount > 0` (otherwise `Error::InvalidAmount`)
   - `penalty_per_breach > 0` (otherwise `Error::InvalidAmount`)
   - `penalty_per_breach <= bond_amount` (otherwise `Error::InvalidAmount`)
-  - `quorum_threshold > 0` (otherwise `Error::InvalidAmount`)
+  - `uptime_target_bps` must be in `1..=10_000` (otherwise `Error::InvalidUptimeTarget`, code 10).
+  - `quorum_threshold` must be greater than zero and no greater than the current registered watcher count. A zero watcher count or an out-of-range threshold returns `Error::InvalidQuorum` (code 11).
 - **Circuit Breaker**: Returns `Error::ContractPaused` if the contract is paused.
-- **Events**: Emits `SlaCreated { sla_id, provider, token, bond_amount, beneficiary }`.
+- **Endpoint Binding**: Stores the supplied 32-byte endpoint commitment in `SLAConfig`.
+- **Events**: Emits `SlaCreated`; `sla_id` and `provider` are topic fields. The data fields are `token`, `endpoint_hash`, `bond_amount`, `uptime_target_bps`, `quorum_threshold`, `penalty_per_breach`, and `beneficiary`.
 
 ---
 
@@ -128,7 +132,7 @@ pub fn trigger_settlement(
 - **Execution Pipeline**:
   1. Verifies agreement exists and status is `Active` (`SlaNotActive`).
   2. Confirms round is not already settled (`AlreadySettled`).
-  3. Queries `watcher_registry.get_round_tally(sla_id, round_id)`.
+  3. Queries `watcher_registry.get_round_tally(sla_id, round_id, config.endpoint_hash)`.
   4. Confirms `votes_down >= quorum_threshold` (`QuorumNotMet`).
   5. Computes payout: `min(penalty_per_breach, remaining_balance)`. Rejects `BondExhausted` if payout is 0.
   6. Executes SAC token transfer to `beneficiary`.
@@ -176,3 +180,10 @@ pub fn unpause(env: Env, caller: Address) -> Result<(), Error>
 ```
 - **Authorization**: `caller.require_auth()` (Must match `Admin`).
 - **Description**: Pausing halts `create_sla` while allowing existing obligations (`top_up_bond`, `trigger_settlement`, `withdraw_remaining_bond`) to proceed.
+
+### `extend_contract_ttl`
+```rust
+pub fn extend_contract_ttl(env: Env)
+```
+- **Authorization**: None (public maintenance entrypoint).
+- **Description**: Extends the contract instance and code TTL. It does not blanket-extend every persistent SLA or settlement entry.

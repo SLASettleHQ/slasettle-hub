@@ -6,7 +6,7 @@ Watcher nodes are registered observers whose daemons can independently probe ser
 
 To operate a watcher node reliably:
 - **Compute**: 1 vCPU, 1 GB RAM (minimal footprint).
-- **Runtime**: Go 1.22+ or Docker.
+- **Runtime**: Go 1.25.0 or later in the supported Go 1.25 toolchain series, or Docker. The module pins the Go 1.25.14 toolchain.
 - **Network**: Stable, unmetered egress connectivity to public internet and Stellar RPC.
 - **Stellar Account**: A dedicated keypair with a modest XLM balance on Testnet to pay transaction fees.
 
@@ -26,46 +26,47 @@ To operate a watcher node reliably:
 
 ## 2. Configuring the Watcher Daemon
 
-The Go watcher daemon is located in `watcher`. Configure the daemon using environment variables or a `.env` file:
+The Go watcher daemon is located in `watcher`. It reads process environment variables and does not automatically load `.env` files. Export the values in the shell or supervisor that launches it. If you store them in `.env`, source the file with export enabled before starting the daemon (for example, `set -a; . ./.env; set +a`). Quote `NETWORK_PASSPHRASE` because it contains spaces and a semicolon.
 
 ```bash
 # Network & RPC
-STELLAR_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
-SOROBAN_RPC_URL="https://soroban-testnet.stellar.org"
+export NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
+export RPC_URL="https://soroban-testnet.stellar.org"
 
 # Contract Addresses
-WATCHER_REGISTRY_CONTRACT_ID="CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY"
-SLA_VAULT_CONTRACT_ID="CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2"
+export WATCHER_REGISTRY_CONTRACT_ID="CDTIVQ6I77EMFP42522RIFKMSMJID3BDLNR5LPLJEGVAS4Q2DJDMN3DY"
+export SLA_VAULT_CONTRACT_ID="CA5R7V5IGMYOBRSAMP4R5MWURSNTY6565NSKEEVR6626PLC3VM2A3EZ2"
 
 # Watcher Identity & Signing Key
-WATCHER_SECRET_KEY="S..."
+export WATCHER_SECRET_KEY="S..."
 
 # Monitored Agreement Configuration
-SLA_ID=2
-TARGET_ENDPOINT="https://api.example.com/health"
-PROBE_INTERVAL_SECONDS=60
-PROBE_TIMEOUT_SECONDS=5
+export SLA_ID=2
+export TARGET_URL="https://api.example.com/health"
+export ROUND_LENGTH_SECONDS=60
+export HTTP_TIMEOUT_SECONDS=10
+export HTTP_EXPECT_MAX_STATUS=400
 ```
 
 ## 3. Running the Daemon
 
-Compile and start the daemon:
+From the repository root, run the package in the current `watcher/cmd/watcher` entrypoint:
 
 ```bash
 cd watcher
-go build -o watcher-node cmd/watcher/main.go
-./watcher-node
+go run ./cmd/watcher
 ```
 
 ### Operational Loop
 Each cycle, the daemon:
 1. Reads the ledger-derived current round from `watcher_registry`.
 2. Queries `has_watcher_voted` on `watcher_registry`. If already voted, it skips to the next cycle.
-3. Performs an HTTP GET request to `TARGET_ENDPOINT` with a 5-second timeout.
-4. If response is HTTP 200 within timeout $\to$ votes `UP` (1).
-5. If timeout, connection failure, or HTTP 5xx $\to$ votes `DOWN` (2).
-6. Constructs and signs `submit_check` transaction on Stellar.
-7. Submits to Soroban RPC and waits for ledger confirmation.
+3. Performs one HTTP GET request to `TARGET_URL`, bounded by `HTTP_TIMEOUT_SECONDS` (10 seconds by default).
+4. Votes `UP` when the response status code is below `HTTP_EXPECT_MAX_STATUS` (400 by default).
+5. Votes `DOWN` when the status code is at or above the threshold, or when the request times out or fails.
+6. Response-body content and latency are not used to classify the result.
+7. Constructs and signs a `submit_check` transaction on Stellar.
+8. Submits to Soroban RPC and waits for ledger confirmation.
 
 ## 4. Best Practices for High Availability
 

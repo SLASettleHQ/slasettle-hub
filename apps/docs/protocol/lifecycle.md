@@ -8,10 +8,10 @@ The core agreement status is defined by the `SLAStatus` enum in `sla_vault`:
 
 ```rust
 #[contracttype]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum SLAStatus {
-    Active = 1,
-    Cancelled = 2,
+    Active,
+    Cancelled,
 }
 ```
 
@@ -55,14 +55,17 @@ pub enum SLAStatus {
 
 ### 1. Agreement Creation (`create_sla`)
 - **Caller**: Service Provider (`provider.require_auth()`).
+- **Endpoint**: `create_sla` requires `endpoint_hash: BytesN<32>`, which is stored in `SLAConfig` and used to select the SLA's watcher tally.
 - **Collateral Transfer**: Transfers `bond_amount` of `token` from provider to `sla_vault` via the Stellar Asset Contract interface.
 - **Initialization**: Assigns a monotonic `sla_id` (from instance key `NextSlaId`), sets initial bond balance, stores SLA parameters in persistent storage, and assigns status `Active`.
-- **Event**: Emits `SlaCreated { sla_id, provider, token, bond_amount, beneficiary }`.
+- **Event**: Emits `SlaCreated`; topic fields are `sla_id` and `provider`. Data fields include `endpoint_hash`, `uptime_target_bps`, and `quorum_threshold` along with the token, bond, penalty, and beneficiary values.
 
 ### 2. Round Health Attestation
-- Each round (identified by an incremental `round_id`), registered watchers independently execute HTTP health checks against the target endpoint.
+- Rounds are derived from the ledger timestamp using a fixed 60-second interval: `round_id = ledger.timestamp() / 60`. The schedule is not provider-configurable. The contract accepts the current round and the immediately preceding round as a grace window.
+- Registered watchers independently execute HTTP health checks against the committed endpoint.
 - Watchers call `watcher_registry.submit_check(watcher, sla_id, round_id, endpoint_hash, status)`.
-- The registry increments `votes_up` or `votes_down` in the round's `RoundTally` record and marks `DataKey::Check(sla_id, round_id, watcher)` to prevent duplicate submissions.
+- The registry increments `votes_up` or `votes_down` in the tally keyed by `(sla_id, round_id, endpoint_hash)` and records the check at `DataKey::Check(sla_id, round_id, watcher)`. That uniqueness key prevents a watcher from submitting again under another endpoint hash for the same SLA round.
+- The commitment partitions tallies but does not prove that a watcher made an HTTP request or reported honestly.
 
 ### 3. Settlement Execution (`trigger_settlement`)
 - When downtime occurs and `votes_down >= quorum_threshold`:
@@ -70,7 +73,7 @@ pub enum SLAStatus {
 - **Validation Pipeline**:
   1. Verifies agreement is `Active` (`SlaNotActive` if cancelled).
   2. Checks idempotency: confirms the round has not already been settled (`AlreadySettled`).
-  3. Queries `watcher_registry.get_round_tally(sla_id, round_id)`.
+  3. Queries `watcher_registry.get_round_tally(sla_id, round_id, config.endpoint_hash)`.
   4. Verifies `tally.votes_down >= config.quorum_threshold` (`QuorumNotMet` if false).
   5. Determines payout: `payout = min(config.penalty_per_breach, current_bond_balance)`. If balance is 0, rejects with `BondExhausted`.
   6. Executes transfer from vault to `beneficiary`.

@@ -15,6 +15,7 @@ pub fn create_sla(
     env: Env,
     provider: Address,
     token: Address,
+    endpoint_hash: BytesN<32>,
     bond_amount: i128,
     uptime_target_bps: u32,
     quorum_threshold: u32,
@@ -32,10 +33,12 @@ pub fn create_sla(
    - Must satisfy `0 < penalty_per_breach <= bond_amount`. (Rejects `InvalidAmount` if penalty exceeds bond).
 3. **`quorum_threshold` (`u32`)**:
    - Number of verified `DOWN` checks required to trigger settlement.
-   - Must be strictly positive (`quorum_threshold > 0`).
+   - Must be greater than zero and no greater than the current registered watcher count. Zero watchers or an invalid threshold returns `Error::InvalidQuorum` (code 11).
 4. **`uptime_target_bps` (`u32`)**:
-   - Contractually recorded target in basis points (e.g., `9990` represents 99.90%).
-   - Stored on-chain for verification and UI presentation. Settlement evaluation occurs per round.
+   - Descriptive target in basis points (e.g., `9990` represents 99.90%); the contract accepts `1..=10_000` and otherwise returns `Error::InvalidUptimeTarget` (code 10).
+   - Stored on-chain for display. It does not calculate aggregate or monthly uptime. Settlement is evaluated per round: an endpoint-bound `DOWN` tally meeting quorum can trigger the fixed `penalty_per_breach`, capped at the remaining bond.
+
+`endpoint_hash` is the 32-byte commitment to the endpoint watched for this SLA. Registry tallies are keyed by `(sla_id, round_id, endpoint_hash)`, and the vault queries the SLA's stored commitment when settling.
 
 ## Settlement Payout Mechanics
 
@@ -66,8 +69,8 @@ env.storage().persistent().set(&balance_key, &(balance - payout));
 
 ## Live Testnet Evidence
 
-### Current Testnet SLA #2 (Verified Live 2026-10-07)
-During the Phase 7 live verification on the Protocol 28 Testnet deployment:
+### Historical Testnet example: SLA #2 (verified 2026-10-07)
+This dated Phase 7 record is from the earlier Protocol 28 Testnet deployment. It is retained as historical evidence and does not describe the current v0.2 GREEN SLA or deployment:
 - **Contract**: `sla_vault` (`CDBFPYHJNYSIFXSMXF3BBDWPKHRS7SJFFEKMQ5WJXYTBMD4LFAG2CHLN`)
 - **Initial Bond**: `10,000,000` stroops (1.0 XLM)
 - **Penalty Per Breach**: `1,000,000` stroops (0.1 XLM)

@@ -12,7 +12,7 @@ The SLASettle smart contract layer is implemented in Rust using `soroban-sdk 29.
 +-------------------------------------------------------+
                            ^
                            | Cross-contract read:
-                           | get_round_tally(sla_id, round_id)
+                           | get_round_tally(sla_id, round_id, endpoint_hash)
                            |
 +-------------------------------------------------------+
 |                       sla_vault                       |
