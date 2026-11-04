@@ -28,6 +28,9 @@ jobs:
       - name: install
         run: pnpm install --frozen-lockfile
 
+      - name: install Chromium for browser tests
+        run: pnpm --filter @slasettle/web exec playwright install --with-deps chromium
+
       - name: build (sdk, then web)
         run: pnpm run build
 
@@ -42,6 +45,9 @@ jobs:
 
       - name: test
         run: pnpm run test
+
+      - name: browser test (Chromium)
+        run: pnpm --filter @slasettle/web test:e2e
 
   indexer:
     name: indexer (build, test)
