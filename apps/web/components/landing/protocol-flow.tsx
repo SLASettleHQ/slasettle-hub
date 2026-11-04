@@ -63,9 +63,9 @@ export function ProtocolFlow() {
               </span>
               <h3 className="text-sm font-medium text-[var(--color-fg-primary)] lg:mt-3">{step.label}</h3>
             </div>
-            <div className="ml-11 mt-1 flex-1 pb-3 lg:ml-0 lg:mt-2 lg:px-2 lg:pb-0 lg:text-center">
+            <div className="ml-11 mt-1 min-w-0 flex-1 pb-3 lg:ml-0 lg:mt-2 lg:px-2 lg:pb-0 lg:text-center">
               <p className="text-xs text-[var(--color-fg-secondary)]">{step.detail}</p>
-              <code className="mt-2 inline-block rounded bg-[var(--color-status-neutral-bg)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--color-status-neutral)]">
+              <code className="mt-2 inline-block max-w-full wrap-anywhere rounded bg-[var(--color-status-neutral-bg)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--color-status-neutral)]">
                 {step.call}
               </code>
             </div>

@@ -32,6 +32,7 @@ CLAUDE.md
 
 # coverage
 coverage/
+apps/web/test-results/
 
 # os
 .DS_Store
