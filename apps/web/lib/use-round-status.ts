@@ -115,5 +115,5 @@ export function useRoundStatus(slaId: bigint, endpointHash: Uint8Array | null) {
     }
     return fetchRoundStatus(slaId, endpointHash);
   }, [endpointHash, slaId]);
-  return usePolling(fetcher, POLL_INTERVAL_MS);
+  return usePolling(fetcher, POLL_INTERVAL_MS, endpointHash !== null);
 }

@@ -1,4 +1,5 @@
 import { Keypair } from "@stellar/stellar-sdk";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@slasettle/sdk", async (importOriginal) => ({
@@ -14,7 +15,7 @@ vi.mock("./indexer", async (importOriginal) => ({
 
 import { getRoundTally, isRoundSettled } from "@slasettle/sdk";
 import { getClock, getCurrentRound } from "./indexer";
-import { fetchRoundStatus } from "./use-round-status";
+import { fetchRoundStatus, useRoundStatus } from "./use-round-status";
 import { TEST_ENDPOINT_HASH } from "@/test/fixtures";
 
 const W1 = Keypair.random().publicKey();
@@ -89,5 +90,78 @@ describe("fetchRoundStatus", () => {
     vi.mocked(getRoundTally).mockRejectedValue(new Error("rpc down"));
     const view = await fetchRoundStatus(7n, TEST_ENDPOINT_HASH);
     expect(view.tally).not.toHaveProperty("value");
+  });
+});
+
+describe("useRoundStatus configuration gating", () => {
+  it("does not request data until the endpoint hash is available", () => {
+    const { result } = renderHook(() => useRoundStatus(7n, null));
+
+    expect(result.current).toMatchObject({ data: null, error: null, loading: true });
+    expect(getClock).not.toHaveBeenCalled();
+    expect(getCurrentRound).not.toHaveBeenCalled();
+    expect(getRoundTally).not.toHaveBeenCalled();
+    expect(isRoundSettled).not.toHaveBeenCalled();
+  });
+
+  it("starts the first poll immediately when the endpoint hash becomes available", async () => {
+    const { result, rerender } = renderHook(
+      ({ endpointHash }: { endpointHash: Uint8Array | null }) => useRoundStatus(7n, endpointHash),
+      { initialProps: { endpointHash: null as Uint8Array | null } },
+    );
+
+    expect(result.current).toMatchObject({ data: null, error: null, loading: true });
+    expect(getClock).not.toHaveBeenCalled();
+    expect(getCurrentRound).not.toHaveBeenCalled();
+
+    rerender({ endpointHash: TEST_ENDPOINT_HASH });
+    await waitFor(() => expect(result.current.data?.roundId).toBe(100n));
+
+    expect(getClock).toHaveBeenCalledTimes(1);
+    expect(getCurrentRound).toHaveBeenCalledTimes(1);
+    expect(getRoundTally).toHaveBeenCalledWith(7n, 100n, TEST_ENDPOINT_HASH);
+  });
+
+  it("invalidates prior configuration data and polls the new SLA and endpoint hash", async () => {
+    const nextHash = new Uint8Array(32).fill(8);
+    vi.mocked(getClock)
+      .mockReset()
+      .mockResolvedValueOnce(CLOCK)
+      .mockResolvedValueOnce({ ...CLOCK, currentRoundId: 101n });
+    vi.mocked(getCurrentRound)
+      .mockReset()
+      .mockResolvedValueOnce(CURRENT_ROUND)
+      .mockResolvedValueOnce({ ...CURRENT_ROUND, roundId: 101n, roundStartedAt: "2026-10-01T00:01:00.000Z" });
+
+    const { result, rerender } = renderHook(
+      ({ slaId, endpointHash }: { slaId: bigint; endpointHash: Uint8Array }) => useRoundStatus(slaId, endpointHash),
+      { initialProps: { slaId: 7n, endpointHash: TEST_ENDPOINT_HASH } },
+    );
+    await waitFor(() => expect(result.current.data?.roundId).toBe(100n));
+
+    rerender({ slaId: 8n, endpointHash: nextHash });
+    expect(result.current).toMatchObject({ data: null, error: null, loading: true });
+    await waitFor(() => expect(result.current.data?.roundId).toBe(101n));
+
+    expect(getClock).toHaveBeenCalledTimes(2);
+    expect(getCurrentRound).toHaveBeenCalledTimes(2);
+    expect(getRoundTally).toHaveBeenLastCalledWith(8n, 101n, nextHash);
+    expect(isRoundSettled).toHaveBeenLastCalledWith(8n, 101n);
+  });
+
+  it("clears a failed initial poll when a later refresh succeeds", async () => {
+    vi.mocked(getClock).mockImplementationOnce(() => {
+      throw new Error("temporary indexer failure");
+    });
+    const { result } = renderHook(() => useRoundStatus(7n, TEST_ENDPOINT_HASH));
+
+    await waitFor(() => expect(result.current.error).toBe("temporary indexer failure"));
+    expect(result.current.data).toBeNull();
+
+    await act(async () => {
+      result.current.refresh();
+    });
+    await waitFor(() => expect(result.current.data?.roundId).toBe(100n));
+    expect(result.current.error).toBeNull();
   });
 });
