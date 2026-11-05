@@ -33,6 +33,7 @@ function view(overrides: Partial<RoundStatusView> = {}): PollingState<RoundStatu
     data: {
       roundId: 100n,
       asOf: "2026-10-01T00:00:00.000Z",
+      asOfSource: "ledger",
       watchers: {
         status: "ok",
         value: [
@@ -76,6 +77,7 @@ describe("RoundPanel", () => {
   it("shows the ledger-derived round, per-watcher status and the Down tally", () => {
     renderPanel(view());
     expect(screen.getByText("Round 100")).toBeInTheDocument();
+    expect(screen.getByText(/ledger time/)).toBeInTheDocument();
     expect(screen.getByText("1 of 2 watchers checked in")).toBeInTheDocument();
     expect(screen.getByText("Down")).toBeInTheDocument();
     expect(screen.getByText("Pending")).toBeInTheDocument();
@@ -89,12 +91,50 @@ describe("RoundPanel", () => {
     expect(screen.getByText(/Quorum has not been reached/)).toBeInTheDocument();
   });
 
+  it("labels a round start timestamp as round started", () => {
+    renderPanel(view({ asOfSource: "round-start" }));
+    expect(screen.getByText(/round started/)).toBeInTheDocument();
+    expect(screen.queryByText(/ledger time/)).not.toBeInTheDocument();
+  });
+
   it("offers settlement at quorum, with the round, tally and penalty shown", () => {
     renderPanel(view({ tally: { status: "ok", value: { votesUp: 0, votesDown: 2 } } }));
     expect(screen.getByText("Quorum reached")).toBeInTheDocument();
     expect(screen.getByText("2 of 2 required")).toBeInTheDocument();
     expect(screen.getByText("50")).toBeInTheDocument();
     // Open to any wallet: the prompt is to connect, not a provider-only restriction.
+    expect(triggerButton()).toHaveTextContent("Connect wallet to trigger settlement");
+  });
+
+  it("labels last-good data as stale, blocks settlement, and restores it after recovery", () => {
+    const fresh = view({ tally: { status: "ok", value: { votesUp: 0, votesDown: 2 } } });
+    const rendered = renderPanel({
+      ...fresh,
+      error: "The indexer could not be reached for /v1/slas/1/current-round: no response within 10s",
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Round refresh failed");
+    expect(
+      screen.getByText(/details below are from the last successful check and may have changed/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Round 100")).toBeInTheDocument();
+    expect(screen.getByText("Quorum reached")).toBeInTheDocument();
+    expect(screen.getByText(/Settlement eligibility has not been refreshed/)).toBeInTheDocument();
+    expect(triggerButton()).not.toBeInTheDocument();
+
+    rendered.rerender(
+      <RoundPanel
+        slaId={1n}
+        config={CONFIG}
+        tokenDecimals={7}
+        tokenSymbol="USDC"
+        round={fresh}
+        onSettled={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("Round refresh failed")).not.toBeInTheDocument();
+    expect(screen.getByText("2 of 2 required")).toBeInTheDocument();
     expect(triggerButton()).toHaveTextContent("Connect wallet to trigger settlement");
   });
 
@@ -163,7 +203,16 @@ describe("RoundPanel", () => {
 
   it("reports an unknown round and does not guess one from the device clock", () => {
     const unavailable = { status: "unavailable" as const, message: "The indexer could not be reached." };
-    renderPanel(view({ roundId: null, asOf: null, watchers: unavailable, tally: unavailable, settled: unavailable }));
+    renderPanel(
+      view({
+        roundId: null,
+        asOf: null,
+        asOfSource: null,
+        watchers: unavailable,
+        tally: unavailable,
+        settled: unavailable,
+      }),
+    );
     expect(screen.getByText("Current round unknown")).toBeInTheDocument();
     expect(screen.queryByText(/^Round \d+/)).not.toBeInTheDocument();
     expect(triggerButton()).not.toBeInTheDocument();

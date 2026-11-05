@@ -10,20 +10,35 @@ export interface PollingState<T> {
   loading: boolean;
 }
 
+interface PollingSnapshot<T> extends PollingState<T> {
+  fetcher: () => Promise<T>;
+}
+
 /**
- * Calls `fetcher` repeatedly, `intervalMs` after the previous call settles,
+ * Calls `fetcher` immediately and then `intervalMs` after the previous call settles,
  * so requests never overlap and a slow backend is not hammered. After the
  * first load it pauses while the tab is hidden, fetches immediately when the tab becomes visible
- * again, and drops results that arrive after unmount or a restart.
+ * again, and drops results that arrive after unmount or a restart. When disabled it makes no request
+ * and exposes an empty loading state. Changing the fetcher invalidates data from its previous identity.
  *
  * `fetcher` must be referentially stable (wrap it in `useCallback`); a new
  * function restarts polling. `refresh` restarts polling and fetches now.
  */
-export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number) {
-  const [state, setState] = useState<PollingState<T>>({ data: null, error: null, loading: true });
+export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number, enabled = true) {
+  const [state, setState] = useState<PollingSnapshot<T>>({
+    data: null,
+    error: null,
+    loading: true,
+    fetcher,
+  });
   const [restartKey, setRestartKey] = useState(0);
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ data: null, error: null, loading: true, fetcher });
+      return;
+    }
+
     let cancelled = false;
     let inFlight = false;
     let hasFetched = false;
@@ -45,13 +60,14 @@ export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number) {
       hasFetched = true;
       try {
         const data = await fetcher();
-        if (!cancelled) setState({ data, error: null, loading: false });
+        if (!cancelled) setState({ data, error: null, loading: false, fetcher });
       } catch (err) {
         if (!cancelled) {
           setState((prev) => ({
-            data: prev.data,
+            data: prev.fetcher === fetcher ? prev.data : null,
             error: err instanceof Error ? err.message : "The request failed.",
             loading: false,
+            fetcher,
           }));
         }
       } finally {
@@ -75,9 +91,12 @@ export function usePolling<T>(fetcher: () => Promise<T>, intervalMs: number) {
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [fetcher, intervalMs, restartKey]);
+  }, [fetcher, intervalMs, restartKey, enabled]);
 
   const refresh = useCallback(() => setRestartKey((key) => key + 1), []);
 
-  return { ...state, refresh };
+  const visibleState: PollingState<T> =
+    enabled && state.fetcher === fetcher ? state : { data: null, error: null, loading: true };
+
+  return { ...visibleState, refresh };
 }

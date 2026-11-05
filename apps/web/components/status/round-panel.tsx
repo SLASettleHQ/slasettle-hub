@@ -39,13 +39,20 @@ export function RoundPanel({
     );
   }
 
-  const { roundId, asOf, watchers, tally, settled } = round.data;
+  const { roundId, asOf, asOfSource, watchers, tally, settled } = round.data;
   const quorum = tally.status === "ok" ? deriveQuorum(tally.value, config.quorumThreshold) : null;
 
   return (
     <div className="space-y-4">
+      {round.error && (
+        <UnavailableState title="Round refresh failed" message={round.error}>
+          The details below are from the last successful check and may have changed. Settlement is disabled until
+          the round refreshes successfully.
+        </UnavailableState>
+      )}
+
       {roundId !== null ? (
-        <RoundIndicator roundId={roundId} asOf={asOf} />
+        <RoundIndicator roundId={roundId} asOf={asOf} asOfSource={asOfSource} />
       ) : (
         <UnavailableState
           title="Current round unknown"
@@ -92,6 +99,7 @@ export function RoundPanel({
           votesDown={quorum?.votesDown ?? null}
           quorumReached={quorum?.reached ?? null}
           settled={settled}
+          stale={round.error !== null}
           onSettled={onSettled}
         />
       </div>
@@ -108,6 +116,7 @@ function SettlementStatus({
   votesDown,
   quorumReached,
   settled,
+  stale,
   onSettled,
 }: {
   slaId: bigint;
@@ -118,10 +127,14 @@ function SettlementStatus({
   votesDown: number | null;
   quorumReached: boolean | null;
   settled: RoundStatusView["settled"];
+  stale: boolean;
   onSettled: () => void;
 }) {
   const muted = "text-sm text-[var(--color-fg-muted)]";
 
+  if (stale) {
+    return <p className={muted}>Settlement eligibility has not been refreshed, so settlement is disabled.</p>;
+  }
   if (settled.status === "unavailable") {
     return (
       <UnavailableState title="Settled state unavailable" message={settled.message}>

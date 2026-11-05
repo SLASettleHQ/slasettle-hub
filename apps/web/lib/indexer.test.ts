@@ -30,6 +30,12 @@ function respond(body: unknown, init: { status?: number; statusText?: string } =
   );
 }
 
+function rejectResponseBody(name: "TimeoutError" | "AbortError") {
+  const response = new Response("{}", { status: 200 });
+  vi.spyOn(response, "json").mockRejectedValueOnce(new DOMException("request interrupted", name));
+  fetchMock.mockResolvedValueOnce(response);
+}
+
 function settlementRow(overrides: Record<string, unknown> = {}) {
   return {
     round_id: 118,
@@ -91,11 +97,25 @@ describe("failure classification", () => {
     await expect(getClock()).rejects.toThrow(/no response within/);
   });
 
+  it.each([
+    ["timeout", "TimeoutError", /timed out while reading the response body/],
+    ["abort", "AbortError", /was aborted while reading the response body/],
+  ] as const)("reports a body-read %s as unavailable", async (_label, name, message) => {
+    rejectResponseBody(name);
+    await expect(getClock()).rejects.toMatchObject({
+      name: "IndexerUnavailableError",
+      message: expect.stringMatching(message),
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("reports a non-2xx status as an API error carrying the status", async () => {
     respond({ error: "internal_error" }, { status: 500, statusText: "Internal Server Error" });
     await expect(getClock()).rejects.toMatchObject({ name: "IndexerApiError", status: 500 });
     respond("nope", { status: 404 });
     await expect(getClock()).rejects.toBeInstanceOf(IndexerApiError);
+    respond("<html>service unavailable</html>", { status: 503, statusText: "Service Unavailable" });
+    await expect(getClock()).rejects.toMatchObject({ name: "IndexerApiError", status: 503 });
   });
 
   it("reports a non-JSON body as a malformed response", async () => {
