@@ -59,6 +59,11 @@ export class IndexerResponseError extends Error {
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
+function timeoutOrAbortName(err: unknown): "TimeoutError" | "AbortError" | null {
+  if (typeof err !== "object" || err === null || !("name" in err)) return null;
+  return err.name === "TimeoutError" || err.name === "AbortError" ? err.name : null;
+}
+
 function getIndexerBaseUrl(): string {
   const baseUrl = process.env.NEXT_PUBLIC_INDEXER_API_URL;
   if (!baseUrl) {
@@ -73,8 +78,9 @@ async function indexerGet(path: string): Promise<unknown> {
   try {
     response = await fetch(`${baseUrl}${path}`, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   } catch (err) {
+    const abortName = timeoutOrAbortName(err);
     const reason =
-      err instanceof DOMException && err.name === "TimeoutError"
+      abortName === "TimeoutError"
         ? `no response within ${REQUEST_TIMEOUT_MS / 1000}s`
         : err instanceof Error
           ? err.message
@@ -86,7 +92,14 @@ async function indexerGet(path: string): Promise<unknown> {
   }
   try {
     return await response.json();
-  } catch {
+  } catch (err) {
+    const abortName = timeoutOrAbortName(err);
+    if (abortName === "TimeoutError") {
+      throw new IndexerUnavailableError(path, "the request timed out while reading the response body");
+    }
+    if (abortName === "AbortError") {
+      throw new IndexerUnavailableError(path, "the request was aborted while reading the response body");
+    }
     throw new IndexerResponseError(path, "the body is not valid JSON.");
   }
 }

@@ -15,5 +15,12 @@ export default defineConfig({
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
+    env: {
+      NEXT_PUBLIC_INDEXER_API_URL: "https://indexer.invalid",
+      NEXT_PUBLIC_SOROBAN_RPC_URL: "https://soroban.invalid",
+      NEXT_PUBLIC_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015",
+      NEXT_PUBLIC_SLA_VAULT_CONTRACT_ID: "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526",
+      NEXT_PUBLIC_WATCHER_REGISTRY_CONTRACT_ID: "CABAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAFNSZ",
+    },
   },
 });
