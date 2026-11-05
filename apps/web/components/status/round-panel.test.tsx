@@ -33,6 +33,7 @@ function view(overrides: Partial<RoundStatusView> = {}): PollingState<RoundStatu
     data: {
       roundId: 100n,
       asOf: "2026-10-01T00:00:00.000Z",
+      asOfSource: "ledger",
       watchers: {
         status: "ok",
         value: [
@@ -76,6 +77,7 @@ describe("RoundPanel", () => {
   it("shows the ledger-derived round, per-watcher status and the Down tally", () => {
     renderPanel(view());
     expect(screen.getByText("Round 100")).toBeInTheDocument();
+    expect(screen.getByText(/ledger time/)).toBeInTheDocument();
     expect(screen.getByText("1 of 2 watchers checked in")).toBeInTheDocument();
     expect(screen.getByText("Down")).toBeInTheDocument();
     expect(screen.getByText("Pending")).toBeInTheDocument();
@@ -87,6 +89,12 @@ describe("RoundPanel", () => {
     renderPanel(view());
     expect(triggerButton()).not.toBeInTheDocument();
     expect(screen.getByText(/Quorum has not been reached/)).toBeInTheDocument();
+  });
+
+  it("labels a round start timestamp as round started", () => {
+    renderPanel(view({ asOfSource: "round-start" }));
+    expect(screen.getByText(/round started/)).toBeInTheDocument();
+    expect(screen.queryByText(/ledger time/)).not.toBeInTheDocument();
   });
 
   it("offers settlement at quorum, with the round, tally and penalty shown", () => {
@@ -195,7 +203,16 @@ describe("RoundPanel", () => {
 
   it("reports an unknown round and does not guess one from the device clock", () => {
     const unavailable = { status: "unavailable" as const, message: "The indexer could not be reached." };
-    renderPanel(view({ roundId: null, asOf: null, watchers: unavailable, tally: unavailable, settled: unavailable }));
+    renderPanel(
+      view({
+        roundId: null,
+        asOf: null,
+        asOfSource: null,
+        watchers: unavailable,
+        tally: unavailable,
+        settled: unavailable,
+      }),
+    );
     expect(screen.getByText("Current round unknown")).toBeInTheDocument();
     expect(screen.queryByText(/^Round \d+/)).not.toBeInTheDocument();
     expect(triggerButton()).not.toBeInTheDocument();

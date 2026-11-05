@@ -21,7 +21,7 @@ import { TEST_ENDPOINT_HASH } from "@/test/fixtures";
 const W1 = Keypair.random().publicKey();
 const W2 = Keypair.random().publicKey();
 
-const CLOCK = { ledgerSequence: 1, ledgerCloseTime: "2026-10-01T00:00:00.000Z", currentRoundId: 100n };
+const CLOCK = { ledgerSequence: 1, ledgerCloseTime: "2026-10-01T00:00:30.000Z", currentRoundId: 100n };
 const CURRENT_ROUND = {
   roundId: 100n,
   roundStartedAt: "2026-10-01T00:00:00.000Z",
@@ -40,6 +40,8 @@ describe("fetchRoundStatus", () => {
   it("combines indexer participation with on-chain tally and settled state", async () => {
     const view = await fetchRoundStatus(7n, TEST_ENDPOINT_HASH);
     expect(view.roundId).toBe(100n);
+    expect(view.asOf).toBe(CLOCK.ledgerCloseTime);
+    expect(view.asOfSource).toBe("ledger");
     expect(view.watchers).toEqual({
       status: "ok",
       value: [
@@ -50,6 +52,19 @@ describe("fetchRoundStatus", () => {
     expect(view.tally).toEqual({ status: "ok", value: { votesUp: 0, votesDown: 1 } });
     expect(view.settled).toEqual({ status: "ok", value: false });
     expect(getRoundTally).toHaveBeenCalledWith(7n, 100n, TEST_ENDPOINT_HASH);
+    expect(isRoundSettled).toHaveBeenCalledWith(7n, 100n);
+  });
+
+  it("keeps the current-round timestamp with its round when the clock crosses a boundary", async () => {
+    vi.mocked(getClock).mockResolvedValue({ ...CLOCK, currentRoundId: 101n });
+
+    const view = await fetchRoundStatus(7n, TEST_ENDPOINT_HASH);
+
+    expect(view.roundId).toBe(CURRENT_ROUND.roundId);
+    expect(view.asOf).toBe(CURRENT_ROUND.roundStartedAt);
+    expect(view.asOfSource).toBe("round-start");
+    expect(getRoundTally).toHaveBeenCalledWith(7n, CURRENT_ROUND.roundId, TEST_ENDPOINT_HASH);
+    expect(isRoundSettled).toHaveBeenCalledWith(7n, CURRENT_ROUND.roundId);
   });
 
   it("keeps on-chain reads working when the participation endpoint is down", async () => {
@@ -57,15 +72,23 @@ describe("fetchRoundStatus", () => {
     const view = await fetchRoundStatus(7n, TEST_ENDPOINT_HASH);
     expect(view.watchers).toEqual({ status: "unavailable", message: "Soroban RPC request failed: indexer unreachable" });
     expect(view.roundId).toBe(100n);
+    expect(view.asOf).toBe(CLOCK.ledgerCloseTime);
+    expect(view.asOfSource).toBe("ledger");
     expect(view.tally.status).toBe("ok");
     expect(view.settled.status).toBe("ok");
+    expect(getRoundTally).toHaveBeenCalledWith(7n, 100n, TEST_ENDPOINT_HASH);
+    expect(isRoundSettled).toHaveBeenCalledWith(7n, 100n);
   });
 
   it("falls back to the participation endpoint's round when the clock is down", async () => {
     vi.mocked(getClock).mockRejectedValue(new Error("clock down"));
     const view = await fetchRoundStatus(7n, TEST_ENDPOINT_HASH);
     expect(view.roundId).toBe(100n);
+    expect(view.asOf).toBe(CURRENT_ROUND.roundStartedAt);
+    expect(view.asOfSource).toBe("round-start");
     expect(view.tally.status).toBe("ok");
+    expect(getRoundTally).toHaveBeenCalledWith(7n, 100n, TEST_ENDPOINT_HASH);
+    expect(isRoundSettled).toHaveBeenCalledWith(7n, 100n);
   });
 
   it("reports every round-dependent value as unavailable when no round is known", async () => {
@@ -73,6 +96,8 @@ describe("fetchRoundStatus", () => {
     vi.mocked(getCurrentRound).mockRejectedValue(new Error("round down"));
     const view = await fetchRoundStatus(7n, TEST_ENDPOINT_HASH);
     expect(view.roundId).toBeNull();
+    expect(view.asOf).toBeNull();
+    expect(view.asOfSource).toBeNull();
     expect(view.tally).toEqual({ status: "unavailable", message: "Soroban RPC request failed: clock down" });
     expect(view.settled.status).toBe("unavailable");
     expect(getRoundTally).not.toHaveBeenCalled();

@@ -39,7 +39,7 @@ export function RoundPanel({
     );
   }
 
-  const { roundId, asOf, watchers, tally, settled } = round.data;
+  const { roundId, asOf, asOfSource, watchers, tally, settled } = round.data;
   const quorum = tally.status === "ok" ? deriveQuorum(tally.value, config.quorumThreshold) : null;
 
   return (
@@ -52,7 +52,7 @@ export function RoundPanel({
       )}
 
       {roundId !== null ? (
-        <RoundIndicator roundId={roundId} asOf={asOf} />
+        <RoundIndicator roundId={roundId} asOf={asOf} asOfSource={asOfSource} />
       ) : (
         <UnavailableState
           title="Current round unknown"

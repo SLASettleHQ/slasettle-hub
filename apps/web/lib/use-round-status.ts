@@ -20,8 +20,10 @@ export type Source<T> = { status: "ok"; value: T } | { status: "unavailable"; me
 export interface RoundStatusView {
   /** From the indexer's ledger-derived clock, never the device clock. Null if no source could supply it. */
   roundId: bigint | null;
-  /** Ledger close time the round was computed from. */
+  /** Timestamp for roundId, selected from a source that identifies that same round. */
   asOf: string | null;
+  /** Identifies whether asOf is the ledger close time or the round's start time. */
+  asOfSource: "ledger" | "round-start" | null;
   /** Per-watcher check-ins, from the indexer. */
   watchers: Source<RoundWatcherView[]>;
   /** Live vote tally, read from `watcher_registry` over Soroban RPC. */
@@ -45,21 +47,30 @@ export async function fetchRoundStatus(
 ): Promise<RoundStatusView> {
   const [clockResult, currentRoundResult] = await Promise.allSettled([getClock(), getCurrentRound(slaId)]);
 
-  // The participation endpoint is computed by the indexer from the same ledger
-  // clock, and is the later read, so it wins if the two ever disagree.
-  const roundId =
-    currentRoundResult.status === "fulfilled"
-      ? currentRoundResult.value.roundId
-      : clockResult.status === "fulfilled"
-        ? clockResult.value.currentRoundId
-        : null;
+  // Keep the participation endpoint's round as the preferred identity. Use a
+  // clock timestamp only when its round ID agrees with that identity; at a
+  // boundary, pair the selected current-round ID with its own start timestamp.
+  let roundId: bigint | null = null;
+  let asOf: string | null = null;
+  let asOfSource: RoundStatusView["asOfSource"] = null;
 
-  const asOf =
-    clockResult.status === "fulfilled"
-      ? clockResult.value.ledgerCloseTime
-      : currentRoundResult.status === "fulfilled"
-        ? currentRoundResult.value.roundStartedAt
-        : null;
+  if (currentRoundResult.status === "fulfilled") {
+    roundId = currentRoundResult.value.roundId;
+    if (
+      clockResult.status === "fulfilled" &&
+      clockResult.value.currentRoundId === currentRoundResult.value.roundId
+    ) {
+      asOf = clockResult.value.ledgerCloseTime;
+      asOfSource = "ledger";
+    } else {
+      asOf = currentRoundResult.value.roundStartedAt;
+      asOfSource = "round-start";
+    }
+  } else if (clockResult.status === "fulfilled") {
+    roundId = clockResult.value.currentRoundId;
+    asOf = clockResult.value.ledgerCloseTime;
+    asOfSource = "ledger";
+  }
 
   const watchers: Source<RoundWatcherView[]> =
     currentRoundResult.status === "fulfilled"
@@ -81,7 +92,7 @@ export async function fetchRoundStatus(
         ? clockResult.reason
         : new Error("The current round is unknown.");
     const noRound = unavailable(reason);
-    return { roundId, asOf, watchers, tally: noRound, settled: noRound };
+    return { roundId, asOf, asOfSource, watchers, tally: noRound, settled: noRound };
   }
 
   const [tallyResult, settledResult] = await Promise.allSettled([
@@ -92,6 +103,7 @@ export async function fetchRoundStatus(
   return {
     roundId,
     asOf,
+    asOfSource,
     watchers,
     tally:
       tallyResult.status === "fulfilled"
