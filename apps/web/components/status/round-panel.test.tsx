@@ -98,6 +98,38 @@ describe("RoundPanel", () => {
     expect(triggerButton()).toHaveTextContent("Connect wallet to trigger settlement");
   });
 
+  it("labels last-good data as stale, blocks settlement, and restores it after recovery", () => {
+    const fresh = view({ tally: { status: "ok", value: { votesUp: 0, votesDown: 2 } } });
+    const rendered = renderPanel({
+      ...fresh,
+      error: "The indexer could not be reached for /v1/slas/1/current-round: no response within 10s",
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Round refresh failed");
+    expect(
+      screen.getByText(/details below are from the last successful check and may have changed/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Round 100")).toBeInTheDocument();
+    expect(screen.getByText("Quorum reached")).toBeInTheDocument();
+    expect(screen.getByText(/Settlement eligibility has not been refreshed/)).toBeInTheDocument();
+    expect(triggerButton()).not.toBeInTheDocument();
+
+    rendered.rerender(
+      <RoundPanel
+        slaId={1n}
+        config={CONFIG}
+        tokenDecimals={7}
+        tokenSymbol="USDC"
+        round={fresh}
+        onSettled={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("Round refresh failed")).not.toBeInTheDocument();
+    expect(screen.getByText("2 of 2 required")).toBeInTheDocument();
+    expect(triggerButton()).toHaveTextContent("Connect wallet to trigger settlement");
+  });
+
   it("does not offer settlement for an already settled round", () => {
     renderPanel(
       view({
