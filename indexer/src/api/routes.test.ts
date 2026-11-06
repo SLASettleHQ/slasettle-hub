@@ -144,7 +144,7 @@ const FAKE_LEDGER = { sequence: 4929505, closeTime: "1790671112" };
 const FAKE_ROUND = 29844518;
 
 function fakeServer(ledger = FAKE_LEDGER): rpc.Server {
-  return { getLatestLedger: async () => ledger } as unknown as rpc.Server;
+  return { _getLatestLedger: async () => ledger } as unknown as rpc.Server;
 }
 
 test("GET /v1/clock reports the mocked ledger and the round derived from its close time", async () => {
