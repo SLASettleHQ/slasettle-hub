@@ -5,23 +5,42 @@ export interface LedgerInfo {
   closeTimeMs: number;
 }
 
+const UNIX_SECONDS = /^(0|[1-9]\d*)$/;
+const MAX_DATE_TIME_MS = 8_640_000_000_000_000;
+
+function invalidLedgerField(field: string, value: unknown): TypeError {
+  return new TypeError(`getLatestLedger returned an invalid ${field}: ${String(value)}`);
+}
+
 /**
- * getLatestLedger's response field is `closeTime` — confirmed against the
- * real installed SDK types (GetLatestLedgerResponse.closeTime: string).
- * The earlier version of this function guessed `ledgerCloseTime` and
- * flagged that guess as needing verification; this is that verification.
+ * The SDK's raw getter uses the same JSON-RPC request path as getLatestLedger,
+ * but leaves headerXdr and metadataXdr encoded. This indexer only needs the
+ * sequence and closeTime fields, so avoid decoding those large XDR payloads.
  */
 export async function getLatestLedgerInfo(server: rpc.Server): Promise<LedgerInfo> {
-  const raw = await server.getLatestLedger();
-  const closeTimeSeconds = Number(raw.closeTime);
+  const raw = await server._getLatestLedger();
+  const sequence = raw?.sequence;
 
-  if (!Number.isFinite(closeTimeSeconds)) {
-    throw new Error(
-      `getLatestLedger returned a non-numeric closeTime: ${String(raw.closeTime)}`,
-    );
+  if (typeof sequence !== "number" || !Number.isSafeInteger(sequence) || sequence <= 0) {
+    throw invalidLedgerField("sequence", sequence);
   }
 
-  return { sequence: raw.sequence, closeTimeMs: closeTimeSeconds * 1000 };
+  const closeTime = raw?.closeTime;
+  if (typeof closeTime !== "string" || !UNIX_SECONDS.test(closeTime)) {
+    throw invalidLedgerField("closeTime", closeTime);
+  }
+
+  const closeTimeSeconds = Number(closeTime);
+  if (!Number.isSafeInteger(closeTimeSeconds)) {
+    throw invalidLedgerField("closeTime", closeTime);
+  }
+
+  const closeTimeMs = closeTimeSeconds * 1000;
+  if (!Number.isSafeInteger(closeTimeMs) || closeTimeMs > MAX_DATE_TIME_MS) {
+    throw invalidLedgerField("closeTime", closeTime);
+  }
+
+  return { sequence, closeTimeMs };
 }
 
 /**
