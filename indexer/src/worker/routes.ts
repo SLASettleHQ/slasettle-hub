@@ -4,7 +4,6 @@ import { getLatestLedgerInfo, currentRoundId } from "../api/ledgerInfo.js";
 import { encodeCursor, decodeCursor } from "../api/pagination.js";
 import { fetchQuorumThreshold } from "../rpc/liveReads.js";
 import type { WorkerEnv } from "./types.js";
-import { runIngestionStep } from "./ingest.js";
 
 function jsonResponse(
   data: unknown,
@@ -238,12 +237,6 @@ export async function handleRequest(
       corsHeaders,
       isHead,
     );
-  }
-
-  // POST /v1/ingest (allows manual trigger / test verification)
-  if (request.method === "POST" && path === "/v1/ingest") {
-    const result = await runIngestionStep(env);
-    return jsonResponse({ success: true, ...result }, 200, corsHeaders);
   }
 
   return jsonResponse({ error: "not_found" }, 404, corsHeaders);

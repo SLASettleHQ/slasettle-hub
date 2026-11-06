@@ -140,6 +140,45 @@ test("Worker: CORS headers allow configured origin and reject other origins", as
   );
 });
 
+test("Worker: POST /v1/ingest is unavailable and cannot reach ingestion dependencies", async () => {
+  const { env, rawDb } = createTestEnv();
+  const databaseCalls: string[] = [];
+  let rpcCalls = 0;
+  const originalFetch = globalThis.fetch;
+
+  env.DB = new Proxy(env.DB, {
+    get(target, property, receiver) {
+      if (property === "prepare" || property === "batch" || property === "exec") {
+        return () => {
+          databaseCalls.push(String(property));
+          throw new Error(`Unexpected D1 call: ${String(property)}`);
+        };
+      }
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  globalThis.fetch = async () => {
+    rpcCalls++;
+    throw new Error("Unexpected RPC call");
+  };
+
+  try {
+    const response = await worker.fetch(
+      new Request("http://localhost/v1/ingest", { method: "POST" }),
+      env,
+      {} as any,
+    );
+
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: "not_found" });
+    assert.deepEqual(databaseCalls, []);
+    assert.equal(rpcCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rawDb.close();
+  }
+});
+
 test("Worker: GET /v1/watchers returns eligible watchers", async () => {
   const { env, d1 } = createTestEnv();
 
@@ -236,6 +275,59 @@ test("Worker: failed ingestion does not incorrectly advance checkpoint", async (
 
   const cp = await d1.getCheckpoint();
   assert.equal(cp, undefined);
+});
+
+test("Worker: scheduled handler independently completes an ingestion cycle", async () => {
+  const { env, d1, rawDb } = createTestEnv();
+  env.START_LEDGER = "500";
+  const originalFetch = globalThis.fetch;
+  let rpcCalls = 0;
+  globalThis.fetch = async (_input, init) => {
+    const request = JSON.parse(String(init?.body)) as { id: number; method: string };
+    assert.equal(request.method, "getEvents");
+    rpcCalls++;
+
+    return new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: request.id,
+        result: {
+          events: [],
+          cursor: "cursor-501",
+          latestLedger: 501,
+          oldestLedger: 1,
+          latestLedgerCloseTime: "1793861770",
+          oldestLedgerCloseTime: "1793861000",
+        },
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  };
+
+  let scheduledWork: Promise<unknown> | undefined;
+  const ctx = {
+    waitUntil(promise: Promise<unknown>) {
+      scheduledWork = promise;
+    },
+  } as unknown as ExecutionContext;
+
+  try {
+    await worker.scheduled(
+      { cron: "* * * * *", scheduledTime: Date.now() } as ScheduledEvent,
+      env,
+      ctx,
+    );
+
+    assert.ok(scheduledWork, "scheduled handler must register its ingestion promise");
+    await scheduledWork;
+    assert.equal(rpcCalls, 1);
+    const checkpoint = await d1.getCheckpoint();
+    assert.equal(checkpoint?.last_ledger, 501);
+    assert.equal(checkpoint?.last_cursor, "cursor-501");
+  } finally {
+    globalThis.fetch = originalFetch;
+    rawDb.close();
+  }
 });
 
 test("Worker: HEAD /v1/health returns 200 with null body", async () => {
