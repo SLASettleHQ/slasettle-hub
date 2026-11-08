@@ -41,8 +41,10 @@ function view(overrides: Partial<RoundStatusView> = {}): PollingState<RoundStatu
           { address: W2, status: "pending" },
         ],
       },
+      participationVerified: true,
       tally: { status: "ok", value: { votesUp: 0, votesDown: 1 } },
       settled: { status: "ok", value: false },
+      settlementReady: true,
       ...overrides,
     },
   };
@@ -164,6 +166,39 @@ describe("RoundPanel", () => {
     expect(screen.getByText("The indexer could not be reached.")).toBeInTheDocument();
     expect(screen.queryByText("No registered watchers")).not.toBeInTheDocument();
     expect(screen.getByText("1 / 2")).toBeInTheDocument();
+  });
+
+  it("keeps clock-only fallback read-only when the live tally has quorum", () => {
+    renderPanel(
+      view({
+        watchers: { status: "unavailable", message: "Current-round participation is unavailable." },
+        participationVerified: false,
+        tally: { status: "ok", value: { votesUp: 0, votesDown: 3 } },
+        settled: { status: "ok", value: false },
+        settlementReady: false,
+      }),
+    );
+
+    expect(screen.getByText("Quorum reached")).toBeInTheDocument();
+    expect(screen.getByText("3 / 2")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Settlement is disabled until a verified current-round response/),
+    ).toBeInTheDocument();
+    expect(triggerButton()).not.toBeInTheDocument();
+  });
+
+  it("labels legacy watcher rows as degraded and blocks settlement", () => {
+    renderPanel(
+      view({
+        participationVerified: false,
+        tally: { status: "ok", value: { votesUp: 0, votesDown: 3 } },
+        settlementReady: false,
+      }),
+    );
+
+    expect(screen.getByText("Participation data is not fully verified")).toBeInTheDocument();
+    expect(screen.getByText("1 of 2 watchers checked in")).toBeInTheDocument();
+    expect(triggerButton()).not.toBeInTheDocument();
   });
 
   it("distinguishes zero registered watchers from an unavailable watcher list", () => {

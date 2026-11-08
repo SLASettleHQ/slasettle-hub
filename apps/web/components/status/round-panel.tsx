@@ -39,8 +39,23 @@ export function RoundPanel({
     );
   }
 
-  const { roundId, asOf, asOfSource, watchers, tally, settled } = round.data;
+  const {
+    roundId,
+    asOf,
+    asOfSource,
+    watchers,
+    participationVerified,
+    tally,
+    settled,
+    settlementReady,
+  } = round.data;
   const quorum = tally.status === "ok" ? deriveQuorum(tally.value, config.quorumThreshold) : null;
+  const settlementCanBeConsideredReady =
+    settlementReady &&
+    participationVerified &&
+    watchers.status === "ok" &&
+    tally.status === "ok" &&
+    settled.status === "ok";
 
   return (
     <div className="space-y-4">
@@ -63,7 +78,15 @@ export function RoundPanel({
       )}
 
       {watchers.status === "ok" ? (
-        <WatcherGrid watchers={watchers.value} />
+        <>
+          {!participationVerified && (
+            <UnavailableState
+              title="Participation data is not fully verified"
+              message="This indexer response does not include a matching ledger snapshot. These watcher rows are for read-only context; settlement is disabled."
+            />
+          )}
+          <WatcherGrid watchers={watchers.value} />
+        </>
       ) : (
         <UnavailableState title="Watcher check-ins unavailable" message={watchers.message}>
           {tally.status === "ok"
@@ -99,6 +122,7 @@ export function RoundPanel({
           votesDown={quorum?.votesDown ?? null}
           quorumReached={quorum?.reached ?? null}
           settled={settled}
+          settlementReady={settlementCanBeConsideredReady}
           stale={round.error !== null}
           onSettled={onSettled}
         />
@@ -116,6 +140,7 @@ function SettlementStatus({
   votesDown,
   quorumReached,
   settled,
+  settlementReady,
   stale,
   onSettled,
 }: {
@@ -127,6 +152,7 @@ function SettlementStatus({
   votesDown: number | null;
   quorumReached: boolean | null;
   settled: RoundStatusView["settled"];
+  settlementReady: boolean;
   stale: boolean;
   onSettled: () => void;
 }) {
@@ -149,6 +175,13 @@ function SettlementStatus({
     return (
       <p className="text-sm text-[var(--color-fg-secondary)]">
         This SLA is cancelled. Settlement cannot be triggered.
+      </p>
+    );
+  }
+  if (!settlementReady) {
+    return (
+      <p className={muted}>
+        Settlement is disabled until a verified current-round response and all required live contract reads are available.
       </p>
     );
   }

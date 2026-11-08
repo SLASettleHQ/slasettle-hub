@@ -100,6 +100,8 @@ export async function handleRequest(
       {
         round_id: roundId,
         round_started_at: new Date(roundId * roundLengthSeconds * 1000).toISOString(),
+        ledger_sequence: ledger.sequence,
+        ledger_close_time: new Date(ledger.closeTimeMs).toISOString(),
         checked_in: checkedIn.map((c) => ({
           watcher: c.watcher,
           status: c.status,

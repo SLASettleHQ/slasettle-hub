@@ -158,6 +158,8 @@ describe("getCurrentRound", () => {
   const valid = {
     round_id: 29842537,
     round_started_at: "2026-09-27T23:37:00.000Z",
+    ledger_sequence: 4929505,
+    ledger_close_time: "2026-09-27T23:37:59.000Z",
     checked_in: [{ watcher: WATCHER_A, status: "down", checked_at: "2026-09-27T23:37:12Z" }],
     not_yet_checked_in: [WATCHER_B],
   };
@@ -167,10 +169,62 @@ describe("getCurrentRound", () => {
     await expect(getCurrentRound(5n)).resolves.toEqual({
       roundId: 29842537n,
       roundStartedAt: "2026-09-27T23:37:00.000Z",
+      ledgerSnapshot: {
+        status: "verified",
+        sequence: 4929505,
+        closeTime: "2026-09-27T23:37:59.000Z",
+      },
       checkedIn: [{ watcher: WATCHER_A, status: "down", checkedAt: "2026-09-27T23:37:12Z" }],
       notYetCheckedIn: [WATCHER_B],
     });
     expect(fetchMock.mock.calls[0]![0]).toBe("https://indexer.test/v1/slas/5/current-round");
+  });
+
+  it("accepts the exact 60-second boundary when the round ID and start time advance together", async () => {
+    respond({
+      ...valid,
+      round_id: 29842538,
+      round_started_at: "2026-09-27T23:38:00.000Z",
+      ledger_close_time: "2026-09-27T23:38:00.000Z",
+    });
+
+    await expect(getCurrentRound(5n)).resolves.toMatchObject({
+      roundId: 29842538n,
+      roundStartedAt: "2026-09-27T23:38:00.000Z",
+      ledgerSnapshot: { status: "verified", closeTime: "2026-09-27T23:38:00.000Z" },
+    });
+  });
+
+  it("marks both absent ledger fields as a legacy Worker response", async () => {
+    const legacy: Record<string, unknown> = { ...valid };
+    delete legacy.ledger_sequence;
+    delete legacy.ledger_close_time;
+    respond(legacy);
+
+    await expect(getCurrentRound(5n)).resolves.toMatchObject({
+      roundId: 29842537n,
+      ledgerSnapshot: { status: "legacy" },
+    });
+  });
+
+  it("rejects a partial ledger field pair", async () => {
+    const partial: Record<string, unknown> = { ...valid };
+    delete partial.ledger_close_time;
+    respond(partial);
+    await expect(getCurrentRound(5n)).rejects.toThrow(/must both be present or both be absent/);
+  });
+
+  it("rejects a ledger snapshot that identifies a different round", async () => {
+    respond({ ...valid, ledger_close_time: "2026-09-27T23:38:00.000Z" });
+    await expect(getCurrentRound(5n)).rejects.toThrow(/do not identify the same 60-second round/);
+  });
+
+  it("rejects a missing or invalid ledger sequence instead of treating it as fresh", async () => {
+    respond({ ...valid, ledger_sequence: 0 });
+    await expect(getCurrentRound(5n)).rejects.toThrow(/ledger_sequence.*positive integer/);
+
+    respond({ ...valid, ledger_sequence: "4929505" });
+    await expect(getCurrentRound(5n)).rejects.toThrow(/ledger_sequence.*non-negative integer/);
   });
 
   it("rejects a watcher status other than up or down", async () => {

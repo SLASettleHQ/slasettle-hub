@@ -2,7 +2,7 @@
 
 import { getRoundTally, isRoundSettled, type RoundTally } from "@slasettle/sdk";
 import { useCallback } from "react";
-import { getClock, getCurrentRound } from "./indexer";
+import { getClock, getCurrentRound, type CurrentRound } from "./indexer";
 import { usePolling } from "./use-polling";
 import { describeReadError } from "./read-error";
 import type { WatcherCheckStatus } from "@/components/status/watcher-status-row";
@@ -26,10 +26,14 @@ export interface RoundStatusView {
   asOfSource: "ledger" | "round-start" | null;
   /** Per-watcher check-ins, from the indexer. */
   watchers: Source<RoundWatcherView[]>;
+  /** True only when watcher rows and round identity came with a coherent ledger snapshot. */
+  participationVerified: boolean;
   /** Live vote tally, read from `watcher_registry` over Soroban RPC. */
   tally: Source<RoundTally>;
   /** Whether the round is settled, read from `sla_vault` over Soroban RPC. */
   settled: Source<boolean>;
+  /** Required current-round and live reads succeeded; the poller and contract still enforce freshness and safety. */
+  settlementReady: boolean;
 }
 
 function unavailable(reason: unknown): { status: "unavailable"; message: string } {
@@ -45,54 +49,88 @@ export async function fetchRoundStatus(
   slaId: bigint,
   endpointHash: Uint8Array,
 ): Promise<RoundStatusView> {
-  const [clockResult, currentRoundResult] = await Promise.allSettled([getClock(), getCurrentRound(slaId)]);
+  const [currentRoundResult] = await Promise.allSettled([getCurrentRound(slaId)]);
+  const currentRound = currentRoundResult.status === "fulfilled" ? currentRoundResult.value : null;
+  const currentRoundError =
+    currentRoundResult.status === "rejected"
+      ? currentRoundResult.reason
+      : new Error("The current-round ledger snapshot is unavailable.");
+  const needsClockFallback =
+    currentRound === null || currentRound.ledgerSnapshot.status === "legacy";
+  let clock: Awaited<ReturnType<typeof getClock>> | null = null;
+  let clockError: unknown = null;
+  if (needsClockFallback) {
+    try {
+      clock = await getClock();
+    } catch (err) {
+      clockError = err;
+    }
+  }
 
-  // Keep the participation endpoint's round as the preferred identity. Use a
-  // clock timestamp only when its round ID agrees with that identity; at a
-  // boundary, pair the selected current-round ID with its own start timestamp.
   let roundId: bigint | null = null;
   let asOf: string | null = null;
   let asOfSource: RoundStatusView["asOfSource"] = null;
+  let participationVerified = false;
+  let watchers: Source<RoundWatcherView[]>;
 
-  if (currentRoundResult.status === "fulfilled") {
-    roundId = currentRoundResult.value.roundId;
-    if (
-      clockResult.status === "fulfilled" &&
-      clockResult.value.currentRoundId === currentRoundResult.value.roundId
-    ) {
-      asOf = clockResult.value.ledgerCloseTime;
-      asOfSource = "ledger";
-    } else {
-      asOf = currentRoundResult.value.roundStartedAt;
-      asOfSource = "round-start";
-    }
-  } else if (clockResult.status === "fulfilled") {
-    roundId = clockResult.value.currentRoundId;
-    asOf = clockResult.value.ledgerCloseTime;
+  const currentRoundWatchers = (value: CurrentRound): RoundWatcherView[] => [
+    ...value.checkedIn.map((w) => ({ address: w.watcher, status: w.status })),
+    ...value.notYetCheckedIn.map((address) => ({ address, status: "pending" as const })),
+  ];
+
+  if (currentRound?.ledgerSnapshot.status === "verified") {
+    // Round identity and its timestamp come from the same latest-ledger
+    // snapshot. Do not make a second indexer request on this successful path.
+    roundId = currentRound.roundId;
+    asOf = currentRound.ledgerSnapshot.closeTime;
     asOfSource = "ledger";
+    watchers = { status: "ok", value: currentRoundWatchers(currentRound) };
+    participationVerified = true;
+  } else if (currentRound !== null) {
+    // A pre-upgrade GREEN response remains useful for display. Its round may
+    // be paired with /clock for read-only status, but its participation is
+    // explicitly degraded and cannot authorize settlement.
+    if (clock !== null) {
+      roundId = clock.currentRoundId;
+      asOf = clock.ledgerCloseTime;
+      asOfSource = "ledger";
+      watchers =
+        clock.currentRoundId === currentRound.roundId
+          ? { status: "ok", value: currentRoundWatchers(currentRound) }
+          : {
+              status: "unavailable",
+              message: "Watcher check-ins belong to a different round than the latest network clock.",
+            };
+    } else {
+      roundId = currentRound.roundId;
+      asOf = currentRound.roundStartedAt;
+      asOfSource = "round-start";
+      watchers = { status: "ok", value: currentRoundWatchers(currentRound) };
+    }
+  } else if (clock !== null) {
+    // Clock-only fallback is useful for the round label and live read-only
+    // tally, while participation and settlement remain unavailable.
+    roundId = clock.currentRoundId;
+    asOf = clock.ledgerCloseTime;
+    asOfSource = "ledger";
+    watchers = unavailable(currentRoundError);
+  } else {
+    watchers = unavailable(currentRoundError);
   }
 
-  const watchers: Source<RoundWatcherView[]> =
-    currentRoundResult.status === "fulfilled"
-      ? {
-          status: "ok",
-          value: [
-            ...currentRoundResult.value.checkedIn.map((w) => ({ address: w.watcher, status: w.status })),
-            ...currentRoundResult.value.notYetCheckedIn.map((address) => ({
-              address,
-              status: "pending" as const,
-            })),
-          ],
-        }
-      : unavailable(currentRoundResult.reason);
-
   if (roundId === null) {
-    const reason =
-      clockResult.status === "rejected"
-        ? clockResult.reason
-        : new Error("The current round is unknown.");
+    const reason = clockError ?? currentRoundError;
     const noRound = unavailable(reason);
-    return { roundId, asOf, asOfSource, watchers, tally: noRound, settled: noRound };
+    return {
+      roundId,
+      asOf,
+      asOfSource,
+      watchers,
+      participationVerified,
+      tally: noRound,
+      settled: noRound,
+      settlementReady: false,
+    };
   }
 
   const [tallyResult, settledResult] = await Promise.allSettled([
@@ -105,6 +143,7 @@ export async function fetchRoundStatus(
     asOf,
     asOfSource,
     watchers,
+    participationVerified,
     tally:
       tallyResult.status === "fulfilled"
         ? { status: "ok", value: tallyResult.value }
@@ -113,6 +152,11 @@ export async function fetchRoundStatus(
       settledResult.status === "fulfilled"
         ? { status: "ok", value: settledResult.value }
         : unavailable(settledResult.reason),
+    settlementReady:
+      participationVerified &&
+      watchers.status === "ok" &&
+      tallyResult.status === "fulfilled" &&
+      settledResult.status === "fulfilled",
   };
 }
 
