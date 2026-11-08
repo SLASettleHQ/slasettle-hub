@@ -265,12 +265,20 @@ export interface CheckedInWatcher {
   checkedAt: string;
 }
 
+export type CurrentRoundLedgerSnapshot =
+  | { status: "verified"; sequence: number; closeTime: string }
+  | { status: "legacy" };
+
 export interface CurrentRound {
   roundId: bigint;
   roundStartedAt: string;
+  /** Explicitly marked legacy when reading a pre-upgrade Worker response. */
+  ledgerSnapshot: CurrentRoundLedgerSnapshot;
   checkedIn: CheckedInWatcher[];
   notYetCheckedIn: string[];
 }
+
+const CURRENT_ROUND_LENGTH_SECONDS = 60;
 
 export async function getCurrentRound(slaId: bigint): Promise<CurrentRound> {
   const endpoint = `/v1/slas/${checkSlaId(slaId)}/current-round`;
@@ -283,9 +291,48 @@ export async function getCurrentRound(slaId: bigint): Promise<CurrentRound> {
     );
   }
 
+  const roundId = BigInt(nonNegativeInt(fields, "round_id", endpoint));
+  const roundStartedAt = timestamp(fields, "round_started_at", endpoint);
+  const hasLedgerSequence = Object.prototype.hasOwnProperty.call(fields, "ledger_sequence");
+  const hasLedgerCloseTime = Object.prototype.hasOwnProperty.call(fields, "ledger_close_time");
+  let ledgerSnapshot: CurrentRoundLedgerSnapshot;
+
+  if (!hasLedgerSequence && !hasLedgerCloseTime) {
+    // GREEN Workers deployed before this response extension omit both fields.
+    // Keep their read-only status data available, but mark it explicitly as
+    // legacy so the caller can use /v1/clock and disable settlement.
+    ledgerSnapshot = { status: "legacy" };
+  } else {
+    if (!hasLedgerSequence || !hasLedgerCloseTime) {
+      throw new IndexerResponseError(
+        endpoint,
+        '"ledger_sequence" and "ledger_close_time" must both be present or both be absent.',
+      );
+    }
+
+    const sequence = nonNegativeInt(fields, "ledger_sequence", endpoint);
+    if (sequence === 0) {
+      throw new IndexerResponseError(endpoint, '"ledger_sequence" is not a positive integer.');
+    }
+    const closeTime = timestamp(fields, "ledger_close_time", endpoint);
+    const expectedRoundId = Math.floor(Date.parse(closeTime) / (CURRENT_ROUND_LENGTH_SECONDS * 1000));
+    const expectedRoundStartMs = expectedRoundId * CURRENT_ROUND_LENGTH_SECONDS * 1000;
+    if (
+      BigInt(expectedRoundId) !== roundId ||
+      Date.parse(roundStartedAt) !== expectedRoundStartMs
+    ) {
+      throw new IndexerResponseError(
+        endpoint,
+        '"round_id", "round_started_at", and the ledger snapshot do not identify the same 60-second round.',
+      );
+    }
+    ledgerSnapshot = { status: "verified", sequence, closeTime };
+  }
+
   return {
-    roundId: BigInt(nonNegativeInt(fields, "round_id", endpoint)),
-    roundStartedAt: timestamp(fields, "round_started_at", endpoint),
+    roundId,
+    roundStartedAt,
+    ledgerSnapshot,
     checkedIn: fields.checked_in.map((item, index) => {
       const w = asObject(item, endpoint, `checked_in[${index}]`);
       const status = w.status;
