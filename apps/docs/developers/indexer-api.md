@@ -67,6 +67,8 @@ Aggregates checks submitted during the active round for a specified SLA.
 {
   "round_id": 29856392,
   "round_started_at": "2026-10-07T14:32:00.000Z",
+  "ledger_sequence": 5215001,
+  "ledger_close_time": "2026-10-07T14:32:15.000Z",
   "checked_in": [
     {
       "watcher": "GA4WTXER6HGGZUXEPIOFYRTMOM34Q675DEAAK3WLBIO2FY7ENFNNDQHK",
@@ -79,6 +81,10 @@ Aggregates checks submitted during the active round for a specified SLA.
   ]
 }
 ```
+
+`ledger_sequence` is the sequence of the latest ledger used for this response. `ledger_close_time` is that ledger's close time in ISO 8601 UTC form. Both values come from the same latest-ledger snapshot used to calculate `round_id`; `round_started_at` is the beginning of that round. The endpoint still performs the two D1 reads used to assemble watcher participation.
+
+Clients should treat the two ledger fields as a pair. A response with both fields absent is from a Worker deployed before this extension and must be treated as degraded; a partial or invalid pair is an invalid response. Deploy the Worker before the Web client to use one indexer request during a normal status poll. A Web deployment made first remains compatible with older Workers by using `/v1/clock` for read-only status and keeping settlement disabled until a coherent ledger snapshot is available.
 
 ---
 

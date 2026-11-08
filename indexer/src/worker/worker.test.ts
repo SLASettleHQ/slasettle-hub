@@ -34,6 +34,32 @@ function createTestEnv(): { env: WorkerEnv; d1: IndexerD1; rawDb: Database.Datab
   return { env, d1, rawDb };
 }
 
+function mockLatestLedgerRpc(sequence: number, closeTime: string) {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (_input, init) => {
+    const request = JSON.parse(String(init?.body)) as { id: number; method: string };
+    assert.equal(request.method, "getLatestLedger");
+    calls++;
+    return new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: request.id,
+        result: { sequence, closeTime },
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  };
+  return {
+    get calls() {
+      return calls;
+    },
+    restore() {
+      globalThis.fetch = originalFetch;
+    },
+  };
+}
+
 test("Worker: GET /v1/health returns ok and checkpoint status", async () => {
   const { env, d1 } = createTestEnv();
 
@@ -202,6 +228,86 @@ test("Worker: GET /v1/watchers returns eligible watchers", async () => {
   assert.equal(body.data[0].address, "GWATCHER1");
   assert.equal(body.data[1].address, "GWATCHER2");
   assert.equal(body.next_cursor, null);
+});
+
+test("Worker: current-round returns its ledger snapshot with one RPC call and both D1 reads", async () => {
+  const { env, d1, rawDb } = createTestEnv();
+  const roundId = Math.floor(1790671112 / 60);
+  await d1.applyBatch({
+    lastLedger: 1,
+    lastCursor: null,
+    watcherEvents: [{ type: "registered", address: "GWATCHER1", at: "2026-09-29T08:00:00Z" }],
+    checks: [
+      {
+        event_id: "check-1",
+        sla_id: "7",
+        round_id: String(roundId),
+        watcher: "GWATCHER1",
+        status: "down",
+        endpoint_hash: "aa".repeat(32),
+        checked_at: "2026-09-29T08:38:10Z",
+      },
+    ],
+    slas: [],
+    settlements: [],
+    lifecycleEvents: [],
+  });
+
+  const d1Reads: string[] = [];
+  const originalDb = env.DB;
+  env.DB = new Proxy(originalDb, {
+    get(target, property, receiver) {
+      if (property === "prepare") {
+        return (query: string) => {
+          d1Reads.push(query);
+          return target.prepare(query);
+        };
+      }
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  const rpc = mockLatestLedgerRpc(4929505, "1790671112");
+
+  try {
+    const response = await worker.fetch(new Request("http://localhost/v1/slas/7/current-round"), env, {} as any);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      round_id: roundId,
+      round_started_at: "2026-09-29T08:38:00.000Z",
+      ledger_sequence: 4929505,
+      ledger_close_time: "2026-09-29T08:38:32.000Z",
+      checked_in: [
+        { watcher: "GWATCHER1", status: "down", checked_at: "2026-09-29T08:38:10Z" },
+      ],
+      not_yet_checked_in: [],
+    });
+    assert.equal(rpc.calls, 1);
+    assert.equal(d1Reads.length, 2);
+    assert.match(d1Reads[0]!, /FROM watchers/);
+    assert.match(d1Reads[1]!, /FROM checks WHERE sla_id = \? AND round_id = \?/);
+  } finally {
+    rpc.restore();
+    rawDb.close();
+  }
+});
+
+test("Worker: /v1/clock keeps its existing response fields", async () => {
+  const { env, rawDb } = createTestEnv();
+  const rpc = mockLatestLedgerRpc(4929505, "1790671112");
+
+  try {
+    const response = await worker.fetch(new Request("http://localhost/v1/clock"), env, {} as any);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      ledger_sequence: 4929505,
+      ledger_close_time: "2026-09-29T08:38:32.000Z",
+      current_round_id: Math.floor(1790671112 / 60),
+    });
+    assert.equal(rpc.calls, 1);
+  } finally {
+    rpc.restore();
+    rawDb.close();
+  }
 });
 
 test("Worker: GET /v1/providers/:address/slas returns provider slas", async () => {
